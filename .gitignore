@@ -216,3 +216,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Generierte Beispieldateien (werden per Skript erzeugt, siehe examples/)
+examples/vorlage.docx
+*.docx.bak
