@@ -1,0 +1,196 @@
+# Konzept: Masterform – Datenbank & Vorausfüllen von Qualifizierungs-/Validierungsdokumenten
+
+Status: **Entwurf zur Diskussion** – noch keine Umsetzung.
+
+## 0. Ausgangslage
+
+- Aktuell: eine Excel-Datei mit gesammelten Stammdaten (Systeme, Geräte,
+  Anforderungen, Ansprechpartner, ...).
+- Ziel: diese Daten in eine Datenbank überführen und daraus
+  Qualifizierungs-/Validierungsdokumente **vorausfüllen** (QP, QB,
+  Systembewertung, URS, RA, Tracematrix, weitere).
+- Rahmenbedingungen:
+  - Web-basiert, aber **ohne eigenen Server** (rein clientseitig im
+    Browser). Start lokal (Datei auf dem Rechner/Netzlaufwerk), später
+    ggf. auf einen Ort mit Zugriff für mehrere Personen (z.B. SharePoint)
+    verschoben – das UI selbst ändert sich dabei nicht.
+  - Datenbank als **eine SQLite-Datei** (transparent, portabel, mit
+    Standard-Tools inspizierbar, leicht zu sichern/zu versionieren).
+  - **Erst 1 Nutzer**, später mehrere – Architektur sollte das nicht
+    ausschließen, aber jetzt nicht überkonstruiert werden.
+  - Korrekturen: **einfacher Status + grobe Historie** (kein voller,
+    GxP-strenger Audit-Trail à la 21 CFR Part 11 – das bleibt vorerst
+    außerhalb des Tools Sache der Unterschriften-/QM-Prozesse).
+  - Templates und Datenbank werden hier im Repo (bei mir) verwaltet.
+
+## 1. Grobarchitektur
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Browser (statische Web-App, keine Installation, kein Server) │
+│                                                               │
+│  ┌───────────────┐   ┌───────────────┐   ┌────────────────┐ │
+│  │ Datenerfassung │  │  Korrektur/    │  │ Dokument-       │ │
+│  │ & Excel-Import │  │  Pflege-UI     │  │ Erstellung/     │ │
+│  │               │  │               │  │ Finalisierung    │ │
+│  └──────┬────────┘   └──────┬────────┘   └──────┬─────────┘ │
+│         │                    │                    │          │
+│         └─────────► SQLite-Datei (im Browser via WASM) ◄─────┘
+│                        (lokale .sqlite-Datei)                │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+                 Word-Templates (.docx, {{platzhalter}})
+                              │
+                              ▼
+                 Ausgefüllte Dokumente (Entwurf → Finalisiert)
+```
+
+- Alles läuft im Browser als statische HTML/JS-Anwendung (Doppelklick auf
+  `index.html`, keine Installation, kein Backend).
+- Die SQLite-Datei wird direkt im Browser gelesen/geschrieben (per
+  `sql.js`, SQLite als WASM). Speichern erfolgt entweder direkt in eine
+  Datei auf der Platte (File System Access API, Chrome/Edge) oder per
+  Download/Upload-Knopf als Fallback für andere Browser.
+- Das Ausfüllen der `.docx`-Templates kann in zwei Varianten passieren
+  (siehe Abschnitt 5) – das bereits gebaute Python-Modul `masterform`
+  bleibt in jedem Fall die Referenz-Logik für die Platzhalter-Regeln.
+
+## 2. Datenmodell (SQLite)
+
+Da die Excel-Datei vermutlich viele, sich noch ändernde Spalten/Felder
+hat und wir unterschiedliche "Objekttypen" (System, Gerät, Anforderung,
+Risikoeintrag, ...) abbilden müssen, ohne bei jeder neuen Spalte das
+Schema zu migrieren, schlage ich ein **schlankes, generisches
+Kern-Schema** vor statt für jeden Dokumenttyp eine eigene starre Tabelle:
+
+| Tabelle | Zweck |
+|---|---|
+| `entity_types` | Objekttypen, z.B. `system`, `geraet`, `raum`, `anforderung` (URS-Punkt), `risiko` (RA-Eintrag), `person` |
+| `field_definitions` | Welche Felder es je Objekttyp gibt: `key` (= Platzhaltername), `label`, `datentyp`, `pflichtfeld`, `gruppe` |
+| `records` | Ein konkreter Datensatz eines Objekttyps, z.B. "System: HPLC-042", inkl. `status` (`entwurf`/`final`) |
+| `field_values` | Die tatsächlichen Werte: `record_id`, `field_key`, `wert` |
+| `relations` | Verknüpfungen zwischen Datensätzen, z.B. `anforderung` → gehört zu `system`; `risiko` → bezieht sich auf `anforderung` (nötig für URS/RA/Tracematrix, die sich gegenseitig referenzieren) |
+| `change_log` | Grobe Historie: wer hat wann welches Feld von welchem Wert auf welchen Wert geändert (kein Freitext-Begründungszwang, aber vorhanden) |
+| `templates` | Registrierte Word-Vorlagen: `key`, `name`, `dokumenttyp` (QP/QB/URS/RA/Tracematrix/Systembewertung/...), Dateipfad, benötigte Platzhalter |
+| `documents` | Erzeugte Dokumente: welches Template, welche(r) Datensatz(-Bezug), `status` (`entwurf`/`final`), Zeitpunkt Erzeugung/Finalisierung, **Snapshot der verwendeten Werte** (als JSON, eingefroren bei Finalisierung) |
+
+Warum dieses "generische" Modell (statt fixer Tabellen pro Dokumenttyp)?
+- Neue Felder aus der Excel-Datei lassen sich einfach als neue Zeile in
+  `field_definitions` ergänzen, ohne das DB-Schema zu ändern.
+- `field_definitions.key` **ist** direkt der Platzhaltername im
+  Word-Template (siehe Abschnitt 3) – Datenbank und Dokumente sprechen
+  dieselbe Sprache, das war dein Wunsch nach "einheitlichem Einfügen".
+- Nachteil: Abfragen sind etwas technischer (Key-Value statt normaler
+  Spalten) – das UI kapselt das aber vollständig, du siehst nur Formulare.
+
+## 3. Einheitliche Markierungen in den Dokumenten
+
+Platzhalter-Konvention (bereits so im bestehenden `masterform`-Code
+umgesetzt): `{{entity_typ.feld_key}}`, z.B.
+
+```
+{{system.bezeichnung}}      {{system.hersteller}}      {{system.standort}}
+{{anforderung.id}}          {{anforderung.text}}       {{anforderung.kategorie}}
+{{risiko.beschreibung}}     {{risiko.einstufung}}
+{{person.ersteller}}        {{person.pruefer}}         {{datum.erstellung}}
+```
+
+Zwei Platzhalter-Arten, die wir brauchen werden:
+
+1. **Einzelwert-Platzhalter** – ein Wert, einmal im Dokument (z.B.
+   Systemname im Kopf des QP). *Das können wir bereits.*
+2. **Listen-/Tabellen-Platzhalter** – eine Tabellenzeile, die sich pro
+   Datensatz wiederholt (z.B. jede Zeile der Tracematrix = ein
+   URS-Punkt + zugehöriger Risikoeintrag + Teststatus). *Das ist neu und
+   braucht eine Erweiterung des Fill-Mechanismus (wiederholende
+   Tabellenzeile statt einmaligem Platzhalter).* Wird technisch nötig
+   für URS-Tabellen, RA-Tabellen und die Tracematrix.
+
+## 4. Prozesse
+
+### a) Datenerfassung
+- **Einmaliger Import** der bestehenden Excel-Datei: Import-Assistent im
+  Browser (Datei hochladen, Spalten auf `field_definitions` mappen,
+  Vorschau, Übernahme in `records`/`field_values`).
+- **Laufende Neuanlage**: Formular pro Objekttyp (z.B. "Neues System
+  anlegen") für alles, was nach dem Import neu hinzukommt.
+
+### b) Korrektur – manuell (vor Finalisierung)
+- Datensatz suchen/öffnen → Feld bearbeiten → Speichern.
+- Jede Änderung erzeugt einen `change_log`-Eintrag (Feld, alt, neu,
+  Zeitpunkt, wer) – reicht für "grobe Historie", ohne vollen Audit-Trail.
+
+### c) Dokument erzeugen (Entwurf)
+- Template + betroffene(r) Datensatz(-Bezug, z.B. ein System +
+  zugehörige Anforderungen) auswählen.
+- Vorschau der Werte, die eingesetzt werden, inkl. Warnung bei fehlenden
+  Pflichtfeldern.
+- Erzeugung des ausgefüllten `.docx` → Status `entwurf`. Werte werden
+  zusätzlich als Snapshot im `documents`-Eintrag gespeichert.
+
+### d) Finalisierung (Dokument wurde unterschrieben)
+- Nutzer markiert das Dokument nach Ausdruck/Unterschrift als `final`
+  (Datum, wer). Der Werte-Snapshot zu diesem Zeitpunkt wird endgültig
+  eingefroren – das fertige Dokument wird durch spätere Korrekturen an
+  den Stammdaten **nicht** rückwirkend verändert.
+
+### e) Korrektur – nachdem ein Dokument finalisiert wurde
+- Ändert sich später ein Stammdatenwert, der in einem finalisierten
+  Dokument steckt, wird das **nicht** automatisch nachgezogen (das
+  Dokument ist ja unterschrieben), sondern es entsteht ein einfacher
+  Hinweis/Flag: *"Datensatz X wurde am ... geändert, wird in
+  finalisiertem Dokument Y (Snapshot vom ...) noch mit altem Wert
+  geführt"*. Das ist bewusst nur ein Hinweis zur Wiedervorlage, keine
+  automatische Nachtrags-Logik – Entscheidung, was damit passiert
+  (Änderungsmitteilung, neue Dokumentenversion, ...), bleibt beim
+  Menschen.
+
+## 5. Offene technische Entscheidung: wo läuft das Ausfüllen der .docx?
+
+Zwei Optionen, beide mit derselben Platzhalter-Konvention:
+
+- **A – Python bleibt der "Fill-Motor"** (das, was schon existiert):
+  Web-App exportiert die Werte für ein Dokument als JSON-Datei; du
+  führst lokal `python fill_template.py ... --data export.json` aus.
+  Vorteil: nutzt sofort das bereits getestete, robuste Modul. Nachteil:
+  ein manueller Zwischenschritt außerhalb des Browsers.
+- **B – Alles im Browser** (JS-Portierung der gleichen Logik, z.B. via
+  einer JS-Bibliothek, die `.docx` als ZIP/XML im Browser bearbeitet):
+  ein Klick von "Datensatz wählen" bis "Download der fertigen Datei".
+  Vorteil: wirklich nahtlos, kein Kontextwechsel. Nachteil: die
+  Listen-/Tabellen-Platzhalter (Abschnitt 3) müssten in JS neu gebaut
+  werden; mehr Erstaufwand.
+
+**Empfehlung:** mit A starten (schnell nutzbar, Motor existiert schon),
+und erst wenn das Datenmodell/die Templates stehen, auf B umstellen,
+falls der Zwischenschritt in der Praxis stört.
+
+## 6. Offene Fragen für dich
+
+1. Kannst du die Excel-Datei (oder zumindest die Spaltenüberschriften /
+   Tabellenblätter) teilen, damit ich daraus einen konkreten Vorschlag
+   für `entity_types` + `field_definitions` ableite, statt im Blindflug
+   ein Schema zu entwerfen?
+2. Gibt es von den genannten Dokumenten (QP, QB, Systembewertung, URS,
+   RA, Tracematrix) bereits Word-Vorlagen, die wir als Ausgangspunkt
+   nehmen können (auch ungefüllt, nur mit der aktuellen Struktur)?
+3. Referenzieren sich URS/RA/Tracematrix gegenseitig über eine
+   Anforderungs-ID (z.B. "URS-001"), die so oder ähnlich schon in der
+   Excel-Datei existiert? Das würde die `relations`-Tabelle direkt
+   bestimmen.
+4. Passt die Empfehlung aus Abschnitt 5 (erst Python-Export/Import,
+   später ggf. volles Browser-Templating), oder soll gleich B versucht
+   werden?
+
+## 7. Vorgeschlagene Reihenfolge (grob, noch ohne Zeitangaben)
+
+1. Schema (Abschnitt 2) anhand deiner echten Excel-Datei konkretisieren.
+2. Minimal-Web-UI: SQLite-Datei anlegen/öffnen + Excel-Import +
+   Formular zum Anschauen/Bearbeiten eines Datensatzes.
+3. Platzhalter-Erweiterung um Listen-/Tabellen-Platzhalter (Tracematrix
+   etc.).
+4. Dokument-Erzeugung (Entwurf) + Status/Finalisierung +
+   Abweichungs-Hinweis nach Korrektur.
+5. Erst danach: Umstieg von A auf B (Browser-only Templating), falls
+   gewünscht.
