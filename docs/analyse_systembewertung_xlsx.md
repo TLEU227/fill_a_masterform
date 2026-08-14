@@ -158,3 +158,51 @@ Dieses Template arbeitet mit **echten Word-Seriendruckfeldern
 
 Ich würde A empfehlen und als eigenen Unterpunkt zu Task #4 einplanen.
 
+## Update: Antworten vom 14.08. eingearbeitet
+
+### Zu 1) GKAT – vereinfacht
+
+Bestätigt: **nur ein Feld**, keine doppelte Ablage. Die Subkategorie
+(`B1/B2/B3/C1/C2` reicht, `C3` kommt in den Daten nicht vor) ist
+ausreichend, weil die übergeordnete Kategorie (`B`/`C`) daraus ableitbar
+ist. → In der DB genügt **ein Feld** `geraetekategorie` mit den Werten
+`A`, `B1`, `B2`, `B3`, `C1`, `C2`, `N/A` (kein separates `GKATB`/`GKATC`).
+Für das Ausfüllen des aktuellen Templates (das nur A/B/C/N.A.-Checkboxen
+hat) wird die übergeordnete Kategorie beim Dokument-Erzeugen aus dem
+Subkategorie-Wert **abgeleitet** (B1/B2/B3 → "B", C1/C2 → "C"), nicht
+separat gespeichert.
+
+### Zu 3) "Systemliste" statt Dokumentenliste – Konsolidierungsregel
+
+Verstanden: Aus der dokumentversions-granularen Excel-Liste soll eine
+**Systemliste** (ein Eintrag pro System) für unsere DB entstehen, wobei
+bei mehreren Versionen zum selben System **die neueste Bewertung
+maßgeblich ist** (z.B. nach einer Requalifizierung).
+
+**Das ist beim genauen Hinsehen aber nicht vollautomatisch zuverlässig
+lösbar**, weil die Excel-Datei an zwei Stellen nicht eindeutig ist:
+
+- **`Dok.-Nr.` als Gruppierungsschlüssel funktioniert nicht überall**:
+  42 komplett unterschiedliche Systeme teilen sich den Platzhalterwert
+  `QU-OPE-xxxxx` (Dokumentnummer noch nicht vergeben) – die dürfen
+  keinesfalls als "dasselbe System" zusammengefasst werden.
+- **`MLCSID` ist nicht immer eindeutig**: z.B. teilen sich 9 komplett
+  verschiedene Systeme (unterschiedliche Dok.-Nr., unterschiedliche
+  Namen, unterschiedliche Daten) die MLCSID `2326`. Umgekehrt gibt es
+  aber auch den erwarteten Fall – z.B. MLCSID `1433`: Zeile 1 (Version 1,
+  `QU-OPE-xxxxx`, "SPS UF-Anlage PU5650A") und Zeile 2 (Version 2.0,
+  `QU-OPE-2910035`, "UF-Anlage 5650A") sind erkennbar dieselbe Anlage in
+  zwei Versionen.
+
+**Vorschlag:** eine automatische Erkennung *nur* dort anwenden, wo sie
+eindeutig ist (z.B. gleiche `MLCSID` **und** eine echte, nicht-
+Platzhalter-Dok.-Nr. **und** ähnlicher Name), und alles, was nicht
+eindeutig ist, in einem **Prüfschritt beim Excel-Import** (der im Konzept
+sowieso als "Vorschau vor Übernahme" vorgesehen ist, siehe `KONZEPT.md`
+Abschnitt 4a) explizit von dir bestätigen lassen, statt es blind
+zusammenzuführen. Für die DB heißt das zusätzlich: Datensätze behalten
+alle Versionen (grobe Historie, wie in Abschnitt 4b beschrieben), aber
+genau eine gilt pro System als "aktuell" – das wird ein zusätzliches
+Feld/Flag am Datensatz statt einer stillschweigenden Überschreibung.
+
+
