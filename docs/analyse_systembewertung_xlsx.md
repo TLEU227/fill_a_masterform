@@ -205,4 +205,26 @@ alle Versionen (grobe Historie, wie in Abschnitt 4b beschrieben), aber
 genau eine gilt pro System als "aktuell" – das wird ein zusätzliches
 Feld/Flag am Datensatz statt einer stillschweigenden Überschreibung.
 
+### Update: Final vs. Draft über `Erkannte Version2`
+
+Bestätigt und geprüft: Die Spalte **`Erkannte Version2`** (Werte `v8`,
+`v10`, `v11`; nur 31 von 733 Zeilen gesetzt) markiert Zeilen, die bereits
+**aus einem finalisierten/unterschriebenen Dokument zurückimportiert**
+wurden. Am Beispiel MLCSID `1433` bestätigt sich das exakt: die Zeile ohne
+`Erkannte Version2` ist der Draft (`QU-OPE-xxxxx`), die Zeile mit
+`Erkannte Version2 = V11` (`QU-OPE-2910035`) ist final und maßgeblich.
+
+**Konsolidierungsregel (für Task #2/#3):**
+
+1. `Dok.-Nr.`-Platzhalterwerte (`QU-OPE-xxxxx` o.ä.) gelten beim
+   Gruppieren als "keine Dok.-Nr.", nie als Gleichheitsmerkmal.
+2. Eine Zeile mit gesetztem `Erkannte Version2` (= final) hat **Vorrang**
+   vor jeder Draft-Zeile zum selben System.
+3. Gibt es mehrere finale Zeilen, gewinnt die höchste Versionsnummer aus
+   `Erkannte Version2` (`v11` > `v10` > `v8`).
+4. Ohne jede finale Zeile: höchste `Version`-Spalte bzw. neuestes `Datum`
+   unter den Drafts.
+5. Alle anderen Zeilen bleiben als Historie erhalten (Status "nicht
+   aktuell"), werden nicht gelöscht.
+
 
