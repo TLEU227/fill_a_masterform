@@ -80,3 +80,12 @@ Vorlage enthält eine Beispielzeile, die pro tatsächlichem Datensatz
 (Anforderung, Risiko, Prüfschritt) vervielfacht werden muss – das ist
 Teil von Task #4, unabhängig von der Platzhalter-Technik in der Zeile
 selbst.
+
+**Konkrete Ausgangslage (bestätigt am VQ-Template):** die IQ-/OQ-/PQ-
+Tabellen liefern **je 5 Beispielzeilen** fest im Template mit. Ein
+System kann aber deutlich mehr (bis zu ~100) oder weniger Prüfschritte
+brauchen. Der Fill-Mechanismus muss die Beispielzeile beim Erzeugen
+also **klonen** (bei mehr als 5 Datensätzen) oder **entfernen** (bei
+weniger), bis die Zeilenzahl zur tatsächlichen Datenmenge passt -
+nicht nur Text in vorhandene Zeilen einsetzen. Das ist die eigentliche
+Schwierigkeit von Task #4, nicht nur eine Formalität.

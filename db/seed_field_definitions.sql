@@ -146,15 +146,18 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- ---------------------------------------------------------------------------
 -- Prüfschritt (IQ/OQ/PQ/PPQ) – nur für Dokumente mit Prüfprotokoll.
 -- ---------------------------------------------------------------------------
-INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
-('pruefschritt', 'pruef_id',        'IQ/OQ/PQ-ID',           'text', NULL, 1, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 10),
-('pruefschritt', 'phase',           'Phase',                 'auswahl', '["IQ","OQ","PQ","PPQ"]', 1, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 20),
-('pruefschritt', 'beschreibung',    'Beschreibung der Prüfung', 'mehrzeiliger_text', NULL, 1, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 30),
-('pruefschritt', 'akzeptanzkriterium', 'Akzeptanzkriterium', 'mehrzeiliger_text', NULL, 0, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 40),
-('pruefschritt', 'erfuellt',        'Erfüllt?',              'ja_nein', NULL, 0, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 50),
-('pruefschritt', 'kuerzel',         'Kürzel (Prüfer)',       'text', NULL, 0, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 60),
-('pruefschritt', 'datum',           'Datum',                 'datum', NULL, 0, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 70),
-('pruefschritt', 'bemerkung',       'Anhang/Verweis/Bemerkung', 'mehrzeiliger_text', NULL, 0, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 80);
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, freitext_erlaubt, benoetigt_fuer, gruppe, sortierung) VALUES
+('pruefschritt', 'pruef_id',        'IQ/OQ/PQ-ID',           'text', NULL, 1, NULL, NULL, 0, '["VQ","xQTP"]', 'Prüfschritt', 10),
+-- Auswahl mit Freitext-Fluchtoption: normalerweise IQ/OQ/PQ/PPQ, aber
+-- falls ein Fall doch mal anders benannt werden muss, per "Andere" ->
+-- Freitext statt die Auswahlliste künstlich erweitern zu müssen.
+('pruefschritt', 'phase',           'Phase',                 'auswahl', '["IQ","OQ","PQ","PPQ"]', 1, NULL, NULL, 1, '["VQ","xQTP"]', 'Prüfschritt', 20),
+('pruefschritt', 'beschreibung',    'Beschreibung der Prüfung', 'mehrzeiliger_text', NULL, 1, NULL, NULL, 0, '["VQ","xQTP"]', 'Prüfschritt', 30),
+('pruefschritt', 'akzeptanzkriterium', 'Akzeptanzkriterium', 'mehrzeiliger_text', NULL, 0, NULL, NULL, 0, '["VQ","xQTP"]', 'Prüfschritt', 40),
+('pruefschritt', 'erfuellt',        'Erfüllt?',              'ja_nein', NULL, 0, NULL, NULL, 0, '["VQ","xQTP"]', 'Prüfschritt', 50),
+('pruefschritt', 'kuerzel',         'Kürzel (Prüfer)',       'text', NULL, 0, NULL, NULL, 0, '["VQ","xQTP"]', 'Prüfschritt', 60),
+('pruefschritt', 'datum',           'Datum',                 'datum', NULL, 0, NULL, NULL, 0, '["VQ","xQTP"]', 'Prüfschritt', 70),
+('pruefschritt', 'bemerkung',       'Anhang/Verweis/Bemerkung', 'mehrzeiliger_text', NULL, 0, NULL, NULL, 0, '["VQ","xQTP"]', 'Prüfschritt', 80);
 
 -- Verknüpfungs-Typen (relation_type-Werte, zur Orientierung, keine eigene Tabelle nötig):
 --   'gehoert_zu'       anforderung/risiko/pruefschritt -> system

@@ -34,6 +34,10 @@ CREATE TABLE field_definitions (
                                         -- '[{"wert":"Critical","erklaerung":"..."}, ...]'
                                         -- bei datentyp='person_referenz': der Wert in field_values ist die records.id einer 'person'-Objektart (kein Freitext-Name)
     pflichtfeld    INTEGER NOT NULL DEFAULT 0,   -- 0 = optional, 1 = Pflichtfeld
+    freitext_erlaubt INTEGER NOT NULL DEFAULT 0, -- bei datentyp='auswahl': 1 = zusätzlich zur Auswahlliste
+                                        -- eine Fluchtoption "Andere / abweichender Wert" mit Freitext anbieten,
+                                        -- falls die Liste einen Fall nicht abdeckt (z.B. Phase: normalerweise
+                                        -- IQ/OQ/PQ/PPQ, aber gelegentlich ein Sonderfall)
     format_hinweis TEXT,               -- Formatvorschrift, wird nur beim Bearbeiten des Feldes angezeigt, z.B. 'Nachname, Vorname' oder 'x.x'
     sop_hinweis    TEXT,               -- Bezug auf die zugehoerige SOP, z.B. 'gemaess QU-SOP-0021736'
     benoetigt_fuer TEXT    NOT NULL DEFAULT '["immer"]',  -- JSON-Liste: 'immer' = Basisdatum fuer alle Dokumente, sonst Dokumenttyp-Schluessel (z.B. 'VQ','CS-VP','CS-VB','xQTP')
