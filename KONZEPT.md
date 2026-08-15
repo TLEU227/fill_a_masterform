@@ -31,8 +31,8 @@ Status: **Entwurf zur Diskussion** – noch keine Umsetzung.
 │                                                               │
 │  ┌───────────────┐   ┌───────────────┐   ┌────────────────┐ │
 │  │ Datenerfassung │  │  Korrektur/    │  │ Dokument-       │ │
-│  │ & Excel-Import │  │  Pflege-UI     │  │ Erstellung/     │ │
-│  │               │  │               │  │ Finalisierung    │ │
+│  │ (leer/Kopie/   │  │  Pflege-UI     │  │ Erstellung/     │ │
+│  │  bearbeiten)   │  │               │  │ Finalisierung    │ │
 │  └──────┬────────┘   └──────┬────────┘   └──────┬─────────┘ │
 │         │                    │                    │          │
 │         └─────────► SQLite-Datei (im Browser via WASM) ◄─────┘
@@ -109,12 +109,26 @@ Zwei Platzhalter-Arten, die wir brauchen werden:
 
 ## 4. Prozesse
 
-### a) Datenerfassung
-- **Einmaliger Import** der bestehenden Excel-Datei: Import-Assistent im
-  Browser (Datei hochladen, Spalten auf `field_definitions` mappen,
-  Vorschau, Übernahme in `records`/`field_values`).
-- **Laufende Neuanlage**: Formular pro Objekttyp (z.B. "Neues System
-  anlegen") für alles, was nach dem Import neu hinzukommt.
+### a) Datenerfassung – 3 Szenarien im Browser-Formular
+
+Kein Massenimport der Excel-Datei geplant (Entscheidung vom 15.08.) – die
+Datenbank wird von Anfang an über das Formular selbst aufgebaut, in drei
+Fällen:
+
+1. **Neuanlage, alles leer**: leeres, aber gruppiertes Formular mit
+   Dropdowns für die kategorialen Felder (GxP-Kritikalität,
+   Gerätekategorie, ...) statt Freitext.
+2. **Neuanlage auf Basis eines ähnlichen Systems**: bestehenden
+   Datensatz als Vorlage wählen → Formular wird mit dessen Werten
+   vorbefüllt und **sichtbar angezeigt** → Eingabe überschreibt nur die
+   abweichenden Felder, Rest bleibt wie übernommen.
+3. **Bestehendes System bearbeiten**: Datensatz laden → alle aktuellen
+   Werte sichtbar → Eingabe überschreibt nur geänderte/neue Felder.
+
+Szenario 2 und 3 unterscheiden sich technisch nur darin, ob am Ende ein
+**neuer** Datensatz entsteht (2, mit Kopie der Werte als Startpunkt) oder
+der **bestehende** Datensatz aktualisiert wird (3) – die Formular-UI ist
+dieselbe.
 
 ### b) Korrektur – manuell (vor Finalisierung)
 - Datensatz suchen/öffnen → Feld bearbeiten → Speichern.
