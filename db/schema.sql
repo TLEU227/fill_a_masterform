@@ -27,8 +27,12 @@ CREATE TABLE field_definitions (
     entity_type    TEXT    NOT NULL REFERENCES entity_types(key),
     key            TEXT    NOT NULL,   -- Platzhaltername, z.B. 'gxp_kritikalitaet'
     label          TEXT    NOT NULL,   -- Beschriftung im Formular, z.B. 'GxP-Kritikalität'
-    datentyp       TEXT    NOT NULL CHECK (datentyp IN ('text', 'mehrzeiliger_text', 'zahl', 'datum', 'ja_nein', 'auswahl')),
-    optionen       TEXT,               -- bei datentyp='auswahl': JSON-Liste erlaubter Werte, z.B. '["Critical","Major","Minor","N/A"]'
+    datentyp       TEXT    NOT NULL CHECK (datentyp IN ('text', 'mehrzeiliger_text', 'zahl', 'datum', 'ja_nein', 'auswahl', 'person_referenz')),
+    optionen       TEXT,               -- bei datentyp='auswahl': entweder eine einfache JSON-Liste erlaubter Werte
+                                        -- ('["Critical","Major","Minor","N/A"]') oder, wenn jede Option eine kurze
+                                        -- Erklärung braucht, eine JSON-Liste von Objekten:
+                                        -- '[{"wert":"Critical","erklaerung":"..."}, ...]'
+                                        -- bei datentyp='person_referenz': der Wert in field_values ist die records.id einer 'person'-Objektart (kein Freitext-Name)
     pflichtfeld    INTEGER NOT NULL DEFAULT 0,   -- 0 = optional, 1 = Pflichtfeld
     format_hinweis TEXT,               -- Formatvorschrift, wird nur beim Bearbeiten des Feldes angezeigt, z.B. 'Nachname, Vorname' oder 'x.x'
     sop_hinweis    TEXT,               -- Bezug auf die zugehoerige SOP, z.B. 'gemaess QU-SOP-0021736'

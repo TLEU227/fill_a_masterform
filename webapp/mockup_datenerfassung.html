@@ -66,6 +66,56 @@
     border-color: var(--accent);
     background: var(--accent-light);
   }
+  .combo { position: relative; }
+  .combo input {
+    width: 100%;
+    padding: 9px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13.5px;
+  }
+  .combo-results {
+    position: absolute;
+    z-index: 10;
+    left: 0; right: 0;
+    top: calc(100% + 4px);
+    background: white;
+    border: 1.5px solid #9aa5b1;
+    border-radius: 8px;
+    max-height: 220px;
+    overflow-y: auto;
+    box-shadow: 0 6px 16px rgba(0,0,0,.12);
+    display: none;
+  }
+  .combo-results.open { display: block; }
+  .combo-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid #eef1f4;
+  }
+  .combo-item:last-child { border-bottom: none; }
+  .combo-item:hover, .combo-item.active { background: var(--accent-light); }
+  .combo-item b { color: var(--text); }
+  .combo-item span { color: var(--muted); font-size: 11.5px; display: block; }
+  .combo-empty { padding: 10px 12px; font-size: 12.5px; color: var(--muted); }
+  .combo-selected {
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--accent);
+    display: none;
+  }
+  .combo-selected.visible { display: block; }
+  .combo-selected button {
+    margin-left: 8px;
+    font-size: 11.5px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 4px;
+    padding: 1px 7px;
+    cursor: pointer;
+  }
+
   .source-picker, .doc-picker {
     background: var(--card);
     border: 1px solid var(--border);
@@ -88,7 +138,7 @@
 
   .card {
     background: var(--card);
-    border: 1px solid var(--border);
+    border: 1.5px solid #9aa5b1;
     border-radius: 10px;
     margin-bottom: 16px;
     overflow: hidden;
@@ -99,7 +149,7 @@
     padding: 12px 16px;
     font-size: 14px;
     background: var(--group-bg);
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1.5px solid #9aa5b1;
     color: var(--accent);
     display: flex;
     align-items: center;
@@ -164,6 +214,41 @@
     max-height: 60px;
     opacity: 1;
     padding: 4px 6px;
+  }
+
+  .person-info {
+    font-size: 11.5px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .person-new {
+    margin-top: 6px;
+    display: grid;
+    gap: 6px;
+    border-top: 1px dashed var(--border);
+    padding-top: 6px;
+  }
+  .person-new input {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .field.computed {
+    background: var(--group-bg);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 8px 10px;
+  }
+  .field.computed .value {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--accent);
+  }
+  .field.computed .basis {
+    font-size: 11px;
+    color: var(--muted);
   }
 
   .actions {
@@ -231,11 +316,11 @@
 
   <div class="source-picker" id="sourcePicker">
     <label id="sourceLabel">Als Vorlage übernehmen von:</label>
-    <select id="sourceSelect">
-      <option value="">– bitte wählen –</option>
-      <option value="demo1">Muster-Zentrifuge A100 (Gebäude G650)</option>
-      <option value="demo2">Muster-Waage B200 (Gebäude H590)</option>
-    </select>
+    <div class="combo">
+      <input type="text" id="sourceSearch" placeholder="System suchen: MLCS-ID, Gerätename, Hersteller/Lieferant, Software, Gebäude, … " autocomplete="off">
+      <div class="combo-results" id="sourceResults"></div>
+    </div>
+    <div class="combo-selected" id="sourceSelected"></div>
     <div class="hint" id="sourceHint"></div>
   </div>
 
@@ -263,15 +348,26 @@
 <script>
 // Entspricht 1:1 db/seed_field_definitions.sql für entity_type='system'
 // (Reihenfolge: Personen zuerst, dann wie im Systembewertungsdokument).
+// Objektart 'person' (db/seed_field_definitions.sql) - frei erfundene Demo-
+// Personen. In der echten App: Auswahl bestehender Personen oder Neuanlage.
+const DEMO_PERSONS = [
+  { id: "p1", name: "Muster, Anna",   stelle: "CSV Specialist", abteilung: "FBC Campus Management Engineering CSV" },
+  { id: "p2", name: "Beispiel, Ben",  stelle: "Systemintegrator", abteilung: "FBC Automation & Manufacturing Systems" },
+  { id: "p3", name: "Muster, Chris",  stelle: "Technical System Owner", abteilung: "FBC Engineering" },
+  { id: "p4", name: "Muster, Dana",   stelle: "Business System Owner", abteilung: "FBC Production" },
+  { id: "p5", name: "Muster, Elena",  stelle: "Business Quality Representative", abteilung: "FBC Quality" },
+  { id: "p6", name: "Muster, Finn",   stelle: "Computerized System Quality", abteilung: "FBC Quality CSV" },
+];
+
 const GROUPS = [
   { name: "Personen", fields: [
-    { key: "rolle_ersteller", label: "Ersteller", type: "text", required: true, hint: "Format: Nachname, Vorname" },
-    { key: "rolle_sme", label: "SME", type: "text", hint: "Format: Nachname, Vorname" },
-    { key: "rolle_si_pl", label: "SI/PL", type: "text", hint: "Format: Nachname, Vorname" },
-    { key: "rolle_tso", label: "TSO", type: "text", hint: "Format: Nachname, Vorname" },
-    { key: "rolle_bso", label: "BSO", type: "text", hint: "Format: Nachname, Vorname" },
-    { key: "rolle_bqr", label: "BQR", type: "text", hint: "Format: Nachname, Vorname" },
-    { key: "rolle_csq", label: "CSQ", type: "text", hint: "Format: Nachname, Vorname" },
+    { key: "rolle_ersteller", label: "Ersteller", type: "person", required: true },
+    { key: "rolle_sme", label: "SME", type: "person" },
+    { key: "rolle_si_pl", label: "SI/PL", type: "person" },
+    { key: "rolle_tso", label: "TSO", type: "person" },
+    { key: "rolle_bso", label: "BSO", type: "person" },
+    { key: "rolle_bqr", label: "BQR", type: "person" },
+    { key: "rolle_csq", label: "CSQ", type: "person" },
   ]},
   { name: "Stammdaten", fields: [
     { key: "mlcs_id", label: "MLCS-ID", type: "text" },
@@ -287,23 +383,41 @@ const GROUPS = [
     { key: "sw_version", label: "Software-Version/Typ", type: "text" },
     { key: "sw_hersteller", label: "Software-Hersteller", type: "text" },
     { key: "hersteller", label: "Hersteller/Lieferant", type: "text" },
-    { key: "lieferantennummer", label: "Lieferantennummer", type: "text" },
+    { key: "lieferantennummer", label: "QualiPSO Third Party/Customer-ID", type: "text" },
   ]},
   { name: "GxP-Bewertung", fields: [
     { key: "gxp_relevant", label: "GxP-relevant?", type: "ja_nein", required: true },
-    { key: "gxp_kritikalitaet", label: "GxP-Kritikalität", type: "select", options: ["Critical","Major","Minor","N/A"], required: true },
-    { key: "systemtyp", label: "Systemtyp", type: "select", options: ["CIS","CE","S"],
-      hint: "CS = CIS (Informationssystem), CE (Equipment) oder S (Spreadsheet) – gemäß QU-SOP-0015430" },
-    { key: "subtyp", label: "Subtyp (bei CE)", type: "select", options: ["CE-PCS","CE-LCE","CE-EE","N/A"] },
-    { key: "gamp_kategorie", label: "GAMP-5-Software-Kategorie", type: "select", options: ["1","3","4","5","N/A"], hint: "gemäß GAMP 5 (2nd Edition)" },
-    { key: "eres_typ", label: "Typ elektronischer Aufzeichnungen", type: "select", options: ["Typ 1","Typ 2","Typ 3","Typ 4","N/A"] },
-    { key: "testtiefe", label: "Testtiefe", type: "select", options: ["Hoch","Mittel","Gering"] },
+    { key: "gxp_kritikalitaet", label: "GxP-Kritikalität", type: "select", required: true, options: [
+        { wert: "Critical", erklaerung: "Direkter Einfluss auf Produktqualität, Patientensicherheit oder Datenintegrität." },
+        { wert: "Major", erklaerung: "GxP-Verletzung, aber ohne direkten Einfluss auf Produktqualität, Patientensicherheit oder Datenintegrität." },
+        { wert: "Minor", erklaerung: "Indirekte GxP-Verletzung, kein Einfluss auf Produktqualität, Patientensicherheit oder Datenintegrität." },
+        { wert: "N/A", erklaerung: "Kein Risiko." },
+      ] },
+    // Systemtyp: EINE Auswahl mit 8 Optionen (im Referenzdokument als eine
+    // gemeinsame Checkbox-Liste gefunden - CIS/CE-*/S0-S2 gehören zusammen).
+    { key: "systemtyp", label: "Systemtyp", type: "select", options: ["CIS","CE-PCS","CE-LCE","CE-EE","S0","S1","S2","N/A"],
+      hint: "CIS=Informationssystem · CE-PCS=Prozessleitsystem · CE-LCE=Laborgerät · CE-EE=Einzelgerät · S0-S2=Spreadsheet-Stufen – gemäß QU-SOP-0015430" },
+    { key: "gamp_kategorie", label: "GAMP-5-Software-Kategorie", type: "select", options: [
+        { wert: "1", erklaerung: "Infrastruktur-Software, z.B. Betriebssysteme, Datenbankmanager – nicht konfigurierbar." },
+        { wert: "3", erklaerung: "Nicht konfigurierbare Standardsoftware, z.B. Firmware-basierte Systeme." },
+        { wert: "4", erklaerung: "Konfigurierbare Software, z.B. LIMS, SCADA, ERP, PLS, HMI." },
+        { wert: "5", erklaerung: "Kundenspezifisch programmierte Software." },
+        { wert: "N/A", erklaerung: "Nicht zutreffend." },
+      ] },
+    { key: "eres_typ", label: "Typ elektronischer Aufzeichnungen", type: "select", options: [
+        { wert: "Typ 1", erklaerung: "Keine elektronischen Aufzeichnungen, keine elektronische Signatur (einfaches System)." },
+        { wert: "Typ 2", erklaerung: "Keine E-Records/E-Signatur, da durch ein übergeordnetes System oder auf Papier abgedeckt." },
+        { wert: "Typ 3", erklaerung: "Elektronische Aufzeichnungen ohne elektronische Signatur." },
+        { wert: "Typ 4", erklaerung: "Elektronische Aufzeichnungen mit elektronischer Signatur." },
+        { wert: "N/A", erklaerung: "Nicht zutreffend." },
+      ] },
     { key: "geraetekategorie", label: "Gerätekategorie (ISPE/GAMP)", type: "select", options: ["A","B1","B2","B3","C1","C2","N/A"],
       hint: "gemäß QU-SOP-0021736 (Qualifizierung von Gebäuden, Einrichtungen und Ausrüstung)" },
     { key: "business_critical", label: "Business critical?", type: "ja_nein" },
     { key: "vq_erforderlich", label: "Vereinfachte Qualifizierung erforderlich?", type: "ja_nein", hint: "gemäß QU-SOP-0021736" },
     { key: "val_erforderlich", label: "Validierung erforderlich?", type: "ja_nein", hint: "gemäß QU-SOP-0049866 (Validierung computergestützter Systeme)" },
   ]},
+  { name: "Testtiefe (automatisch)", computed: true, fields: [] },
   { name: "Status", fields: [
     { key: "ist_aktuelle_version", label: "Ist aktuelle Version?", type: "ja_nein" },
   ]},
@@ -329,45 +443,108 @@ const DOC_BRANCHES = {
   ],
 };
 
+// Ableitungstabelle Testtiefe (Kapitel 8 der Systembewertung, QU-MT-0001344) -
+// wird berechnet, nicht eingegeben.
+const TESTTIEFE_MATRIX = {
+  Critical: { "1": "Mittel", "3": "Mittel", "4": "Hoch", "5": "Hoch" },
+  Major:    { "1": "Gering", "3": "Gering", "4": "Mittel", "5": "Hoch" },
+  Minor:    { "1": "Gering", "3": "Gering", "4": "Gering", "5": "Mittel" },
+  "N/A":    { "1": "N/A", "3": "N/A", "4": "N/A", "5": "N/A", "N/A": "N/A" },
+};
+
 // Frei erfundene Demo-Datensätze (KEINE echten Sanofi-Daten) für Szenario 2/3.
+// rolle_* verweisen jetzt auf die id eines DEMO_PERSONS-Eintrags.
 const DEMO_RECORDS = {
   demo1: {
-    rolle_ersteller: "Muster, Anna", rolle_sme: "Beispiel, Ben", rolle_si_pl: "Beispiel, Ben",
-    rolle_tso: "Muster, Chris", rolle_bso: "Muster, Dana", rolle_bqr: "Muster, Elena", rolle_csq: "Muster, Finn",
+    rolle_ersteller: "p1", rolle_sme: "p2", rolle_si_pl: "p2",
+    rolle_tso: "p3", rolle_bso: "p4", rolle_bqr: "p5", rolle_csq: "p6",
     mlcs_id: "9001", bereich: "Muster-Produktion 1", gebaeude: "G650", dok_version: "1.0", dok_nummer: "QU-OPE-0000001",
     systemname: "Muster-Zentrifuge A100", anlage: "Zentrifuge A100", raum: "",
     kurzbeschreibung: "Beispiel: SPS-gesteuerte Zentrifuge zur Trocknung.",
     sw_name: "Simatic (Beispiel)", sw_version: "V3.0 (Beispiel)", sw_hersteller: "Siemens (Beispiel)",
     hersteller: "Muster GmbH", lieferantennummer: "100000",
-    gxp_relevant: "ja", gxp_kritikalitaet: "Minor", systemtyp: "CE", subtyp: "CE-PCS", gamp_kategorie: "4",
-    eres_typ: "Typ 3", testtiefe: "Mittel", geraetekategorie: "C1",
+    gxp_relevant: "ja", gxp_kritikalitaet: "Minor", systemtyp: "CE-PCS", gamp_kategorie: "4",
+    eres_typ: "Typ 3", geraetekategorie: "C1",
     business_critical: "nein", vq_erforderlich: "ja", val_erforderlich: "nein",
     ist_aktuelle_version: "ja",
   },
   demo2: {
-    rolle_ersteller: "Muster, Anna", rolle_sme: "", rolle_si_pl: "",
-    rolle_tso: "", rolle_bso: "Muster, Dana", rolle_bqr: "Muster, Elena", rolle_csq: "Muster, Finn",
+    rolle_ersteller: "p1", rolle_sme: "", rolle_si_pl: "",
+    rolle_tso: "", rolle_bso: "p4", rolle_bqr: "p5", rolle_csq: "p6",
     mlcs_id: "9002", bereich: "Muster-Labor", gebaeude: "H590", dok_version: "2.0", dok_nummer: "QU-OPE-0000002",
     systemname: "Muster-Waage B200", anlage: "Feinwaage B200", raum: "3.010",
     kurzbeschreibung: "Beispiel: Präzisionswaage ohne Datenspeicherung.",
     sw_name: "", sw_version: "", sw_hersteller: "",
     hersteller: "Muster Instruments", lieferantennummer: "100001",
-    gxp_relevant: "ja", gxp_kritikalitaet: "N/A", systemtyp: "CE", subtyp: "N/A", gamp_kategorie: "N/A",
-    eres_typ: "N/A", testtiefe: "Gering", geraetekategorie: "A",
+    gxp_relevant: "ja", gxp_kritikalitaet: "N/A", systemtyp: "S0", gamp_kategorie: "N/A",
+    eres_typ: "N/A", geraetekategorie: "A",
     business_critical: "nein", vq_erforderlich: "nein", val_erforderlich: "nein",
+    ist_aktuelle_version: "ja",
+  },
+  demo3: {
+    rolle_ersteller: "p1", rolle_sme: "p2", rolle_si_pl: "p2", rolle_tso: "p3", rolle_bso: "p4", rolle_bqr: "p5", rolle_csq: "p6",
+    mlcs_id: "9003", bereich: "Muster-Verpackung", gebaeude: "G652", dok_version: "1.0", dok_nummer: "QU-OPE-0000003",
+    systemname: "Muster-Etikettierer D400", anlage: "Etikettierer D400", raum: "",
+    kurzbeschreibung: "Beispiel: Etikettierstation mit Kamerakontrolle.",
+    sw_name: "EyeC (Beispiel)", sw_version: "V2.1 (Beispiel)", sw_hersteller: "Muster Vision GmbH",
+    hersteller: "Muster Vision GmbH", lieferantennummer: "100002",
+    gxp_relevant: "ja", gxp_kritikalitaet: "Major", systemtyp: "CE-PCS", gamp_kategorie: "4",
+    eres_typ: "Typ 3", geraetekategorie: "C1",
+    business_critical: "ja", vq_erforderlich: "ja", val_erforderlich: "ja",
+    ist_aktuelle_version: "ja",
+  },
+  demo4: {
+    rolle_ersteller: "p1", rolle_sme: "", rolle_si_pl: "", rolle_tso: "p3", rolle_bso: "p4", rolle_bqr: "p5", rolle_csq: "p6",
+    mlcs_id: "9004", bereich: "Muster-Sterilisation", gebaeude: "G653", dok_version: "1.0", dok_nummer: "QU-OPE-0000004",
+    systemname: "Muster-Sterilisator E500", anlage: "Sterilisator E500", raum: "",
+    kurzbeschreibung: "Beispiel: Dampfsterilisator mit SPS-Steuerung.",
+    sw_name: "Simatic (Beispiel)", sw_version: "V4.0 (Beispiel)", sw_hersteller: "Siemens (Beispiel)",
+    hersteller: "Muster Anlagenbau", lieferantennummer: "100003",
+    gxp_relevant: "ja", gxp_kritikalitaet: "Critical", systemtyp: "CE-PCS", gamp_kategorie: "4",
+    eres_typ: "Typ 4", geraetekategorie: "C2",
+    business_critical: "ja", vq_erforderlich: "nein", val_erforderlich: "ja",
+    ist_aktuelle_version: "ja",
+  },
+  demo5: {
+    rolle_ersteller: "p2", rolle_sme: "p2", rolle_si_pl: "", rolle_tso: "", rolle_bso: "p4", rolle_bqr: "p5", rolle_csq: "p6",
+    mlcs_id: "9005", bereich: "Muster-Labor", gebaeude: "H590", dok_version: "1.0", dok_nummer: "QU-OPE-0000005",
+    systemname: "Muster-Reinraumklimaanlage C300", anlage: "Klimaanlage C300", raum: "",
+    kurzbeschreibung: "Beispiel: Klimatisierung eines Reinraums mit Monitoring.",
+    sw_name: "", sw_version: "", sw_hersteller: "",
+    hersteller: "Muster HVAC", lieferantennummer: "100004",
+    gxp_relevant: "ja", gxp_kritikalitaet: "Minor", systemtyp: "CE-LCE", gamp_kategorie: "3",
+    eres_typ: "Typ 2", geraetekategorie: "B2",
+    business_critical: "nein", vq_erforderlich: "ja", val_erforderlich: "nein",
     ist_aktuelle_version: "ja",
   },
 };
 
 let baseline = {}; // Werte zum Vergleich, um "geändert" hervorzuheben
 
+function optionValue(o) { return typeof o === "string" ? o : o.wert; }
+function optionErklaerung(o) { return typeof o === "string" ? null : o.erklaerung; }
+
 function renderForm() {
   const form = document.getElementById("systemForm");
   form.innerHTML = "";
   GROUPS.forEach(group => {
     const card = document.createElement("div");
-    card.className = "card";
+    card.className = "card" + (group.computed ? " computed" : "");
     card.innerHTML = `<h2>${group.name}<span class="tag">immer</span></h2>`;
+
+    if (group.computed) {
+      const body = document.createElement("div");
+      body.style.padding = "14px 16px";
+      body.innerHTML = `
+        <div class="field computed">
+          <div class="value" id="testtiefeWert">– bitte GxP-Kritikalität und GAMP-Kategorie wählen –</div>
+          <div class="basis">Automatisch abgeleitet aus GxP-Kritikalität + GAMP-5-Software-Kategorie, gemäß Kapitel 8 der Systembewertung (QU-MT-0001344). Kein Eingabefeld.</div>
+        </div>`;
+      card.appendChild(body);
+      form.appendChild(card);
+      return;
+    }
+
     const fieldsDiv = document.createElement("div");
     fieldsDiv.className = "fields";
     group.fields.forEach(f => {
@@ -376,8 +553,25 @@ function renderForm() {
       wrap.dataset.key = f.key;
       const reqMark = f.required ? '<span class="req">*</span>' : "";
       let inputHtml = "";
-      if (f.type === "select") {
-        inputHtml = `<select data-key="${f.key}"><option value=""></option>${f.options.map(o => `<option value="${o}">${o}</option>`).join("")}</select>`;
+      let hintHtml = "";
+
+      if (f.type === "person") {
+        const personOptions = DEMO_PERSONS.map(p => `<option value="${p.id}">${p.name}</option>`).join("");
+        inputHtml = `<select data-key="${f.key}" data-type="person">
+            <option value="">– bitte wählen –</option>
+            ${personOptions}
+            <option value="__new__">+ Neue Person anlegen</option>
+          </select>
+          <div class="person-info" data-personinfo-for="${f.key}"></div>
+          <div class="person-new" data-personnew-for="${f.key}" style="display:none">
+            <input type="text" placeholder="Name (Nachname, Vorname)" data-newperson-field="name">
+            <input type="text" placeholder="Stelle/Funktion, z.B. CSV Specialist" data-newperson-field="stelle">
+            <input type="text" placeholder="Abteilung, z.B. FBC Campus Management Engineering CSV" data-newperson-field="abteilung">
+          </div>`;
+      } else if (f.type === "select") {
+        const opts = f.options.map(o => `<option value="${optionValue(o)}">${optionValue(o)}</option>`).join("");
+        inputHtml = `<select data-key="${f.key}"><option value=""></option>${opts}</select>`;
+        hintHtml = `<div class="fieldhint" data-optionhint-for="${f.key}">${f.hint || ""}</div>`;
       } else if (f.type === "textarea") {
         inputHtml = `<textarea data-key="${f.key}"></textarea>`;
       } else if (f.type === "ja_nein") {
@@ -388,7 +582,7 @@ function renderForm() {
       } else {
         inputHtml = `<input type="text" data-key="${f.key}"${f.hint ? ` placeholder="${f.hint.replace(/^[^:]+:\s*/,'')}"` : ""}>`;
       }
-      const hintHtml = f.hint ? `<div class="fieldhint">${f.hint}</div>` : "";
+      if (!hintHtml && f.hint) hintHtml = `<div class="fieldhint">${f.hint}</div>`;
       wrap.innerHTML = `<label>${f.label}${reqMark}</label>${inputHtml}${hintHtml}`;
       fieldsDiv.appendChild(wrap);
     });
@@ -402,9 +596,44 @@ function renderForm() {
   form.appendChild(actions);
 
   form.querySelectorAll("[data-key]").forEach(el => {
-    el.addEventListener("input", () => markChanged(el));
-    el.addEventListener("change", () => markChanged(el));
+    el.addEventListener("input", () => { markChanged(el); onFieldUpdate(el); });
+    el.addEventListener("change", () => { markChanged(el); onFieldUpdate(el); });
   });
+  updateTesttiefe();
+}
+
+function onFieldUpdate(el) {
+  const key = el.dataset.key;
+  if (el.dataset.type === "person") {
+    const personArea = document.querySelector(`[data-personnew-for="${key}"]`);
+    const infoArea = document.querySelector(`[data-personinfo-for="${key}"]`);
+    if (el.value === "__new__") {
+      personArea.style.display = "grid";
+      infoArea.textContent = "";
+    } else {
+      personArea.style.display = "none";
+      const person = DEMO_PERSONS.find(p => p.id === el.value);
+      infoArea.textContent = person ? `${person.stelle} · ${person.abteilung}` : "";
+    }
+  }
+  const hintArea = document.querySelector(`[data-optionhint-for="${key}"]`);
+  if (hintArea) {
+    const groupWithField = GROUPS.flatMap(g => g.fields).find(f => f.key === key);
+    const opt = groupWithField && groupWithField.options && groupWithField.options.find(o => optionValue(o) === el.value);
+    const erklaerung = opt ? optionErklaerung(opt) : null;
+    hintArea.textContent = erklaerung || (groupWithField && groupWithField.hint) || "";
+  }
+  if (key === "gxp_kritikalitaet" || key === "gamp_kategorie") updateTesttiefe();
+}
+
+function updateTesttiefe() {
+  const el = document.getElementById("testtiefeWert");
+  if (!el) return;
+  const krit = currentValue("gxp_kritikalitaet");
+  const gamp = currentValue("gamp_kategorie");
+  const row = TESTTIEFE_MATRIX[krit];
+  const result = row ? row[gamp] : null;
+  el.textContent = result ? result : "– bitte GxP-Kritikalität und GAMP-Kategorie wählen –";
 }
 
 function renderBranch(docType) {
@@ -461,18 +690,88 @@ function fillForm(values) {
       } else {
         el.value = val || "";
       }
+      onFieldUpdate(el);
     });
   });
   document.querySelectorAll(".field").forEach(w => w.classList.remove("changed"));
+  updateTesttiefe();
 }
 
 function clearForm() {
   baseline = {};
   document.querySelectorAll("#systemForm input[type=text], #systemForm textarea").forEach(el => el.value = "");
-  document.querySelectorAll("#systemForm select").forEach(el => el.value = "");
+  document.querySelectorAll("#systemForm select").forEach(el => { el.value = ""; onFieldUpdate(el); });
   document.querySelectorAll("#systemForm input[type=radio]").forEach(el => el.checked = false);
   document.querySelectorAll(".field").forEach(w => w.classList.remove("changed"));
+  document.querySelectorAll(".person-new").forEach(el => el.style.display = "none");
+  updateTesttiefe();
 }
+
+// Such-/Auswahlkomponente für den Systemwechsel (ersetzt ein Dropdown, das
+// bei ~500 Systemen unbenutzbar wäre): tippen filtert, Klick übernimmt,
+// erneutes Klicken ins Suchfeld erlaubt jederzeit eine andere Auswahl.
+function systemLabel(id) {
+  const r = DEMO_RECORDS[id];
+  return `${r.systemname} · MLCS-ID ${r.mlcs_id || "–"} · Anlage ${r.anlage || "–"} · ${r.gebaeude || "–"}`;
+}
+
+// Sucht über ALLE Feldwerte eines Datensatzes (MLCS-ID, Gerätename,
+// Hersteller/Lieferant, Software, Gebäude, ... - nicht nur ausgewählte
+// Hauptfelder), damit man mit jedem bekannten Stichwort fündig wird.
+function searchableText(record) {
+  return Object.entries(record)
+    .filter(([key]) => !key.startsWith("rolle_"))  // Personen-IDs ergäben keinen sinnvollen Suchtreffer
+    .map(([, v]) => v)
+    .join(" ")
+    .toLowerCase();
+}
+
+function renderSourceResults(query) {
+  const results = document.getElementById("sourceResults");
+  const q = query.trim().toLowerCase();
+  const matches = Object.keys(DEMO_RECORDS).filter(id => {
+    return !q || searchableText(DEMO_RECORDS[id]).includes(q);
+  });
+  if (matches.length === 0) {
+    results.innerHTML = `<div class="combo-empty">Keine Treffer – Suchbegriff anpassen.</div>`;
+  } else {
+    results.innerHTML = matches.map(id => {
+      const r = DEMO_RECORDS[id];
+      return `<div class="combo-item" data-id="${id}"><b>${r.systemname}</b><span>MLCS-ID ${r.mlcs_id || "–"} · Anlage ${r.anlage || "–"} · ${r.gebaeude || "–"} · ${r.bereich || "–"}</span></div>`;
+    }).join("");
+  }
+  results.classList.add("open");
+}
+
+function selectSource(id) {
+  const search = document.getElementById("sourceSearch");
+  const selected = document.getElementById("sourceSelected");
+  const results = document.getElementById("sourceResults");
+  const note = document.getElementById("statusNote");
+  results.classList.remove("open");
+  search.value = "";
+  selected.classList.add("visible");
+  selected.innerHTML = `Ausgewählt: <b>${systemLabel(id)}</b><button type="button" id="sourceChangeBtn">anderes wählen</button>`;
+  document.getElementById("sourceChangeBtn").addEventListener("click", () => {
+    selected.classList.remove("visible");
+    search.value = "";
+    search.focus();
+    renderSourceResults("");
+    clearForm();
+  });
+  fillForm(DEMO_RECORDS[id]);
+  note.textContent = "Werte übernommen (blau umrandet = von dir geändert).";
+}
+
+document.getElementById("sourceSearch").addEventListener("input", (e) => renderSourceResults(e.target.value));
+document.getElementById("sourceSearch").addEventListener("focus", (e) => renderSourceResults(e.target.value));
+document.getElementById("sourceResults").addEventListener("click", (e) => {
+  const item = e.target.closest(".combo-item");
+  if (item) selectSource(item.dataset.id);
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".combo")) document.getElementById("sourceResults").classList.remove("open");
+});
 
 function setScenario(scenario) {
   document.querySelectorAll(".scenario-btn").forEach(b => b.classList.toggle("active", b.dataset.scenario === scenario));
@@ -480,7 +779,9 @@ function setScenario(scenario) {
   const label = document.getElementById("sourceLabel");
   const hint = document.getElementById("sourceHint");
   const note = document.getElementById("statusNote");
-  document.getElementById("sourceSelect").value = "";
+  document.getElementById("sourceSearch").value = "";
+  document.getElementById("sourceSelected").classList.remove("visible");
+  document.getElementById("sourceResults").classList.remove("open");
 
   if (scenario === "leer") {
     picker.classList.remove("visible");
@@ -503,17 +804,6 @@ function setScenario(scenario) {
 
 document.querySelectorAll(".scenario-btn").forEach(btn => {
   btn.addEventListener("click", () => setScenario(btn.dataset.scenario));
-});
-
-document.getElementById("sourceSelect").addEventListener("change", (e) => {
-  const val = e.target.value;
-  const note = document.getElementById("statusNote");
-  if (val && DEMO_RECORDS[val]) {
-    fillForm(DEMO_RECORDS[val]);
-    note.textContent = "Werte übernommen (blau umrandet = von dir geändert).";
-  } else {
-    clearForm();
-  }
 });
 
 document.getElementById("docSelect").addEventListener("change", (e) => {
