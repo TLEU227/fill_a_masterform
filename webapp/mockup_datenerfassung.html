@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Masterform – Datenerfassung (Mockup)</title>
+<style>
+  :root {
+    --bg: #f4f6f8;
+    --card: #ffffff;
+    --border: #d7dde3;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --accent: #0f5ea8;
+    --accent-light: #e8f1fa;
+    --required: #b3261e;
+    --group-bg: #fafbfc;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 18px 28px;
+  }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
+  .banner {
+    background: #fff8e1;
+    border-bottom: 1px solid #f0d98c;
+    color: #6b5300;
+    font-size: 13px;
+    padding: 8px 28px;
+  }
+  main {
+    max-width: 880px;
+    margin: 24px auto 60px;
+    padding: 0 20px;
+  }
+  .scenario-picker {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .scenario-btn {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--card);
+    cursor: pointer;
+    font-size: 13.5px;
+    text-align: left;
+    color: var(--text);
+    transition: border-color .15s, background .15s;
+  }
+  .scenario-btn b { display: block; font-size: 13.5px; margin-bottom: 2px; }
+  .scenario-btn span { color: var(--muted); font-size: 12px; }
+  .scenario-btn.active {
+    border-color: var(--accent);
+    background: var(--accent-light);
+  }
+  .source-picker {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-bottom: 18px;
+    display: none;
+  }
+  .source-picker.visible { display: block; }
+  .source-picker label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+  .source-picker select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 13.5px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+  .card h2 {
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 14px;
+    background: var(--group-bg);
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+  }
+  .card .fields {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 20px;
+    padding: 16px;
+  }
+  .field.full { grid-column: 1 / -1; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+  .field label .req { color: var(--required); margin-left: 3px; }
+  .field input[type=text], .field input[type=date], .field select, .field textarea {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13.5px;
+    font-family: inherit;
+    background: white;
+  }
+  .field textarea { resize: vertical; min-height: 50px; }
+  .field.changed input, .field.changed select, .field.changed textarea {
+    border-color: var(--accent);
+    background: #f5faff;
+  }
+  .field .yn { display: flex; gap: 14px; padding-top: 4px; font-size: 13px; }
+  .field .yn label { font-weight: 400; display: flex; align-items: center; gap: 4px; margin: 0; }
+
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .actions button {
+    padding: 10px 20px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: white;
+  }
+  .actions button.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .status-note {
+    font-size: 12px;
+    color: var(--muted);
+    text-align: right;
+    margin-top: 6px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Masterform – Systemdaten erfassen</h1>
+  <p>Objektart: System &nbsp;·&nbsp; Datenbank: (noch keine verbunden – Mockup)</p>
+</header>
+<div class="banner">
+  ⚠️ Dies ist ein klickbares Mockup zur Vorschau des Formular-Layouts. Es ist <b>noch nicht</b> mit einer echten SQLite-Datenbank verbunden – die Beispieldaten sind frei erfunden.
+</div>
+
+<main>
+  <div class="scenario-picker">
+    <button class="scenario-btn active" data-scenario="leer">
+      <b>1 · Neuanlage (leer)</b>
+      <span>System ist unbekannt, alles neu eingeben</span>
+    </button>
+    <button class="scenario-btn" data-scenario="kopie">
+      <b>2 · Kopie von ähnlichem System</b>
+      <span>Werte übernehmen, abweichende überschreiben</span>
+    </button>
+    <button class="scenario-btn" data-scenario="bearbeiten">
+      <b>3 · Bestehendes System bearbeiten</b>
+      <span>Vorhandene Werte anzeigen, ändern was nötig ist</span>
+    </button>
+  </div>
+
+  <div class="source-picker" id="sourcePicker">
+    <label id="sourceLabel">Als Vorlage übernehmen von:</label>
+    <select id="sourceSelect">
+      <option value="">– bitte wählen –</option>
+      <option value="demo1">Muster-Zentrifuge A100 (Gebäude G650)</option>
+      <option value="demo2">Muster-Waage B200 (Gebäude H590)</option>
+    </select>
+    <div class="hint" id="sourceHint"></div>
+  </div>
+
+  <form id="systemForm"></form>
+
+  <div class="status-note" id="statusNote"></div>
+</main>
+
+<script>
+// Entspricht 1:1 db/seed_field_definitions.sql für entity_type='system'.
+const GROUPS = [
+  { name: "Stammdaten", fields: [
+    { key: "systemname", label: "Systemname", type: "text", required: true, full: true },
+    { key: "mlcs_id", label: "MLCS-ID", type: "text" },
+    { key: "gebaeude", label: "Gebäude", type: "text" },
+    { key: "bereich", label: "Bereich/Betrieb", type: "text" },
+    { key: "anlage", label: "Anlage", type: "text" },
+    { key: "raum", label: "Raum", type: "text" },
+    { key: "kurzbeschreibung", label: "Kurzbeschreibung", type: "textarea", full: true },
+    { key: "sw_name", label: "Software-Name", type: "text" },
+    { key: "sw_version", label: "Software-Version/Typ", type: "text" },
+    { key: "sw_hersteller", label: "Software-Hersteller", type: "text" },
+    { key: "hersteller", label: "Hersteller/Lieferant", type: "text" },
+    { key: "lieferantennummer", label: "Lieferantennummer", type: "text" },
+  ]},
+  { name: "GxP-Bewertung", fields: [
+    { key: "gxp_relevant", label: "GxP-relevant?", type: "ja_nein", required: true },
+    { key: "gxp_kritikalitaet", label: "GxP-Kritikalität", type: "select", options: ["Critical","Major","Minor","N/A"], required: true },
+    { key: "geraetekategorie", label: "Gerätekategorie (ISPE/GAMP)", type: "select", options: ["A","B1","B2","B3","C1","C2","N/A"] },
+    { key: "gamp_kategorie", label: "GAMP-5-Software-Kategorie", type: "select", options: ["1","3","4","5","N/A"] },
+    { key: "systemtyp", label: "Systemtyp", type: "select", options: ["CIS","CE"] },
+    { key: "subtyp", label: "Subtyp", type: "select", options: ["CE-PCS","CE-LCE","CE-EE","N/A"] },
+    { key: "testtiefe", label: "Testtiefe", type: "select", options: ["Hoch","Mittel","Gering"] },
+    { key: "eres_typ", label: "Typ elektronischer Aufzeichnungen", type: "select", options: ["Typ 1","Typ 2","Typ 3","Typ 4","N/A"] },
+    { key: "business_critical", label: "Business critical?", type: "ja_nein" },
+    { key: "vq_erforderlich", label: "Vereinfachte Qualifizierung (VQ-SOP)?", type: "ja_nein" },
+    { key: "val_erforderlich", label: "Validierung (VAL-SOP)?", type: "ja_nein" },
+  ]},
+  { name: "Rollen", fields: [
+    { key: "rolle_ersteller", label: "Ersteller", type: "text" },
+    { key: "rolle_sme", label: "SME", type: "text" },
+    { key: "rolle_si_pl", label: "SI/PL", type: "text" },
+    { key: "rolle_tso", label: "TSO", type: "text" },
+    { key: "rolle_bso", label: "BSO", type: "text" },
+    { key: "rolle_bqr", label: "BQR", type: "text" },
+    { key: "rolle_csq", label: "CSQ", type: "text" },
+  ]},
+  { name: "Status", fields: [
+    { key: "dok_nummer", label: "Dokumentnummer (Systembewertung)", type: "text" },
+    { key: "dok_version", label: "Dokumentversion", type: "text" },
+    { key: "ist_aktuelle_version", label: "Ist aktuelle Version?", type: "ja_nein" },
+  ]},
+];
+
+// Frei erfundene Demo-Datensätze (KEINE echten Sanofi-Daten) für Szenario 2/3.
+const DEMO_RECORDS = {
+  demo1: {
+    systemname: "Muster-Zentrifuge A100", mlcs_id: "9001", gebaeude: "G650", bereich: "Muster-Produktion 1",
+    anlage: "Zentrifuge A100", raum: "", kurzbeschreibung: "Beispiel: SPS-gesteuerte Zentrifuge zur Trocknung.",
+    sw_name: "Simatic (Beispiel)", sw_version: "V3.0 (Beispiel)", sw_hersteller: "Siemens (Beispiel)",
+    hersteller: "Muster GmbH", lieferantennummer: "100000",
+    gxp_relevant: "ja", gxp_kritikalitaet: "Minor", geraetekategorie: "C1", gamp_kategorie: "4",
+    systemtyp: "CE", subtyp: "CE-PCS", testtiefe: "Mittel", eres_typ: "Typ 3",
+    business_critical: "nein", vq_erforderlich: "ja", val_erforderlich: "nein",
+    rolle_ersteller: "Muster, Anna", rolle_sme: "Beispiel, Ben", rolle_si_pl: "Beispiel, Ben",
+    rolle_tso: "Muster, Chris", rolle_bso: "Muster, Dana", rolle_bqr: "Muster, Elena", rolle_csq: "Muster, Finn",
+    dok_nummer: "QU-OPE-0000001", dok_version: "1", ist_aktuelle_version: "ja",
+  },
+  demo2: {
+    systemname: "Muster-Waage B200", mlcs_id: "9002", gebaeude: "H590", bereich: "Muster-Labor",
+    anlage: "Feinwaage B200", raum: "3.010", kurzbeschreibung: "Beispiel: Präzisionswaage ohne Datenspeicherung.",
+    sw_name: "", sw_version: "", sw_hersteller: "",
+    hersteller: "Muster Instruments", lieferantennummer: "100001",
+    gxp_relevant: "ja", gxp_kritikalitaet: "N/A", geraetekategorie: "A", gamp_kategorie: "N/A",
+    systemtyp: "CE", subtyp: "N/A", testtiefe: "Gering", eres_typ: "N/A",
+    business_critical: "nein", vq_erforderlich: "nein", val_erforderlich: "nein",
+    rolle_ersteller: "Muster, Anna", rolle_sme: "", rolle_si_pl: "",
+    rolle_tso: "", rolle_bso: "Muster, Dana", rolle_bqr: "Muster, Elena", rolle_csq: "Muster, Finn",
+    dok_nummer: "QU-OPE-0000002", dok_version: "2.0", ist_aktuelle_version: "ja",
+  },
+};
+
+let baseline = {}; // Werte zum Vergleich, um "geändert" hervorzuheben
+
+function renderForm() {
+  const form = document.getElementById("systemForm");
+  form.innerHTML = "";
+  GROUPS.forEach(group => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<h2>${group.name}</h2>`;
+    const fieldsDiv = document.createElement("div");
+    fieldsDiv.className = "fields";
+    group.fields.forEach(f => {
+      const wrap = document.createElement("div");
+      wrap.className = "field" + (f.full ? " full" : "");
+      wrap.dataset.key = f.key;
+      const reqMark = f.required ? '<span class="req">*</span>' : "";
+      let inputHtml = "";
+      if (f.type === "select") {
+        inputHtml = `<select data-key="${f.key}"><option value=""></option>${f.options.map(o => `<option value="${o}">${o}</option>`).join("")}</select>`;
+      } else if (f.type === "textarea") {
+        inputHtml = `<textarea data-key="${f.key}"></textarea>`;
+      } else if (f.type === "ja_nein") {
+        inputHtml = `<div class="yn">
+          <label><input type="radio" name="${f.key}" data-key="${f.key}" value="ja"> Ja</label>
+          <label><input type="radio" name="${f.key}" data-key="${f.key}" value="nein"> Nein</label>
+        </div>`;
+      } else {
+        inputHtml = `<input type="text" data-key="${f.key}">`;
+      }
+      wrap.innerHTML = `<label>${f.label}${reqMark}</label>${inputHtml}`;
+      fieldsDiv.appendChild(wrap);
+    });
+    card.appendChild(fieldsDiv);
+    form.appendChild(card);
+  });
+
+  const actions = document.createElement("div");
+  actions.className = "actions";
+  actions.innerHTML = `<button type="button">Abbrechen</button><button type="button" class="primary">Speichern</button>`;
+  form.appendChild(actions);
+
+  form.querySelectorAll("[data-key]").forEach(el => {
+    el.addEventListener("input", () => markChanged(el));
+    el.addEventListener("change", () => markChanged(el));
+  });
+}
+
+function markChanged(el) {
+  const key = el.dataset.key;
+  const wrap = el.closest(".field");
+  const val = currentValue(key);
+  if (baseline[key] !== undefined && val !== baseline[key]) {
+    wrap.classList.add("changed");
+  } else {
+    wrap.classList.remove("changed");
+  }
+}
+
+function currentValue(key) {
+  const el = document.querySelector(`[data-key="${key}"]`);
+  if (!el) return "";
+  if (el.type === "radio") {
+    const checked = document.querySelector(`input[name="${key}"]:checked`);
+    return checked ? checked.value : "";
+  }
+  return el.value;
+}
+
+function fillForm(values) {
+  baseline = { ...values };
+  Object.entries(values).forEach(([key, val]) => {
+    const els = document.querySelectorAll(`[data-key="${key}"]`);
+    els.forEach(el => {
+      if (el.type === "radio") {
+        el.checked = (el.value === val);
+      } else {
+        el.value = val || "";
+      }
+    });
+  });
+  document.querySelectorAll(".field").forEach(w => w.classList.remove("changed"));
+}
+
+function clearForm() {
+  baseline = {};
+  document.querySelectorAll("#systemForm input[type=text], #systemForm textarea").forEach(el => el.value = "");
+  document.querySelectorAll("#systemForm select").forEach(el => el.value = "");
+  document.querySelectorAll("#systemForm input[type=radio]").forEach(el => el.checked = false);
+  document.querySelectorAll(".field").forEach(w => w.classList.remove("changed"));
+}
+
+function setScenario(scenario) {
+  document.querySelectorAll(".scenario-btn").forEach(b => b.classList.toggle("active", b.dataset.scenario === scenario));
+  const picker = document.getElementById("sourcePicker");
+  const label = document.getElementById("sourceLabel");
+  const hint = document.getElementById("sourceHint");
+  const note = document.getElementById("statusNote");
+  document.getElementById("sourceSelect").value = "";
+
+  if (scenario === "leer") {
+    picker.classList.remove("visible");
+    clearForm();
+    note.textContent = "Neuer, leerer Datensatz – wird beim Speichern angelegt.";
+  } else if (scenario === "kopie") {
+    picker.classList.add("visible");
+    label.textContent = "Als Vorlage übernehmen von:";
+    hint.textContent = "Alle Werte des gewählten Systems werden übernommen und sichtbar angezeigt. Es entsteht ein NEUER Datensatz – nur abweichende Felder werden von dir überschrieben.";
+    clearForm();
+    note.textContent = "Bitte Vorlage wählen.";
+  } else if (scenario === "bearbeiten") {
+    picker.classList.add("visible");
+    label.textContent = "Zu bearbeitendes System:";
+    hint.textContent = "Der BESTEHENDE Datensatz wird geladen und beim Speichern aktualisiert (kein neuer Datensatz).";
+    clearForm();
+    note.textContent = "Bitte System wählen.";
+  }
+}
+
+document.querySelectorAll(".scenario-btn").forEach(btn => {
+  btn.addEventListener("click", () => setScenario(btn.dataset.scenario));
+});
+
+document.getElementById("sourceSelect").addEventListener("change", (e) => {
+  const val = e.target.value;
+  const note = document.getElementById("statusNote");
+  if (val && DEMO_RECORDS[val]) {
+    fillForm(DEMO_RECORDS[val]);
+    note.textContent = "Werte übernommen (blau hervorgehoben = von dir geändert). Blaue Rahmen zeigen Abweichungen von der Vorlage.";
+  } else {
+    clearForm();
+  }
+});
+
+renderForm();
+setScenario("leer");
+</script>
+
+</body>
+</html>
