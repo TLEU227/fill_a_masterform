@@ -14,6 +14,8 @@
     --accent-light: #e8f1fa;
     --required: #b3261e;
     --group-bg: #fafbfc;
+    --hint-bg: #fff8e1;
+    --hint-border: #f0d98c;
   }
   * { box-sizing: border-box; }
   body {
@@ -64,18 +66,25 @@
     border-color: var(--accent);
     background: var(--accent-light);
   }
-  .source-picker {
+  .source-picker, .doc-picker {
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 14px 16px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
     display: none;
   }
-  .source-picker.visible { display: block; }
-  .source-picker label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
-  .source-picker select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 13.5px; }
+  .source-picker.visible, .doc-picker.visible { display: block; }
+  .source-picker label, .doc-picker label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+  .source-picker select, .doc-picker select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 13.5px; }
   .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .legend {
+    font-size: 12px;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  .legend .req { color: var(--required); }
 
   .card {
     background: var(--card);
@@ -84,6 +93,7 @@
     margin-bottom: 16px;
     overflow: hidden;
   }
+  .card.branch { border-color: var(--accent); }
   .card h2 {
     margin: 0;
     padding: 12px 16px;
@@ -91,6 +101,18 @@
     background: var(--group-bg);
     border-bottom: 1px solid var(--border);
     color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card h2 .tag {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: white;
+    background: var(--accent);
+    border-radius: 10px;
+    padding: 2px 8px;
+    text-transform: uppercase;
   }
   .card .fields {
     display: grid;
@@ -124,6 +146,26 @@
   .field .yn { display: flex; gap: 14px; padding-top: 4px; font-size: 13px; }
   .field .yn label { font-weight: 400; display: flex; align-items: center; gap: 4px; margin: 0; }
 
+  /* Formatvorschrift/SOP-Hinweis: unsichtbar, bis das Feld fokussiert wird */
+  .fieldhint {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height .12s ease, opacity .12s ease;
+    font-size: 11.5px;
+    color: #7a5c00;
+    background: var(--hint-bg);
+    border: 1px solid var(--hint-border);
+    border-radius: 4px;
+    margin-top: 4px;
+    padding: 0 6px;
+  }
+  .field:focus-within .fieldhint {
+    max-height: 60px;
+    opacity: 1;
+    padding: 4px 6px;
+  }
+
   .actions {
     display: flex;
     justify-content: flex-end;
@@ -149,6 +191,15 @@
     color: var(--muted);
     text-align: right;
     margin-top: 6px;
+  }
+  .branch-note {
+    font-size: 12.5px;
+    color: var(--muted);
+    background: var(--group-bg);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
   }
 </style>
 </head>
@@ -188,19 +239,47 @@
     <div class="hint" id="sourceHint"></div>
   </div>
 
+  <div class="doc-picker visible" id="docPicker">
+    <label>Für welches Dokument bereitest du die Daten vor?</label>
+    <select id="docSelect">
+      <option value="">Nur Basisdaten (dokumentübergreifend)</option>
+      <option value="VQ">Vereinfachte Qualifizierung (VQ)</option>
+      <option value="CS-VP">CS Validierungsplan (CS-VP)</option>
+      <option value="CS-VB">CS Validierungsbericht (CS-VB)</option>
+      <option value="xQTP">xQ-Testplan (IQ/OQ/PQ)</option>
+    </select>
+    <div class="hint">Die Basisdaten unten werden von allen Dokumenten gemeinsam genutzt (einmal erfassen, überall wiederverwenden). Je nach Auswahl erscheinen zusätzlich nur die Felder, die speziell für dieses Dokument benötigt werden.</div>
+  </div>
+
+  <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
+
   <form id="systemForm"></form>
+
+  <div id="branchArea"></div>
 
   <div class="status-note" id="statusNote"></div>
 </main>
 
 <script>
-// Entspricht 1:1 db/seed_field_definitions.sql für entity_type='system'.
+// Entspricht 1:1 db/seed_field_definitions.sql für entity_type='system'
+// (Reihenfolge: Personen zuerst, dann wie im Systembewertungsdokument).
 const GROUPS = [
+  { name: "Personen", fields: [
+    { key: "rolle_ersteller", label: "Ersteller", type: "text", required: true, hint: "Format: Nachname, Vorname" },
+    { key: "rolle_sme", label: "SME", type: "text", hint: "Format: Nachname, Vorname" },
+    { key: "rolle_si_pl", label: "SI/PL", type: "text", hint: "Format: Nachname, Vorname" },
+    { key: "rolle_tso", label: "TSO", type: "text", hint: "Format: Nachname, Vorname" },
+    { key: "rolle_bso", label: "BSO", type: "text", hint: "Format: Nachname, Vorname" },
+    { key: "rolle_bqr", label: "BQR", type: "text", hint: "Format: Nachname, Vorname" },
+    { key: "rolle_csq", label: "CSQ", type: "text", hint: "Format: Nachname, Vorname" },
+  ]},
   { name: "Stammdaten", fields: [
-    { key: "systemname", label: "Systemname", type: "text", required: true, full: true },
     { key: "mlcs_id", label: "MLCS-ID", type: "text" },
-    { key: "gebaeude", label: "Gebäude", type: "text" },
     { key: "bereich", label: "Bereich/Betrieb", type: "text" },
+    { key: "gebaeude", label: "Gebäude", type: "text" },
+    { key: "dok_version", label: "Dokumentversion (Systembewertung)", type: "text", hint: "Format: x.x, z.B. 1.0" },
+    { key: "dok_nummer", label: "Dokumentnummer (Systembewertung)", type: "text" },
+    { key: "systemname", label: "Systemname", type: "text", required: true, full: true },
     { key: "anlage", label: "Anlage", type: "text" },
     { key: "raum", label: "Raum", type: "text" },
     { key: "kurzbeschreibung", label: "Kurzbeschreibung", type: "textarea", full: true },
@@ -213,57 +292,70 @@ const GROUPS = [
   { name: "GxP-Bewertung", fields: [
     { key: "gxp_relevant", label: "GxP-relevant?", type: "ja_nein", required: true },
     { key: "gxp_kritikalitaet", label: "GxP-Kritikalität", type: "select", options: ["Critical","Major","Minor","N/A"], required: true },
-    { key: "geraetekategorie", label: "Gerätekategorie (ISPE/GAMP)", type: "select", options: ["A","B1","B2","B3","C1","C2","N/A"] },
-    { key: "gamp_kategorie", label: "GAMP-5-Software-Kategorie", type: "select", options: ["1","3","4","5","N/A"] },
-    { key: "systemtyp", label: "Systemtyp", type: "select", options: ["CIS","CE"] },
-    { key: "subtyp", label: "Subtyp", type: "select", options: ["CE-PCS","CE-LCE","CE-EE","N/A"] },
-    { key: "testtiefe", label: "Testtiefe", type: "select", options: ["Hoch","Mittel","Gering"] },
+    { key: "systemtyp", label: "Systemtyp", type: "select", options: ["CIS","CE","S"],
+      hint: "CS = CIS (Informationssystem), CE (Equipment) oder S (Spreadsheet) – gemäß QU-SOP-0015430" },
+    { key: "subtyp", label: "Subtyp (bei CE)", type: "select", options: ["CE-PCS","CE-LCE","CE-EE","N/A"] },
+    { key: "gamp_kategorie", label: "GAMP-5-Software-Kategorie", type: "select", options: ["1","3","4","5","N/A"], hint: "gemäß GAMP 5 (2nd Edition)" },
     { key: "eres_typ", label: "Typ elektronischer Aufzeichnungen", type: "select", options: ["Typ 1","Typ 2","Typ 3","Typ 4","N/A"] },
+    { key: "testtiefe", label: "Testtiefe", type: "select", options: ["Hoch","Mittel","Gering"] },
+    { key: "geraetekategorie", label: "Gerätekategorie (ISPE/GAMP)", type: "select", options: ["A","B1","B2","B3","C1","C2","N/A"],
+      hint: "gemäß QU-SOP-0021736 (Qualifizierung von Gebäuden, Einrichtungen und Ausrüstung)" },
     { key: "business_critical", label: "Business critical?", type: "ja_nein" },
-    { key: "vq_erforderlich", label: "Vereinfachte Qualifizierung (VQ-SOP)?", type: "ja_nein" },
-    { key: "val_erforderlich", label: "Validierung (VAL-SOP)?", type: "ja_nein" },
-  ]},
-  { name: "Rollen", fields: [
-    { key: "rolle_ersteller", label: "Ersteller", type: "text" },
-    { key: "rolle_sme", label: "SME", type: "text" },
-    { key: "rolle_si_pl", label: "SI/PL", type: "text" },
-    { key: "rolle_tso", label: "TSO", type: "text" },
-    { key: "rolle_bso", label: "BSO", type: "text" },
-    { key: "rolle_bqr", label: "BQR", type: "text" },
-    { key: "rolle_csq", label: "CSQ", type: "text" },
+    { key: "vq_erforderlich", label: "Vereinfachte Qualifizierung erforderlich?", type: "ja_nein", hint: "gemäß QU-SOP-0021736" },
+    { key: "val_erforderlich", label: "Validierung erforderlich?", type: "ja_nein", hint: "gemäß QU-SOP-0049866 (Validierung computergestützter Systeme)" },
   ]},
   { name: "Status", fields: [
-    { key: "dok_nummer", label: "Dokumentnummer (Systembewertung)", type: "text" },
-    { key: "dok_version", label: "Dokumentversion", type: "text" },
     { key: "ist_aktuelle_version", label: "Ist aktuelle Version?", type: "ja_nein" },
   ]},
 ];
 
+// Zusätzliche, NUR für bestimmte Dokumente benötigte Felder (Objektarten
+// anforderung/risiko/pruefschritt aus db/seed_field_definitions.sql).
+// Illustrativ - vollständige Listenverwaltung (mehrere Zeilen) folgt in Task #4.
+const DOC_BRANCHES = {
+  "VQ": [
+    { title: "Anforderung (URS) – nur für VQ", fields: ["URS-ID", "Anforderungsbeschreibung", "GxP-relevant?", "Entspricht URS in (DS/PH)"] },
+    { title: "Risiko (RA) – nur für VQ", fields: ["RA-ID", "Mögliche Fehlfunktion", "Einfluss", "Mitigierende Maßnahmen"] },
+    { title: "Prüfschritt (IQ/OQ/PQ) – nur für VQ", fields: ["Prüf-ID", "Phase", "Beschreibung der Prüfung", "Akzeptanzkriterium", "Erfüllt?"] },
+  ],
+  "xQTP": [
+    { title: "Prüfschritt (IQ/OQ/PQ) – nur für xQTP", fields: ["Prüf-ID", "Phase", "Beschreibung der Prüfung", "Akzeptanzkriterium", "Erfüllt?"] },
+  ],
+  "CS-VP": [
+    { title: "CS-VP-spezifische Felder", fields: ["(noch zu erfassen – z.B. Referenzdokumente, Change-Control-Nr.)"] },
+  ],
+  "CS-VB": [
+    { title: "CS-VB-spezifische Felder", fields: ["(noch zu erfassen – z.B. unerwartete Ereignisse, Anhänge)"] },
+  ],
+};
+
 // Frei erfundene Demo-Datensätze (KEINE echten Sanofi-Daten) für Szenario 2/3.
 const DEMO_RECORDS = {
   demo1: {
-    systemname: "Muster-Zentrifuge A100", mlcs_id: "9001", gebaeude: "G650", bereich: "Muster-Produktion 1",
-    anlage: "Zentrifuge A100", raum: "", kurzbeschreibung: "Beispiel: SPS-gesteuerte Zentrifuge zur Trocknung.",
-    sw_name: "Simatic (Beispiel)", sw_version: "V3.0 (Beispiel)", sw_hersteller: "Siemens (Beispiel)",
-    hersteller: "Muster GmbH", lieferantennummer: "100000",
-    gxp_relevant: "ja", gxp_kritikalitaet: "Minor", geraetekategorie: "C1", gamp_kategorie: "4",
-    systemtyp: "CE", subtyp: "CE-PCS", testtiefe: "Mittel", eres_typ: "Typ 3",
-    business_critical: "nein", vq_erforderlich: "ja", val_erforderlich: "nein",
     rolle_ersteller: "Muster, Anna", rolle_sme: "Beispiel, Ben", rolle_si_pl: "Beispiel, Ben",
     rolle_tso: "Muster, Chris", rolle_bso: "Muster, Dana", rolle_bqr: "Muster, Elena", rolle_csq: "Muster, Finn",
-    dok_nummer: "QU-OPE-0000001", dok_version: "1", ist_aktuelle_version: "ja",
+    mlcs_id: "9001", bereich: "Muster-Produktion 1", gebaeude: "G650", dok_version: "1.0", dok_nummer: "QU-OPE-0000001",
+    systemname: "Muster-Zentrifuge A100", anlage: "Zentrifuge A100", raum: "",
+    kurzbeschreibung: "Beispiel: SPS-gesteuerte Zentrifuge zur Trocknung.",
+    sw_name: "Simatic (Beispiel)", sw_version: "V3.0 (Beispiel)", sw_hersteller: "Siemens (Beispiel)",
+    hersteller: "Muster GmbH", lieferantennummer: "100000",
+    gxp_relevant: "ja", gxp_kritikalitaet: "Minor", systemtyp: "CE", subtyp: "CE-PCS", gamp_kategorie: "4",
+    eres_typ: "Typ 3", testtiefe: "Mittel", geraetekategorie: "C1",
+    business_critical: "nein", vq_erforderlich: "ja", val_erforderlich: "nein",
+    ist_aktuelle_version: "ja",
   },
   demo2: {
-    systemname: "Muster-Waage B200", mlcs_id: "9002", gebaeude: "H590", bereich: "Muster-Labor",
-    anlage: "Feinwaage B200", raum: "3.010", kurzbeschreibung: "Beispiel: Präzisionswaage ohne Datenspeicherung.",
-    sw_name: "", sw_version: "", sw_hersteller: "",
-    hersteller: "Muster Instruments", lieferantennummer: "100001",
-    gxp_relevant: "ja", gxp_kritikalitaet: "N/A", geraetekategorie: "A", gamp_kategorie: "N/A",
-    systemtyp: "CE", subtyp: "N/A", testtiefe: "Gering", eres_typ: "N/A",
-    business_critical: "nein", vq_erforderlich: "nein", val_erforderlich: "nein",
     rolle_ersteller: "Muster, Anna", rolle_sme: "", rolle_si_pl: "",
     rolle_tso: "", rolle_bso: "Muster, Dana", rolle_bqr: "Muster, Elena", rolle_csq: "Muster, Finn",
-    dok_nummer: "QU-OPE-0000002", dok_version: "2.0", ist_aktuelle_version: "ja",
+    mlcs_id: "9002", bereich: "Muster-Labor", gebaeude: "H590", dok_version: "2.0", dok_nummer: "QU-OPE-0000002",
+    systemname: "Muster-Waage B200", anlage: "Feinwaage B200", raum: "3.010",
+    kurzbeschreibung: "Beispiel: Präzisionswaage ohne Datenspeicherung.",
+    sw_name: "", sw_version: "", sw_hersteller: "",
+    hersteller: "Muster Instruments", lieferantennummer: "100001",
+    gxp_relevant: "ja", gxp_kritikalitaet: "N/A", systemtyp: "CE", subtyp: "N/A", gamp_kategorie: "N/A",
+    eres_typ: "N/A", testtiefe: "Gering", geraetekategorie: "A",
+    business_critical: "nein", vq_erforderlich: "nein", val_erforderlich: "nein",
+    ist_aktuelle_version: "ja",
   },
 };
 
@@ -275,7 +367,7 @@ function renderForm() {
   GROUPS.forEach(group => {
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = `<h2>${group.name}</h2>`;
+    card.innerHTML = `<h2>${group.name}<span class="tag">immer</span></h2>`;
     const fieldsDiv = document.createElement("div");
     fieldsDiv.className = "fields";
     group.fields.forEach(f => {
@@ -294,9 +386,10 @@ function renderForm() {
           <label><input type="radio" name="${f.key}" data-key="${f.key}" value="nein"> Nein</label>
         </div>`;
       } else {
-        inputHtml = `<input type="text" data-key="${f.key}">`;
+        inputHtml = `<input type="text" data-key="${f.key}"${f.hint ? ` placeholder="${f.hint.replace(/^[^:]+:\s*/,'')}"` : ""}>`;
       }
-      wrap.innerHTML = `<label>${f.label}${reqMark}</label>${inputHtml}`;
+      const hintHtml = f.hint ? `<div class="fieldhint">${f.hint}</div>` : "";
+      wrap.innerHTML = `<label>${f.label}${reqMark}</label>${inputHtml}${hintHtml}`;
       fieldsDiv.appendChild(wrap);
     });
     card.appendChild(fieldsDiv);
@@ -312,6 +405,29 @@ function renderForm() {
     el.addEventListener("input", () => markChanged(el));
     el.addEventListener("change", () => markChanged(el));
   });
+}
+
+function renderBranch(docType) {
+  const area = document.getElementById("branchArea");
+  area.innerHTML = "";
+  if (!docType) {
+    area.innerHTML = `<div class="branch-note">Kein Dokument gewählt – es werden nur die dokumentübergreifenden Basisdaten oben erfasst.</div>`;
+    return;
+  }
+  const sections = DOC_BRANCHES[docType] || [];
+  sections.forEach(sec => {
+    const card = document.createElement("div");
+    card.className = "card branch";
+    card.innerHTML = `<h2>${sec.title}<span class="tag">nur ${docType}</span></h2>`;
+    const fieldsDiv = document.createElement("div");
+    fieldsDiv.className = "fields";
+    fieldsDiv.innerHTML = sec.fields.map(label => `
+      <div class="field"><label>${label}</label><input type="text" placeholder="Beispiel – Listenverwaltung folgt in Task #4"></div>
+    `).join("");
+    card.appendChild(fieldsDiv);
+    area.appendChild(card);
+  });
+  area.innerHTML += `<div class="branch-note">Diese Felder werden zusätzlich zu den Basisdaten oben in derselben Datenbank gespeichert – ein anderes Dokument (z.B. CS-VP oder CS-VB), das denselben Wert benötigt, liest ihn von dort aus, statt erneut zu fragen.</div>`;
 }
 
 function markChanged(el) {
@@ -394,14 +510,19 @@ document.getElementById("sourceSelect").addEventListener("change", (e) => {
   const note = document.getElementById("statusNote");
   if (val && DEMO_RECORDS[val]) {
     fillForm(DEMO_RECORDS[val]);
-    note.textContent = "Werte übernommen (blau hervorgehoben = von dir geändert). Blaue Rahmen zeigen Abweichungen von der Vorlage.";
+    note.textContent = "Werte übernommen (blau umrandet = von dir geändert).";
   } else {
     clearForm();
   }
 });
 
+document.getElementById("docSelect").addEventListener("change", (e) => {
+  renderBranch(e.target.value);
+});
+
 renderForm();
 setScenario("leer");
+renderBranch("");
 </script>
 
 </body>

@@ -23,15 +23,18 @@ CREATE TABLE entity_types (
 
 -- Welche Felder es pro Objektart gibt, und wie das Formular sie anzeigen soll.
 CREATE TABLE field_definitions (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    entity_type TEXT    NOT NULL REFERENCES entity_types(key),
-    key         TEXT    NOT NULL,   -- Platzhaltername, z.B. 'gxp_kritikalitaet'
-    label       TEXT    NOT NULL,   -- Beschriftung im Formular, z.B. 'GxP-Kritikalität'
-    datentyp    TEXT    NOT NULL CHECK (datentyp IN ('text', 'mehrzeiliger_text', 'zahl', 'datum', 'ja_nein', 'auswahl')),
-    optionen    TEXT,               -- bei datentyp='auswahl': JSON-Liste erlaubter Werte, z.B. '["Critical","Major","Minor","N/A"]'
-    pflichtfeld INTEGER NOT NULL DEFAULT 0,   -- 0 = optional, 1 = Pflichtfeld
-    gruppe      TEXT,               -- Gruppierung im Formular, z.B. 'Stammdaten', 'GxP-Bewertung'
-    sortierung  INTEGER NOT NULL DEFAULT 0,   -- Reihenfolge innerhalb der Gruppe
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_type    TEXT    NOT NULL REFERENCES entity_types(key),
+    key            TEXT    NOT NULL,   -- Platzhaltername, z.B. 'gxp_kritikalitaet'
+    label          TEXT    NOT NULL,   -- Beschriftung im Formular, z.B. 'GxP-Kritikalität'
+    datentyp       TEXT    NOT NULL CHECK (datentyp IN ('text', 'mehrzeiliger_text', 'zahl', 'datum', 'ja_nein', 'auswahl')),
+    optionen       TEXT,               -- bei datentyp='auswahl': JSON-Liste erlaubter Werte, z.B. '["Critical","Major","Minor","N/A"]'
+    pflichtfeld    INTEGER NOT NULL DEFAULT 0,   -- 0 = optional, 1 = Pflichtfeld
+    format_hinweis TEXT,               -- Formatvorschrift, wird nur beim Bearbeiten des Feldes angezeigt, z.B. 'Nachname, Vorname' oder 'x.x'
+    sop_hinweis    TEXT,               -- Bezug auf die zugehoerige SOP, z.B. 'gemaess QU-SOP-0021736'
+    benoetigt_fuer TEXT    NOT NULL DEFAULT '["immer"]',  -- JSON-Liste: 'immer' = Basisdatum fuer alle Dokumente, sonst Dokumenttyp-Schluessel (z.B. 'VQ','CS-VP','CS-VB','xQTP')
+    gruppe         TEXT,               -- Gruppierung im Formular, z.B. 'Personen', 'Stammdaten', 'GxP-Bewertung'
+    sortierung     INTEGER NOT NULL DEFAULT 0,   -- Reihenfolge innerhalb der Gruppe (spiegelt die Reihenfolge im Systembewertungsdokument)
     UNIQUE (entity_type, key)
 );
 
