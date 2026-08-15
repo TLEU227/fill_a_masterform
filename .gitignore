@@ -217,6 +217,10 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Node (z.B. presentation/build_deck.js via pptxgenjs)
+node_modules/
+package-lock.json
+
 # Generierte Beispieldateien (werden per Skript erzeugt, siehe examples/)
 examples/vorlage.docx
 *.docx.bak
