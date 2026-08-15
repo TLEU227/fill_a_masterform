@@ -31,6 +31,41 @@
   }
   header h1 { margin: 0; font-size: 19px; font-weight: 600; }
   header p { margin: 4px 0 0; font-size: 13px; opacity: 0.9; }
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: white;
+    border-bottom: 1.5px solid #9aa5b1;
+    padding: 8px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 2px 6px rgba(0,0,0,.06);
+  }
+  .dirty-indicator {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .dirty-indicator.dirty {
+    color: var(--required);
+    font-weight: 600;
+  }
+  .topbar-actions { display: flex; gap: 8px; }
+  .action-btn {
+    padding: 6px 16px;
+    border-radius: 7px;
+    font-size: 13px;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: white;
+  }
+  .action-btn.primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
   .banner {
     background: #fff8e1;
     border-bottom: 1px solid #f0d98c;
@@ -144,6 +179,25 @@
     overflow: hidden;
   }
   .card.branch { border-color: var(--accent); }
+  .card.branch.optional { border-color: var(--border); border-style: dashed; }
+  .card.branch.optional h2 { color: var(--muted); }
+  .card.branch.optional h2 .tag { background: var(--muted); }
+  .branch-heading {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 18px 0 8px;
+  }
+  .branch-heading.optional { color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .branch-heading .tag {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: white;
+    background: var(--muted);
+    border-radius: 10px;
+    padding: 2px 8px;
+    text-transform: none;
+  }
   .card h2 {
     margin: 0;
     padding: 12px 16px;
@@ -253,23 +307,16 @@
 
   .actions {
     display: flex;
-    justify-content: flex-end;
+    align-items: center;
+    justify-content: space-between;
     gap: 10px;
     margin-top: 8px;
+    padding-top: 16px;
+    border-top: 1.5px solid #9aa5b1;
   }
-  .actions button {
+  .actions .action-btn {
     padding: 10px 20px;
-    border-radius: 7px;
     font-size: 13.5px;
-    cursor: pointer;
-    border: 1px solid var(--border);
-    background: white;
-  }
-  .actions button.primary {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
-    font-weight: 600;
   }
   .status-note {
     font-size: 12px;
@@ -294,6 +341,13 @@
   <h1>Masterform – Systemdaten erfassen</h1>
   <p>Objektart: System &nbsp;·&nbsp; Datenbank: (noch keine verbunden – Mockup)</p>
 </header>
+<div class="topbar">
+  <span class="dirty-indicator" id="dirtyIndicatorTop">Keine ungespeicherten Änderungen</span>
+  <div class="topbar-actions">
+    <button type="button" class="action-btn">Abbrechen</button>
+    <button type="button" class="action-btn primary">Speichern</button>
+  </div>
+</div>
 <div class="banner">
   ⚠️ Dies ist ein klickbares Mockup zur Vorschau des Formular-Layouts. Es ist <b>noch nicht</b> mit einer echten SQLite-Datenbank verbunden – die Beispieldaten sind frei erfunden.
 </div>
@@ -343,6 +397,14 @@
   <div id="branchArea"></div>
 
   <div class="status-note" id="statusNote"></div>
+
+  <div class="actions">
+    <span class="dirty-indicator" id="dirtyIndicatorBottom">Keine ungespeicherten Änderungen</span>
+    <div class="topbar-actions">
+      <button type="button" class="action-btn">Abbrechen</button>
+      <button type="button" class="action-btn primary">Speichern</button>
+    </div>
+  </div>
 </main>
 
 <script>
@@ -426,21 +488,40 @@ const GROUPS = [
 // Zusätzliche, NUR für bestimmte Dokumente benötigte Felder (Objektarten
 // anforderung/risiko/pruefschritt aus db/seed_field_definitions.sql).
 // Illustrativ - vollständige Listenverwaltung (mehrere Zeilen) folgt in Task #4.
+//
+// Aufgeteilt in 'pflicht' (ohne das ist das Dokument nicht sinnvoll
+// vorausfüllbar) und 'optional' (z.B. Testschritte - können erst mal
+// übersprungen und ggf. direkt im Word-Dokument nachgetragen werden;
+// das Speichern der Basisdaten hängt NICHT davon ab, ob diese Liste
+// gefüllt ist, siehe Nutzer-Rückmeldung vom 15.08.).
 const DOC_BRANCHES = {
-  "VQ": [
-    { title: "Anforderung (URS) – nur für VQ", fields: ["URS-ID", "Anforderungsbeschreibung", "GxP-relevant?", "Entspricht URS in (DS/PH)"] },
-    { title: "Risiko (RA) – nur für VQ", fields: ["RA-ID", "Mögliche Fehlfunktion", "Einfluss", "Mitigierende Maßnahmen"] },
-    { title: "Prüfschritt (IQ/OQ/PQ/PPQ) – nur für VQ", fields: ["Prüf-ID", "Phase", "Beschreibung der Prüfung", "Akzeptanzkriterium", "Erfüllt?"] },
-  ],
-  "xQTP": [
-    { title: "Prüfschritt (IQ/OQ/PQ/PPQ) – nur für xQTP", fields: ["Prüf-ID", "Phase", "Beschreibung der Prüfung", "Akzeptanzkriterium", "Erfüllt?"] },
-  ],
-  "CS-VP": [
-    { title: "CS-VP-spezifische Felder", fields: ["(noch zu erfassen – z.B. Referenzdokumente, Change-Control-Nr.)"] },
-  ],
-  "CS-VB": [
-    { title: "CS-VB-spezifische Felder", fields: ["(noch zu erfassen – z.B. unerwartete Ereignisse, Anhänge)"] },
-  ],
+  "VQ": {
+    pflicht: [
+      { title: "Anforderung (URS) – nur für VQ", fields: ["URS-ID", "Anforderungsbeschreibung", "GxP-relevant?", "Entspricht URS in (DS/PH)"] },
+      { title: "Risiko (RA) – nur für VQ", fields: ["RA-ID", "Mögliche Fehlfunktion", "Einfluss", "Mitigierende Maßnahmen"] },
+    ],
+    optional: [
+      { title: "Prüfschritt (IQ/OQ/PQ/PPQ) – nur für VQ", fields: ["Prüf-ID", "Phase", "Beschreibung der Prüfung", "Akzeptanzkriterium", "Erfüllt?"] },
+    ],
+  },
+  "xQTP": {
+    pflicht: [],
+    optional: [
+      { title: "Prüfschritt (IQ/OQ/PQ/PPQ) – nur für xQTP", fields: ["Prüf-ID", "Phase", "Beschreibung der Prüfung", "Akzeptanzkriterium", "Erfüllt?"] },
+    ],
+  },
+  "CS-VP": {
+    pflicht: [
+      { title: "CS-VP-spezifische Felder", fields: ["(noch zu erfassen – z.B. Referenzdokumente, Change-Control-Nr.)"] },
+    ],
+    optional: [],
+  },
+  "CS-VB": {
+    pflicht: [
+      { title: "CS-VB-spezifische Felder", fields: ["(noch zu erfassen – z.B. unerwartete Ereignisse, Anhänge)"] },
+    ],
+    optional: [],
+  },
 };
 
 // Ableitungstabelle Testtiefe (Kapitel 8 der Systembewertung, QU-MT-0001344) -
@@ -590,11 +671,6 @@ function renderForm() {
     form.appendChild(card);
   });
 
-  const actions = document.createElement("div");
-  actions.className = "actions";
-  actions.innerHTML = `<button type="button">Abbrechen</button><button type="button" class="primary">Speichern</button>`;
-  form.appendChild(actions);
-
   form.querySelectorAll("[data-key]").forEach(el => {
     el.addEventListener("input", () => { markChanged(el); onFieldUpdate(el); });
     el.addEventListener("change", () => { markChanged(el); onFieldUpdate(el); });
@@ -636,6 +712,20 @@ function updateTesttiefe() {
   el.textContent = result ? result : "– bitte GxP-Kritikalität und GAMP-Kategorie wählen –";
 }
 
+function renderBranchSection(sec, docType, isOptional) {
+  const card = document.createElement("div");
+  card.className = "card branch" + (isOptional ? " optional" : "");
+  const tag = isOptional ? `optional · ${docType}` : `pflicht · ${docType}`;
+  card.innerHTML = `<h2>${sec.title}<span class="tag">${tag}</span></h2>`;
+  const fieldsDiv = document.createElement("div");
+  fieldsDiv.className = "fields";
+  fieldsDiv.innerHTML = sec.fields.map(label => `
+    <div class="field"><label>${label}</label><input type="text" placeholder="Beispiel – Listenverwaltung folgt in Task #4"></div>
+  `).join("");
+  card.appendChild(fieldsDiv);
+  return card;
+}
+
 function renderBranch(docType) {
   const area = document.getElementById("branchArea");
   area.innerHTML = "";
@@ -643,20 +733,28 @@ function renderBranch(docType) {
     area.innerHTML = `<div class="branch-note">Kein Dokument gewählt – es werden nur die dokumentübergreifenden Basisdaten oben erfasst.</div>`;
     return;
   }
-  const sections = DOC_BRANCHES[docType] || [];
-  sections.forEach(sec => {
-    const card = document.createElement("div");
-    card.className = "card branch";
-    card.innerHTML = `<h2>${sec.title}<span class="tag">nur ${docType}</span></h2>`;
-    const fieldsDiv = document.createElement("div");
-    fieldsDiv.className = "fields";
-    fieldsDiv.innerHTML = sec.fields.map(label => `
-      <div class="field"><label>${label}</label><input type="text" placeholder="Beispiel – Listenverwaltung folgt in Task #4"></div>
-    `).join("");
-    card.appendChild(fieldsDiv);
-    area.appendChild(card);
-  });
-  area.innerHTML += `<div class="branch-note">Diese Felder werden zusätzlich zu den Basisdaten oben in derselben Datenbank gespeichert – ein anderes Dokument (z.B. CS-VP oder CS-VB), das denselben Wert benötigt, liest ihn von dort aus, statt erneut zu fragen.</div>`;
+  const branch = DOC_BRANCHES[docType] || { pflicht: [], optional: [] };
+
+  if (branch.pflicht.length) {
+    const heading = document.createElement("h3");
+    heading.className = "branch-heading";
+    heading.textContent = `Notwendige Zusatzfelder für ${docType}`;
+    area.appendChild(heading);
+    branch.pflicht.forEach(sec => area.appendChild(renderBranchSection(sec, docType, false)));
+  }
+
+  if (branch.optional.length) {
+    const heading = document.createElement("h3");
+    heading.className = "branch-heading optional";
+    heading.innerHTML = `Optionale Zusatzfelder für ${docType} <span class="tag">kannst du überspringen</span>`;
+    area.appendChild(heading);
+    branch.optional.forEach(sec => area.appendChild(renderBranchSection(sec, docType, true)));
+    area.innerHTML += `<div class="branch-note">Optional heißt: das Speichern der Daten oben hängt nicht davon ab, ob diese Liste gefüllt ist. Du kannst sie jetzt leer lassen und später - auch direkt im Word-Dokument - ergänzen.</div>`;
+  }
+
+  if (branch.pflicht.length || branch.optional.length) {
+    area.innerHTML += `<div class="branch-note">Alle hier erfassten Werte werden zusätzlich zu den Basisdaten oben in derselben Datenbank gespeichert – ein anderes Dokument (z.B. CS-VP oder CS-VB), das denselben Wert benötigt, liest ihn von dort aus, statt erneut zu fragen.</div>`;
+  }
 }
 
 function markChanged(el) {
@@ -808,6 +906,43 @@ document.querySelectorAll(".scenario-btn").forEach(btn => {
 
 document.getElementById("docSelect").addEventListener("change", (e) => {
   renderBranch(e.target.value);
+});
+
+// Ungespeicherte Änderungen: Warnung beim Schließen/Verlassen der Seite,
+// plus sichtbarer Hinweis oben und unten, solange nicht gespeichert wurde.
+let isDirty = false;
+
+function setDirty(value) {
+  isDirty = value;
+  document.querySelectorAll(".dirty-indicator").forEach(el => {
+    el.textContent = value ? "● Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen";
+    el.classList.toggle("dirty", value);
+  });
+}
+
+document.addEventListener("input", (e) => { if (e.target.closest("#systemForm, #branchArea")) setDirty(true); });
+document.addEventListener("change", (e) => { if (e.target.closest("#systemForm, #branchArea")) setDirty(true); });
+
+window.addEventListener("beforeunload", (e) => {
+  if (!isDirty) return;
+  // Löst den nativen Browser-Dialog "Änderungen werden nicht gespeichert" aus.
+  e.preventDefault();
+  e.returnValue = "";
+});
+
+document.querySelectorAll(".action-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    if (btn.classList.contains("primary")) {
+      // Mockup: es gibt noch keine echte Datenbank zum Schreiben, siehe Banner oben.
+      setDirty(false);
+      document.getElementById("statusNote").textContent = "Gespeichert (Mockup - noch keine echte Datenbank angebunden).";
+    } else {
+      if (isDirty && !confirm("Ungespeicherte Änderungen verwerfen?")) return;
+      setDirty(false);
+      clearForm();
+      document.getElementById("statusNote").textContent = "Abgebrochen, Formular zurückgesetzt.";
+    }
+  });
 });
 
 renderForm();
