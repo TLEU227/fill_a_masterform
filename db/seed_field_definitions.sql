@@ -23,7 +23,7 @@ INSERT INTO entity_types (key, label) VALUES
     ('system',      'System'),
     ('anforderung', 'Anforderung (URS)'),
     ('risiko',      'Risiko (RA)'),
-    ('pruefschritt','Prüfschritt (IQ/OQ/PQ)');
+    ('pruefschritt','Prüfschritt (IQ/OQ/PQ/PPQ)');
 
 -- ---------------------------------------------------------------------------
 -- Person: eigene Objektart statt Freitext-Name je Rolle. Grund: dieselbe
@@ -144,11 +144,11 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('risiko', 'massnahmen',      'Mitigierende Maßnahmen',   'mehrzeiliger_text', NULL, 0, NULL, NULL, '["VQ"]', 'Risiko', 40);
 
 -- ---------------------------------------------------------------------------
--- Prüfschritt (IQ/OQ/PQ) – nur für Dokumente mit Prüfprotokoll.
+-- Prüfschritt (IQ/OQ/PQ/PPQ) – nur für Dokumente mit Prüfprotokoll.
 -- ---------------------------------------------------------------------------
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
 ('pruefschritt', 'pruef_id',        'IQ/OQ/PQ-ID',           'text', NULL, 1, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 10),
-('pruefschritt', 'phase',           'Phase',                 'auswahl', '["IQ","OQ","PQ"]', 1, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 20),
+('pruefschritt', 'phase',           'Phase',                 'auswahl', '["IQ","OQ","PQ","PPQ"]', 1, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 20),
 ('pruefschritt', 'beschreibung',    'Beschreibung der Prüfung', 'mehrzeiliger_text', NULL, 1, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 30),
 ('pruefschritt', 'akzeptanzkriterium', 'Akzeptanzkriterium', 'mehrzeiliger_text', NULL, 0, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 40),
 ('pruefschritt', 'erfuellt',        'Erfüllt?',              'ja_nein', NULL, 0, NULL, NULL, '["VQ","xQTP"]', 'Prüfschritt', 50),
