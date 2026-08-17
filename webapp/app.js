@@ -712,6 +712,7 @@ function showAppScreen(label) {
   document.getElementById("appScreen").classList.remove("hidden");
   document.getElementById("dbFileLabel").textContent = label;
   document.getElementById("fsWarningBanner").style.display = hasFSAccess ? "none" : "block";
+  document.getElementById("btnLinkFile").classList.toggle("hidden", !!fileHandle || !hasFSAccess);
   loadFieldDefinitions();
   loadPersonCache();
   loadSystemCache();
@@ -756,6 +757,22 @@ async function handleOpenDb() {
   }
 }
 
+async function handleLinkFile() {
+  if (!hasFSAccess) return;
+  try {
+    fileHandle = await window.showSaveFilePicker({
+      suggestedName: "masterform.sqlite",
+      types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite"] } }],
+    });
+    await writeDbToDisk();
+    document.getElementById("dbFileLabel").textContent = "Datei: " + fileHandle.name;
+    document.getElementById("btnLinkFile").classList.add("hidden");
+    document.getElementById("statusNote").textContent = "Ab jetzt speichert „Speichern“ direkt in diese Datei.";
+  } catch (e) {
+    // Nutzer hat den Dialog abgebrochen - kein Problem, "Speichern" bleibt beim Download-Fallback.
+  }
+}
+
 // ---------------------------------------------------------------- Bootstrap
 async function main() {
   await initEngine();
@@ -763,6 +780,16 @@ async function main() {
     ? "Dein Browser unterstützt direktes Speichern in eine lokale Datei."
     : "Dein Browser unterstützt kein direktes Datei-Speichern – „Speichern“ bietet die Datenbank stattdessen zum Herunterladen an.";
   document.getElementById("fsNote").classList.toggle("ok", hasFSAccess);
+  document.getElementById("btnLinkFile").addEventListener("click", handleLinkFile);
+
+  // Eingebettete Startdatenbank vorhanden? Dann direkt loslegen, kein
+  // Anlegen/Öffnen-Dialog. "Speichern" laedt zunaechst herunter, bis man
+  // sich optional ueber "Mit Datei verknuepfen" mit einer Datei verbindet.
+  if (STARTER_DB_B64) {
+    loadDbFromBytes(base64ToBytes(STARTER_DB_B64));
+    showAppScreen("Eingebettete Datenbank (noch nicht mit einer Datei verknüpft)");
+    if (hasFSAccess) document.getElementById("btnLinkFile").classList.remove("hidden");
+  }
 
   document.getElementById("btnNewDb").addEventListener("click", handleNewDb);
   document.getElementById("btnOpenDb").addEventListener("click", handleOpenDb);

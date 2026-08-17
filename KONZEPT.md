@@ -111,9 +111,19 @@ Zwei Platzhalter-Arten, die wir brauchen werden:
 
 ### a) Datenerfassung – 3 Szenarien im Browser-Formular
 
-Kein Massenimport der Excel-Datei geplant (Entscheidung vom 15.08.) – die
-Datenbank wird von Anfang an über das Formular selbst aufgebaut, in drei
-Fällen:
+Klargestellt am 17.08.: "kein Massenimport" (Entscheidung vom 15.08.) bezog
+sich auf eine UI-Funktion zum Anlegen vieler *neuer* Systeme auf einmal -
+nicht auf den einmaligen Import der bereits vorhandenen Excel-Daten. Die
+733 bestehenden Systeme aus `Systembewertungen_GESAMT.xlsx` werden per
+`db/import_excel.py` einmalig in die Datenbank übernommen (1 Zeile =
+1 Systemdatensatz, keine automatische Zusammenführung von
+Dokumentversionen, siehe `docs/analyse_systembewertung_xlsx.md`) und als
+**eingebettete Startdatenbank** in eine eigene App-Variante gebaut
+(`webapp/build.js <db> <ausgabe.html>`), die beim Öffnen direkt startet -
+kein Anlegen/Öffnen-Dialog. Diese befüllte Variante bleibt lokal beim
+Nutzer, **nicht** im Git-Repo (siehe Abschnitt 0 - Code ins Repo, echte
+Daten bleiben lokal). Danach wird die Datenbank über das Formular selbst
+weitergepflegt, in drei Fällen:
 
 1. **Neuanlage, alles leer**: leeres, aber gruppiertes Formular mit
    Dropdowns für die kategorialen Felder (GxP-Kritikalität,

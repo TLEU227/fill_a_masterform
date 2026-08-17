@@ -146,6 +146,7 @@
   <div class="topbar">
     <span class="dirty-indicator" id="dirtyIndicatorTop">Keine ungespeicherten Änderungen</span>
     <div class="topbar-actions">
+      <button type="button" class="action-btn hidden" id="btnLinkFile">Mit Datei verknüpfen</button>
       <button type="button" class="action-btn" id="btnCloseDb">Datenbank schließen</button>
       <button type="button" class="action-btn" id="btnCancelTop">Abbrechen</button>
       <button type="button" class="action-btn primary" id="btnSaveTop">Speichern</button>
@@ -206,6 +207,9 @@
 const SCHEMA_SQL = /*__SCHEMA_SQL__*/"";
 const SEED_SQL = /*__SEED_SQL__*/"";
 const WASM_B64 = /*__WASM_B64__*/"";
+// Falls nicht leer: eine fertige .sqlite-Datenbank (Base64), die beim Start
+// direkt geladen wird - ohne Anlegen/Öffnen-Dialog. Siehe build.js.
+const STARTER_DB_B64 = /*__STARTER_DB_B64__*/"";
 </script>
 <script>/*__SQLJS_LIB__*/</script>
 <script src="app.js"></script>

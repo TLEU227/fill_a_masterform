@@ -122,7 +122,8 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- System: Status/Nachverfolgung
 -- ---------------------------------------------------------------------------
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
-('system', 'ist_aktuelle_version', 'Ist aktuelle Version?', 'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'Status', 10);
+('system', 'ist_aktuelle_version', 'Ist aktuelle Version?', 'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'Status', 10),
+('system', 'herkunft', 'Herkunft', 'text', NULL, 0, NULL, NULL, '["immer"]', 'Status', 20);
 
 -- ---------------------------------------------------------------------------
 -- Anforderung (URS-Punkt) – für URS-Tabelle / Traceability Matrix.

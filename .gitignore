@@ -221,6 +221,14 @@ __marimo__/
 node_modules/
 package-lock.json
 
+# E2E-Test-Downloads (webapp/test_e2e*.js) - Wegwerfartefakte
+webapp/e2e_downloads/
+
+# Mit echten Daten befuellte App-Varianten duerfen NICHT ins Repo
+# (siehe KONZEPT.md: Code ins Repo, echte Daten bleiben lokal)
+webapp/*_mit_daten.html
+webapp/app_mit_daten*.html
+
 # Generierte Beispieldateien (werden per Skript erzeugt, siehe examples/)
 examples/vorlage.docx
 *.docx.bak
