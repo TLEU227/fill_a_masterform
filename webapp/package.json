@@ -1,0 +1,14 @@
+{
+  "name": "masterform-webapp",
+  "version": "1.0.0",
+  "description": "Browser-App zur Systemdatenerfassung (Task #3) - baut app.html aus app_template.html + app.js + db/schema.sql + db/seed_field_definitions.sql + vendor/sqljs.",
+  "private": true,
+  "scripts": {
+    "build": "node build.js",
+    "test": "node test_e2e.js && node test_e2e_2.js"
+  },
+  "devDependencies": {
+    "sql.js": "^1.14.2",
+    "playwright": "^1.0.0"
+  }
+}

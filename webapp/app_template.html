@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Masterform</title>
+<style>
+  :root {
+    --bg: #f4f6f8; --card: #ffffff; --border: #d7dde3; --text: #1f2937;
+    --muted: #6b7280; --accent: #0f5ea8; --accent-light: #e8f1fa;
+    --required: #b3261e; --group-bg: #fafbfc; --hint-bg: #fff8e1; --hint-border: #f0d98c;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", Arial, sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--accent); color: white; padding: 18px 28px; }
+  header h1 { margin: 0; font-size: 19px; font-weight: 600; }
+  header p { margin: 4px 0 0; font-size: 13px; opacity: .9; }
+  main { max-width: 900px; margin: 24px auto 60px; padding: 0 20px; }
+  .hidden { display: none !important; }
+
+  .topbar { position: sticky; top: 0; z-index: 20; background: white; border-bottom: 1.5px solid #9aa5b1;
+    padding: 8px 28px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 6px rgba(0,0,0,.06); }
+  .dirty-indicator { font-size: 12px; color: var(--muted); }
+  .dirty-indicator.dirty { color: var(--required); font-weight: 600; }
+  .topbar-actions { display: flex; gap: 8px; }
+  .action-btn { padding: 6px 16px; border-radius: 7px; font-size: 13px; cursor: pointer; border: 1px solid var(--border); background: white; }
+  .action-btn.primary { background: var(--accent); color: white; border-color: var(--accent); font-weight: 600; }
+  .action-btn:disabled { opacity: .5; cursor: default; }
+
+  .start-card { max-width: 640px; margin: 8vh auto; background: white; border: 1.5px solid #9aa5b1; border-radius: 12px; padding: 34px 38px; }
+  .start-card h2 { margin: 0 0 6px; font-size: 22px; color: var(--accent); }
+  .start-card p.lead { color: var(--muted); font-size: 13.5px; margin: 0 0 26px; }
+  .start-options { display: grid; gap: 14px; }
+  .start-btn { display: block; width: 100%; text-align: left; padding: 16px 18px; border-radius: 9px;
+    border: 1.5px solid var(--border); background: var(--group-bg); cursor: pointer; font-family: inherit; }
+  .start-btn b { display: block; font-size: 15px; color: var(--text); margin-bottom: 3px; }
+  .start-btn span { font-size: 12.5px; color: var(--muted); }
+  .start-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+  .fs-note { margin-top: 18px; font-size: 11.5px; color: var(--muted); }
+  .fs-note.ok { color: #1c7293; }
+
+  .banner { background: #fff8e1; border-bottom: 1px solid #f0d98c; color: #6b5300; font-size: 13px; padding: 8px 28px; }
+
+  .scenario-picker { display: flex; gap: 10px; margin-bottom: 18px; }
+  .scenario-btn { flex: 1; padding: 12px 14px; border: 1.5px solid var(--border); border-radius: 8px; background: var(--card);
+    cursor: pointer; font-size: 13.5px; text-align: left; color: var(--text); }
+  .scenario-btn b { display: block; font-size: 13.5px; margin-bottom: 2px; }
+  .scenario-btn span { color: var(--muted); font-size: 12px; }
+  .scenario-btn.active { border-color: var(--accent); background: var(--accent-light); }
+
+  .combo { position: relative; }
+  .combo input { width: 100%; padding: 9px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 13.5px; }
+  .combo-results { position: absolute; z-index: 10; left: 0; right: 0; top: calc(100% + 4px); background: white;
+    border: 1.5px solid #9aa5b1; border-radius: 8px; max-height: 220px; overflow-y: auto; box-shadow: 0 6px 16px rgba(0,0,0,.12); display: none; }
+  .combo-results.open { display: block; }
+  .combo-item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #eef1f4; }
+  .combo-item:last-child { border-bottom: none; }
+  .combo-item:hover { background: var(--accent-light); }
+  .combo-item b { color: var(--text); }
+  .combo-item span { color: var(--muted); font-size: 11.5px; display: block; }
+  .combo-empty { padding: 10px 12px; font-size: 12.5px; color: var(--muted); }
+  .combo-selected { margin-top: 6px; font-size: 12.5px; color: var(--accent); display: none; }
+  .combo-selected.visible { display: block; }
+  .combo-selected button { margin-left: 8px; font-size: 11.5px; border: 1px solid var(--border); background: white; border-radius: 4px; padding: 1px 7px; cursor: pointer; }
+
+  .source-picker, .doc-picker { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; margin-bottom: 14px; display: none; }
+  .source-picker.visible, .doc-picker.visible { display: block; }
+  .source-picker label, .doc-picker label { font-size: 13px; font-weight: 600; display: block; margin-bottom: 6px; }
+  .doc-picker select { width: 100%; padding: 8px; border-radius: 6px; border: 1px solid var(--border); font-size: 13.5px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+  .legend { font-size: 12px; color: var(--muted); margin: 0 0 16px; }
+  .legend .req { color: var(--required); }
+
+  .card { background: var(--card); border: 1.5px solid #9aa5b1; border-radius: 10px; margin-bottom: 16px; overflow: hidden; }
+  .card.branch { border-color: var(--accent); }
+  .card.branch.optional { border-color: var(--border); border-style: dashed; }
+  .card.branch.optional h2 { color: var(--muted); }
+  .card.branch.optional h2 .tag { background: var(--muted); }
+  .card h2 { margin: 0; padding: 12px 16px; font-size: 14px; background: var(--group-bg);
+    border-bottom: 1.5px solid #9aa5b1; color: var(--accent); display: flex; align-items: center; justify-content: space-between; }
+  .card h2 .tag { font-size: 10.5px; font-weight: 600; color: white; background: var(--accent); border-radius: 10px; padding: 2px 8px; text-transform: uppercase; }
+  .card .fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 20px; padding: 16px; }
+  .field.full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 4px; color: var(--text); }
+  .field label .req { color: var(--required); margin-left: 3px; }
+  .field input[type=text], .field input[type=date], .field select, .field textarea {
+    width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 13.5px; font-family: inherit; background: white; }
+  .field textarea { resize: vertical; min-height: 50px; }
+  .field.changed input, .field.changed select, .field.changed textarea { border-color: var(--accent); background: #f5faff; }
+  .field .yn { display: flex; gap: 14px; padding-top: 4px; font-size: 13px; }
+  .field .yn label { font-weight: 400; display: flex; align-items: center; gap: 4px; margin: 0; }
+
+  .fieldhint { max-height: 0; overflow: hidden; opacity: 0; transition: max-height .12s ease, opacity .12s ease;
+    font-size: 11.5px; color: #7a5c00; background: var(--hint-bg); border: 1px solid var(--hint-border); border-radius: 4px; margin-top: 4px; padding: 0 6px; }
+  .field:focus-within .fieldhint { max-height: 60px; opacity: 1; padding: 4px 6px; }
+
+  .person-info { font-size: 11.5px; color: var(--muted); margin-top: 4px; }
+  .person-new { margin-top: 6px; display: grid; gap: 6px; border-top: 1px dashed var(--border); padding-top: 6px; }
+  .person-new input { width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 13px; }
+
+  .field.computed { background: var(--group-bg); border: 1px dashed var(--border); border-radius: 6px; padding: 8px 10px; }
+  .field.computed .value { font-size: 14px; font-weight: 600; color: var(--accent); }
+  .field.computed .basis { font-size: 11px; color: var(--muted); }
+
+  .branch-heading { font-size: 13px; font-weight: 600; color: var(--text); margin: 18px 0 8px; }
+  .branch-heading.optional { color: var(--muted); display: flex; align-items: center; gap: 8px; }
+  .branch-heading .tag { font-size: 10.5px; font-weight: 600; color: white; background: var(--muted); border-radius: 10px; padding: 2px 8px; }
+
+  .list-row { border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; background: var(--group-bg); }
+  .list-row .remove-row { position: absolute; top: 8px; right: 8px; border: 1px solid var(--border); background: white;
+    border-radius: 5px; font-size: 11px; padding: 2px 8px; cursor: pointer; color: var(--required); }
+  .add-row-btn { border: 1.5px dashed var(--border); background: white; border-radius: 8px; padding: 10px; width: 100%;
+    cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 600; }
+
+  .actions { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 8px; padding-top: 16px; border-top: 1.5px solid #9aa5b1; }
+  .actions .action-btn { padding: 10px 20px; font-size: 13.5px; }
+  .status-note { font-size: 12px; color: var(--muted); text-align: right; margin-top: 6px; }
+  .branch-note { font-size: 12.5px; color: var(--muted); background: var(--group-bg); border: 1px dashed var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<div id="startScreen" class="start-card">
+  <h2>Masterform</h2>
+  <p class="lead">Systemdaten erfassen &amp; für Qualifizierungsdokumente vorausfüllen.</p>
+  <div class="start-options">
+    <button type="button" class="start-btn" id="btnNewDb">
+      <b>Neue Datenbank anlegen</b>
+      <span>Legt eine leere Datenbank mit dem aktuellen Schema an. Du wählst gleich, wo sie gespeichert wird.</span>
+    </button>
+    <button type="button" class="start-btn" id="btnOpenDb">
+      <b>Vorhandene Datenbank öffnen</b>
+      <span>Öffnet eine bereits gespeicherte .sqlite-Datei.</span>
+    </button>
+    <input type="file" id="fileInputFallback" accept=".sqlite,.db" class="hidden">
+  </div>
+  <p class="fs-note" id="fsNote"></p>
+</div>
+
+<div id="appScreen" class="hidden">
+  <header>
+    <h1>Masterform – Systemdaten erfassen</h1>
+    <p id="dbFileLabel">Objektart: System</p>
+  </header>
+  <div class="topbar">
+    <span class="dirty-indicator" id="dirtyIndicatorTop">Keine ungespeicherten Änderungen</span>
+    <div class="topbar-actions">
+      <button type="button" class="action-btn" id="btnCloseDb">Datenbank schließen</button>
+      <button type="button" class="action-btn" id="btnCancelTop">Abbrechen</button>
+      <button type="button" class="action-btn primary" id="btnSaveTop">Speichern</button>
+    </div>
+  </div>
+  <div class="banner" id="fsWarningBanner" style="display:none">
+    ⚠️ Dein Browser unterstützt kein direktes Schreiben in die Datei. "Speichern" bietet dir die Datenbank stattdessen zum Herunterladen an – lade sie über die heruntergeladene Datei erneut, um weiterzuarbeiten.
+  </div>
+
+  <main>
+    <div class="scenario-picker">
+      <button class="scenario-btn active" data-scenario="leer"><b>1 · Neuanlage (leer)</b><span>System ist unbekannt, alles neu eingeben</span></button>
+      <button class="scenario-btn" data-scenario="kopie"><b>2 · Kopie von ähnlichem System</b><span>Werte übernehmen, abweichende überschreiben</span></button>
+      <button class="scenario-btn" data-scenario="bearbeiten"><b>3 · Bestehendes System bearbeiten</b><span>Vorhandene Werte anzeigen, ändern was nötig ist</span></button>
+    </div>
+
+    <div class="source-picker" id="sourcePicker">
+      <label id="sourceLabel">Als Vorlage übernehmen von:</label>
+      <div class="combo">
+        <input type="text" id="sourceSearch" placeholder="System suchen: MLCS-ID, Gerätename, Hersteller/Lieferant, Software, Gebäude, … " autocomplete="off">
+        <div class="combo-results" id="sourceResults"></div>
+      </div>
+      <div class="combo-selected" id="sourceSelected"></div>
+      <div class="hint" id="sourceHint"></div>
+    </div>
+
+    <div class="doc-picker visible" id="docPicker">
+      <label>Für welches Dokument bereitest du die Daten vor?</label>
+      <select id="docSelect">
+        <option value="">Nur Basisdaten (dokumentübergreifend)</option>
+        <option value="VQ">Vereinfachte Qualifizierung (VQ)</option>
+        <option value="CS-VP">CS Validierungsplan (CS-VP)</option>
+        <option value="CS-VB">CS Validierungsbericht (CS-VB)</option>
+        <option value="xQTP">xQ-Testplan (IQ/OQ/PQ)</option>
+      </select>
+      <div class="hint">Die Basisdaten unten werden von allen Dokumenten gemeinsam genutzt. Je nach Auswahl erscheinen zusätzlich nur die Felder, die speziell für dieses Dokument benötigt werden.</div>
+    </div>
+
+    <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
+
+    <form id="systemForm"></form>
+
+    <div id="branchArea"></div>
+
+    <div class="status-note" id="statusNote"></div>
+
+    <div class="actions">
+      <span class="dirty-indicator" id="dirtyIndicatorBottom">Keine ungespeicherten Änderungen</span>
+      <div class="topbar-actions">
+        <button type="button" class="action-btn" id="btnCancelBottom">Abbrechen</button>
+        <button type="button" class="action-btn primary" id="btnSaveBottom">Speichern</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const SCHEMA_SQL = /*__SCHEMA_SQL__*/"";
+const SEED_SQL = /*__SEED_SQL__*/"";
+const WASM_B64 = /*__WASM_B64__*/"";
+</script>
+<script>/*__SQLJS_LIB__*/</script>
+<script src="app.js"></script>
+</body>
+</html>
