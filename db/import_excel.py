@@ -13,6 +13,12 @@ ist_aktuelle_version=ja gekennzeichnet; alle anderen bleiben ohne
 Aussage (kein automatisches "nein"), weil das nicht zuverlässig aus
 den Daten allein ableitbar ist.
 
+Platzhalterwerte (reine "x"/"xxxx"-Strings, "QU-OPE-xxxxx" o.ä.) sind keine
+effektive Information und werden generell NICHT uebernommen (Feld bleibt
+leer statt mit einem Platzhalter befuellt) - betroffen u.a. Raum, Hersteller,
+Phenix/lieferantennummer, MLCSID, Dok.-Nr. Wie oft das vorkam, steht in
+stats["platzhalter_uebersprungen"].
+
 Nutzung:
     python db/import_excel.py Systembewertungen_GESAMT.xlsx neue_db.sqlite
 """
@@ -103,7 +109,17 @@ def get(row: tuple, col_idx: dict, colname: str):
     return str(v)
 
 
-PLACEHOLDER_DOKNR = re.compile(r"^qu-ope-x+$", re.IGNORECASE)
+# Platzhalter statt echter Werte - kommen im Excel an mehreren Stellen vor
+# (Raum, Hersteller, Phenix/lieferantennummer, MLCSID, Dok.-Nr. ...). Solche
+# Werte sind keine effektive Information und werden NICHT uebernommen (statt
+# wie zuvor bei der Dok.-Nr. als Wert gespeichert + nur verwarnt).
+PLACEHOLDER_PURE_X = re.compile(r"^x+$", re.IGNORECASE)  # z.B. "xxx", "xxxx"
+PLACEHOLDER_DOKNR = re.compile(r"^qu-[a-z]+-x+$", re.IGNORECASE)  # z.B. "QU-OPE-xxxxx"
+
+
+def is_placeholder(value: str) -> bool:
+    v = value.strip()
+    return bool(PLACEHOLDER_PURE_X.match(v) or PLACEHOLDER_DOKNR.match(v))
 
 
 def import_workbook(xlsx_path: Path, conn: sqlite3.Connection) -> dict:
@@ -114,7 +130,7 @@ def import_workbook(xlsx_path: Path, conn: sqlite3.Connection) -> dict:
     data_rows = rows[1:]
 
     cur = conn.cursor()
-    stats = {"importiert": 0, "final_markiert": 0, "warnungen": []}
+    stats = {"importiert": 0, "final_markiert": 0, "platzhalter_uebersprungen": []}
 
     for excel_zeile, row in enumerate(data_rows, start=2):
         systemname = get(row, col_idx, "AS/BDIS-Name")
@@ -130,9 +146,15 @@ def import_workbook(xlsx_path: Path, conn: sqlite3.Connection) -> dict:
         def setval(field_key: str, value):
             if value is None or value == "":
                 return
+            value = str(value)
+            if is_placeholder(value):
+                stats["platzhalter_uebersprungen"].append(
+                    f"Zeile {excel_zeile}: Feld '{field_key}' = '{value}' ist ein Platzhalter, nicht übernommen"
+                )
+                return
             cur.execute(
                 "INSERT INTO field_values (record_id, field_key, wert) VALUES (?,?,?)",
-                (record_id, field_key, str(value)),
+                (record_id, field_key, value),
             )
 
         for excel_col, field_key in DIRECT_MAP.items():
@@ -148,10 +170,6 @@ def import_workbook(xlsx_path: Path, conn: sqlite3.Connection) -> dict:
         setval("ki_reifegrad", pick_from_group(row, col_idx, KI_REIFEGRAD))
         setval("vq_erforderlich", "ja" if is_marked(row, col_idx, "QUAL") else ("nein" if col_idx.get("QUAL") is not None else None))
         setval("val_erforderlich", "ja" if is_marked(row, col_idx, "VAL") else ("nein" if col_idx.get("VAL") is not None else None))
-
-        dok_nr = get(row, col_idx, "Dok. -Nr.")
-        if dok_nr and PLACEHOLDER_DOKNR.match(dok_nr):
-            stats["warnungen"].append(f"Zeile {excel_zeile}: Platzhalter-Dok.-Nr. '{dok_nr}' übernommen (keine echte Nummer)")
 
         erkannte_version = get(row, col_idx, "Erkannte Version2")
         if erkannte_version:
@@ -196,12 +214,13 @@ def main(argv=None) -> int:
 
     print(f"Importiert: {stats['importiert']} Systemdatensätze -> {db_path}")
     print(f"Davon als 'aktuelle Version' markiert (Erkannte Version2 gesetzt): {stats['final_markiert']}")
-    if stats["warnungen"]:
-        print(f"\n{len(stats['warnungen'])} Warnungen (Platzhalter-Dok.-Nr.):")
-        for w in stats["warnungen"][:10]:
+    if stats["platzhalter_uebersprungen"]:
+        n = len(stats["platzhalter_uebersprungen"])
+        print(f"\n{n} Platzhalterwerte übersprungen (nicht als Feldwert übernommen):")
+        for w in stats["platzhalter_uebersprungen"][:10]:
             print(" -", w)
-        if len(stats["warnungen"]) > 10:
-            print(f"   ... und {len(stats['warnungen']) - 10} weitere")
+        if n > 10:
+            print(f"   ... und {n - 10} weitere")
     return 0
 
 
