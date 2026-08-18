@@ -116,14 +116,33 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('system', 'geraetekategorie',  'Gerätekategorie (ISPE/GAMP)', 'auswahl', '["A","B1","B2","B3","C1","C2","N/A"]', 0, NULL, 'gemäß QU-SOP-0021736 (Qualifizierung von Gebäuden, Einrichtungen und Ausrüstung), Mehrfachauswahl laut Referenzdokument möglich', '["immer"]', 'GxP-Bewertung', 80),
 ('system', 'business_critical',  'Business critical?',    'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'GxP-Bewertung', 90),
 ('system', 'vq_erforderlich',    'Vereinfachte Qualifizierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0021736', '["immer"]', 'GxP-Bewertung', 100),
-('system', 'val_erforderlich',   'Validierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0049866 (Validierung computergestützter Systeme)', '["immer"]', 'GxP-Bewertung', 110);
+('system', 'val_erforderlich',   'Validierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0049866 (Validierung computergestützter Systeme)', '["immer"]', 'GxP-Bewertung', 110),
+-- KI-Reifegrad (Kap. "Einsatz von Künstlicher Intelligenz"): I/II = ohne KI
+-- (parallel zum Prozess bzw. konventionelle Anwendung ohne ML), III/IV = mit
+-- KI (geschlossenes bzw. autonomes KI-gestütztes CS). V/VI sind laut Template
+-- im GxP-Umfeld nicht zugelassen. War bisher nur in der Analyse dokumentiert
+-- (KI1..KI6/KINA-Spalten), jetzt als eigenes Feld nachgezogen.
+('system', 'ki_reifegrad', 'KI-Reifegrad', 'auswahl',
+ '[{"wert":"N/A","erklaerung":"Kein Einsatz von Künstlicher Intelligenz."},
+   {"wert":"I","erklaerung":"KI-gestütztes CS wird parallel zum Produktionsprozess eingesetzt, kein Einfluss auf einen GxP-relevanten Prozess."},
+   {"wert":"II","erklaerung":"KI-gestütztes CS ist eine konventionelle Anwendung ohne Einsatz von Machine Learning (ML)."},
+   {"wert":"III","erklaerung":"KI-gestütztes CS wird als geschlossenes System verwendet."},
+   {"wert":"IV","erklaerung":"KI-gestütztes CS ist autonom mit selbstauslösendem Neutraining, mit menschlichem Eingriff und Kontrolle der Updates."},
+   {"wert":"V","erklaerung":"Im GxP-Umfeld nicht zugelassen."},
+   {"wert":"VI","erklaerung":"Im GxP-Umfeld nicht zugelassen."}]',
+ 0, NULL, 'gemäß QU-OPE-2497575 (Risk Profile and Control Framework, Abschnitt 5 „RISK DOMAIN: Artificial Intelligence“)', '["immer"]', 'GxP-Bewertung', 120);
 
 -- ---------------------------------------------------------------------------
 -- System: Status/Nachverfolgung
 -- ---------------------------------------------------------------------------
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
 ('system', 'ist_aktuelle_version', 'Ist aktuelle Version?', 'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'Status', 10),
-('system', 'herkunft', 'Herkunft', 'text', NULL, 0, NULL, NULL, '["immer"]', 'Status', 20);
+('system', 'herkunft', 'Herkunft', 'text', NULL, 0, NULL, NULL, '["immer"]', 'Status', 20),
+-- Change-Control-Nummer der aktuellen Validierung (z.B. "Die Validierung
+-- erfolgt im Rahmen des Change Controls XXXXXXX..." im CS-Validierungsplan).
+-- Optional: bei Neuanlage/Kopie meist noch leer, wird i.d.R. erst im Projekt-
+-- verlauf bekannt und nachgetragen.
+('system', 'change_control_nummer', 'Change-Control-Nummer', 'text', NULL, 0, 'z.B. CC-2024-001234', NULL, '["CS-VP","CS-VB"]', 'Status', 30);
 
 -- ---------------------------------------------------------------------------
 -- Anforderung (URS-Punkt) – für URS-Tabelle / Traceability Matrix.

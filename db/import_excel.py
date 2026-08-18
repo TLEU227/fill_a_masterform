@@ -65,6 +65,10 @@ GERAETEKATEGORIE = {
     "GKATA": "A", "GKATB": "B", "GKATC": "C", "GKATNA": "N/A",
 }
 BUSINESS_CRITICAL = {"BCkritisch": "ja", "BCunkritisch": "nein"}
+KI_REIFEGRAD = {
+    "KI1": "I", "KI2": "II", "KI3": "III", "KI4": "IV", "KI5": "V", "KI6": "VI",
+    "KINA": "N/A",
+}
 
 
 def col_index_map(header_row: tuple) -> dict[str, int]:
@@ -141,6 +145,7 @@ def import_workbook(xlsx_path: Path, conn: sqlite3.Connection) -> dict:
         setval("eres_typ", pick_from_group(row, col_idx, ERES_TYP))
         setval("geraetekategorie", pick_from_group(row, col_idx, GERAETEKATEGORIE))
         setval("business_critical", pick_from_group(row, col_idx, BUSINESS_CRITICAL))
+        setval("ki_reifegrad", pick_from_group(row, col_idx, KI_REIFEGRAD))
         setval("vq_erforderlich", "ja" if is_marked(row, col_idx, "QUAL") else ("nein" if col_idx.get("QUAL") is not None else None))
         setval("val_erforderlich", "ja" if is_marked(row, col_idx, "VAL") else ("nein" if col_idx.get("VAL") is not None else None))
 
