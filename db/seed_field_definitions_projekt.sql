@@ -59,6 +59,18 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- Kap. 1.6 Tabelle "Mitgeltende Unterlagen": VMP-Dok-ID, nur relevant wenn
 -- vmp_erforderlich = ja.
 ('projekt', 'vmp_dok_id',            'VMP: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, 'nur wenn vmp_erforderlich = ja', '["CS-VP"]', 'Referenzdokumente', 30),
+('projekt', 'vmp_version',           'VMP: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', 'nur wenn vmp_erforderlich = ja', '["CS-VP"]', 'Referenzdokumente', 35),
+
+-- Tabelle "Mitgeltende Unterlagen": URS-Dok-ID/-Version dieses Projekts
+-- (die vorhandene Zeile in der Tabelle wird damit befüllt statt unangetastet
+-- zu bleiben).
+('projekt', 'urs_dok_id',            'URS: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 40),
+('projekt', 'urs_version',           'URS: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 45),
+
+-- Tabelle "Mitgeltende Unterlagen": Funktionsspezifikation (FS) - dafür gibt
+-- es noch keine Zeile im Template, wird bei Bedarf als neue Zeile ergänzt.
+('projekt', 'fs_dok_id',             'Funktionsspezifikation: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 50),
+('projekt', 'fs_version',            'Funktionsspezifikation: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 55),
 
 -- Projektname/-bezeichnung: taucht als Freitext-Ersetzung in Fließtext-
 -- Passagen auf (z.B. Kap. 3.4.1 "...bezogen auf das Projektbezeichnung...").
@@ -152,5 +164,5 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- ---------------------------------------------------------------------------
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, freitext_erlaubt, benoetigt_fuer, gruppe, sortierung) VALUES
 ('lieferant_verantwortlichkeit', 'beschreibung', 'Verantwortlichkeit', 'auswahl',
- '["die Erstellung der Spezifikationen","die technische Umsetzung der Anforderungen","die ordnungsgemäße Installation des Systems","die Durchführung der Validierung"]',
+ '["die Erstellung der Spezifikationen","die technische Umsetzung der Anforderungen","die ordnungsgemäße Installation des Systems","die Durchführung der Validierung","die Schulung des Sanofi-Personals am System"]',
  1, NULL, NULL, 1, '["CS-VP"]', NULL, 10);
