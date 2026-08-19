@@ -260,3 +260,13 @@ falls der Zwischenschritt in der Praxis stört.
    Abweichungs-Hinweis nach Korrektur.
 5. Erst danach: Umstieg von A auf B (Browser-only Templating), falls
    gewünscht.
+
+## 8. Offene Nacharbeiten am Word-Template selbst (Notiz, 19.08.)
+
+Das sind Dinge, die der Nutzer noch direkt im CS-VP-Template (nicht am
+Code/Schema) nachpflegen will - hier nur als Gedächtnisstütze festgehalten:
+
+1. Kap. 3.2 (Einsatz von Künstlicher Intelligenz): die Tabelle dort
+   (IDs/AI Standard/AI High) braucht noch eine Beschriftung/Caption.
+2. Kap. 3.5 (Konstruktion / Systemerstellung): dort muss noch ein Bezug
+   auf das Projekt ergänzt werden (Detail vom Nutzer selbst noch offen).
