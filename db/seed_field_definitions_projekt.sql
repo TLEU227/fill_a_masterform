@@ -14,8 +14,9 @@
 -- ============================================================================
 
 INSERT INTO entity_types (key, label) VALUES
-    ('projekt',               'Projekt'),
-    ('versionshistorie_eintrag', 'Versionshistorie-Eintrag');
+    ('projekt',                    'Projekt'),
+    ('versionshistorie_eintrag',   'Versionshistorie-Eintrag'),
+    ('lieferant_verantwortlichkeit', 'Verantwortlichkeit des Lieferanten');
 
 -- ---------------------------------------------------------------------------
 -- Projekt: Verknüpfung + Vorgängerprojekt/Folgeversion-Logik.
@@ -53,7 +54,74 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- gehörende Systembewertung (nicht notwendigerweise die im Excel-Import
 -- gefundene - ein System kann mehrfach neu bewertet worden sein).
 ('projekt', 'systembewertung_dok_id', 'Systembewertung: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, 'gemäß QU-MT-0001344', '["CS-VP"]', 'Referenzdokumente', 10),
-('projekt', 'systembewertung_version', 'Systembewertung: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 20);
+('projekt', 'systembewertung_version', 'Systembewertung: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 20),
+
+-- Kap. 1.6 Tabelle "Mitgeltende Unterlagen": VMP-Dok-ID, nur relevant wenn
+-- vmp_erforderlich = ja.
+('projekt', 'vmp_dok_id',            'VMP: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, 'nur wenn vmp_erforderlich = ja', '["CS-VP"]', 'Referenzdokumente', 30),
+
+-- Projektname/-bezeichnung: taucht als Freitext-Ersetzung in Fließtext-
+-- Passagen auf (z.B. Kap. 3.4.1 "...bezogen auf das Projektbezeichnung...").
+('projekt', 'projektbezeichnung', 'Projektbezeichnung', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Projekt', 5),
+
+-- ---------------------------------------------------------------------------
+-- Vorgehensweise bei der Validierung (Kap. 3 CS-VP) - Weichen für ganze
+-- Kapitel/Absätze.
+-- ---------------------------------------------------------------------------
+-- vmp_erforderlich = nein -> Kap. 3.1 (Validierungsstrategie gemäß VMP)
+-- kann komplett entfallen.
+('projekt', 'vmp_erforderlich', 'VMP erforderlich? (Kap. 3.1)', 'ja_nein', NULL, 1, NULL, NULL, '["CS-VP"]', 'Vorgehensweise', 10),
+
+-- digital_beteiligt = ja -> im KI-Abschnitt (Kap. 3.2) gilt der ServiceNow-
+-- Risk-Profile-Prozess, der nachfolgende Absatz (KI-Kontrollmaßnahmen/Risk
+-- Profile Outcome/Maßnahmentabelle) entfällt dann. = nein -> dieser Absatz
+-- bleibt (das ist die "anderenfalls"-Vorgehensweise aus dem Template).
+('projekt', 'digital_beteiligt', 'Unterstützung durch Digital? (Kap. 3.2, KI)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Vorgehensweise', 20),
+
+-- ---------------------------------------------------------------------------
+-- Testkonzept (Kap. 3.4.1 / 3.7 CS-VP).
+-- ---------------------------------------------------------------------------
+-- urs_bereits_erstellt steuert "werden" (nein, zukünftig) vs. "wurden" (ja,
+-- bereits erstellt) in "Es werden / wurden User Requirement Specifications
+-- (URS) erstellt...".
+('projekt', 'urs_bereits_erstellt', 'URS bereits erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 10),
+
+-- Geplante Phasen für "GMP-relevante Punkte werden einer CS Validierung
+-- (DQ, IQ, OQ, PQ) unterzogen." - je Phase ein eigenes ja/nein-Feld statt
+-- einer Mehrfachauswahl (kein neuer Datentyp nötig, gleiches Muster wie die
+-- übrigen ja/nein-Felder).
+('projekt', 'phase_dq_geplant',  'Phase DQ geplant?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 20),
+('projekt', 'phase_iq_geplant',  'Phase IQ geplant?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 21),
+('projekt', 'phase_oq_geplant',  'Phase OQ geplant?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 22),
+('projekt', 'phase_pq_geplant',  'Phase PQ geplant?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 23),
+('projekt', 'phase_ppq_geplant', 'Phase PPQ geplant?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 24),
+
+-- gep_pruefung_erforderlich = nein -> Absatz "GEP-relevante Punkte können
+-- geprüft werden..." entfällt.
+('projekt', 'gep_pruefung_erforderlich', 'GEP-Punkte sollen geprüft werden?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 30),
+
+('projekt', 'testplan_art', 'Testplan', 'auswahl',
+ '[{"wert":"separat_freigegeben","erklaerung":"Testplan wird separat vor Beginn der Testphase freigegeben."},
+   {"wert":"als_anhang","erklaerung":"Testplan wird als Anhang zu diesem Validierungsplan freigegeben (TM + RA liegen bereits vollständig vor)."},
+   {"wert":"integriert_im_vp","erklaerung":"Testplan ist in diesem Validierungsplan integriert (TM + RA liegen bereits vollständig vor)."}]',
+ 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 40),
+
+('projekt', 'testdurchfuehrung_art', 'Durchführung von Tests', 'auswahl',
+ '[{"wert":"lieferant_ergebnisse_uebernehmen","erklaerung":"Übernahme von Testergebnissen/Testprotokollen des Lieferanten (Vollständigkeit/Richtigkeit/GxP-Konformität ist sicherzustellen, Dokumente werden im V-Plan/Testplan gelistet)."},
+   {"wert":"lieferant_durchfuehrung_sanofi_aufsicht","erklaerung":"Durchführung durch Hersteller/Lieferant unter Aufsicht von Sanofi, anschließend durch Sanofi geprüft und gegengezeichnet."}]',
+ 0, NULL, NULL, '["CS-VP"]', 'Testkonzept', 50),
+
+-- ---------------------------------------------------------------------------
+-- Verantwortlichkeiten je Dokumenttyp (Tabelle "Dokumententyp/
+-- Verantwortlichkeit") + Kap. 3.7.5 IQ-Durchführung ("<<Lieferant/Sanofi>>").
+-- ---------------------------------------------------------------------------
+('projekt', 'verantwortlich_funktionsspezifikation', 'Verantwortlich: Funktionsspezifikation', 'auswahl', '["Lieferant","Sanofi"]', 0, NULL, NULL, '["CS-VP"]', 'Verantwortlichkeiten je Dokument', 10),
+('projekt', 'verantwortlich_hds', 'Verantwortlich: Hardware Designspezifikation (HDS)', 'auswahl', '["Lieferant","Sanofi"]', 0, NULL, NULL, '["CS-VP"]', 'Verantwortlichkeiten je Dokument', 20),
+('projekt', 'verantwortlich_sds', 'Verantwortlich: Software Designspezifikation (SDS)', 'auswahl', '["Lieferant","Sanofi"]', 0, NULL, NULL, '["CS-VP"]', 'Verantwortlichkeiten je Dokument', 30),
+('projekt', 'verantwortlich_ra', 'Verantwortlich: Risikoanalyse (RA)', 'auswahl', '["Lieferant","Sanofi"]', 0, NULL, NULL, '["CS-VP"]', 'Verantwortlichkeiten je Dokument', 40),
+('projekt', 'verantwortlich_tm', 'Verantwortlich: Traceability-Matrix (TM)', 'auswahl', '["Lieferant","Sanofi"]', 0, NULL, NULL, '["CS-VP"]', 'Verantwortlichkeiten je Dokument', 50),
+('projekt', 'verantwortlich_iq_testvorschriften', 'Verantwortlich: IQ-Testvorschriften', 'auswahl', '["Lieferant","Sanofi"]', 0, NULL, NULL, '["CS-VP"]', 'Verantwortlichkeiten je Dokument', 60),
+('projekt', 'verantwortlich_iq_durchfuehrung', 'Verantwortlich: Durchführung der IQ (Applikation)', 'auswahl', '["Lieferant","Sanofi"]', 0, NULL, NULL, '["CS-VP"]', 'Verantwortlichkeiten je Dokument', 70);
 
 -- ---------------------------------------------------------------------------
 -- Versionshistorie-Eintrag: eine Zeile pro dokumentierter Vorversion mit
@@ -72,3 +140,17 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('versionshistorie_eintrag', 'version',      'Version',                 'text', NULL, 1, 'x.x, z.B. 2.0', NULL, '["CS-VP"]', NULL, 10),
 ('versionshistorie_eintrag', 'cc_nummer',    'Change-Control-Nummer',   'text', NULL, 1, NULL, NULL, '["CS-VP"]', NULL, 20),
 ('versionshistorie_eintrag', 'beschreibung', 'Beschreibung der Änderung', 'mehrzeiliger_text', NULL, 1, NULL, NULL, '["CS-VP"]', NULL, 30);
+
+-- ---------------------------------------------------------------------------
+-- Verantwortlichkeit des Lieferanten (Kap. 2.2 CS-VP, "Die Fa. <<MUSTER>>
+-- ist verantwortlich für: ..."-Aufzählung). Liste statt fixer Checkboxen,
+-- weil laut Nutzer erweiterbar sein soll - freitext_erlaubt=1 deckt "eigene,
+-- nicht vorgesehene Verantwortlichkeit" ab, ohne die Optionsliste selbst
+-- ändern zu müssen. Eine Zeile pro ausgewählter/ergänzter Verantwortlichkeit,
+-- verknüpft mit 'projekt' über eine relation (analog zu Anforderung/Risiko/
+-- Prüfschritt).
+-- ---------------------------------------------------------------------------
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, freitext_erlaubt, benoetigt_fuer, gruppe, sortierung) VALUES
+('lieferant_verantwortlichkeit', 'beschreibung', 'Verantwortlichkeit', 'auswahl',
+ '["die Erstellung der Spezifikationen","die technische Umsetzung der Anforderungen","die ordnungsgemäße Installation des Systems","die Durchführung der Validierung"]',
+ 1, NULL, NULL, 1, '["CS-VP"]', NULL, 10);
