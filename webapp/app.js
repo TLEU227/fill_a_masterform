@@ -7,20 +7,34 @@
  */
 
 // ---------------------------------------------------------------- Zustand
+// Zwei unabhaengige Datenbanken (System-DB + Projekt-DB, siehe KONZEPT.md
+// Abschnitt 2.1) - gleiches generisches Schema, verknuepft ueber den
+// Feldwert mlcs_id (kein klassischer Fremdschluessel, zwei getrennte
+// .sqlite-Dateien). Man kann mit einer von beiden anfangen.
 let SQL = null;
-let db = null;
-let fileHandle = null;      // File System Access API Handle, falls verfuegbar
+let db = null;               // System-DB
+let projektDb = null;        // Projekt-DB
+let fileHandle = null;       // File System Access API Handle fuer die System-DB
+let projektFileHandle = null; // ... fuer die Projekt-DB
 let hasFSAccess = "showOpenFilePicker" in window && "showSaveFilePicker" in window;
+let activeTab = "system";    // "system" | "projekt" - welcher Tab/welche DB gerade aktiv ist
 let scenario = "leer";
 let currentSystemId = null;  // null => Szenario 1/2 legen einen NEUEN Datensatz an
 let baseline = {};           // field_key -> Wert, Stand beim Laden (fuer Aenderungs-Hervorhebung + change_log)
-let fieldDefsByEntity = {};  // entity_type -> [def, ...]
+let fieldDefsByEntity = {};  // entity_type -> [def, ...] (gemeinsam fuer beide DBs, keine ueberlappenden Keys)
 let personCache = [];
 let systemCache = [];
-let isDirty = false;
+let systemDirty = false;
 let currentDocType = "";
 let listState = { anforderung: [], risiko: [], pruefschritt: [] };
 // listState[entity] = [{ id: number|null, geloescht: bool, werte: {feldkey: wert} }, ...]
+
+let projektScenario = "neu";
+let currentProjektId = null;
+let projektBaseline = {};
+let projektCache = [];
+let projektDirty = false;
+let projektListState = { versionshistorie_eintrag: [], lieferant_verantwortlichkeit: [] };
 
 const GROUP_ORDER = {
   system: ["Personen", "Stammdaten", "GxP-Bewertung", "Status"],
@@ -28,11 +42,16 @@ const GROUP_ORDER = {
   anforderung: ["Anforderung"],
   risiko: ["Risiko"],
   pruefschritt: ["Prüfschritt"],
+  projekt: ["Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente", "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument"],
+  versionshistorie_eintrag: [null],
+  lieferant_verantwortlichkeit: [null],
 };
 const ENTITY_LABEL = {
   anforderung: "Anforderung (URS)",
   risiko: "Risiko (RA)",
   pruefschritt: "Prüfschritt (IQ/OQ/PQ/PPQ)",
+  versionshistorie_eintrag: "Versionshistorie-Eintrag",
+  lieferant_verantwortlichkeit: "Verantwortlichkeit des Lieferanten",
 };
 // Welche Zusatz-Objektarten pro Dokumenttyp gebraucht werden, und ob sie
 // "pflicht" (ohne das ist das Dokument nicht sinnvoll vorausfuellbar) oder
@@ -67,35 +86,57 @@ function optionErklaerung(o) { return typeof o === "string" ? null : o.erklaerun
 function nowIso() { return new Date().toISOString(); }
 
 // ---------------------------------------------------------------- DB-Engine
+// Alle CRUD-Hilfsfunktionen nehmen die Ziel-Datenbankverbindung (conn) als
+// ersten Parameter - System-DB (db) und Projekt-DB (projektDb) benutzen
+// dasselbe Schema, aber sind zwei unabhaengige sql.js-Datenbanken.
 async function initEngine() {
   SQL = await initSqlJs({ wasmBinary: base64ToBytes(WASM_B64) });
 }
-function pragmaSetup() {
-  db.run("PRAGMA foreign_keys = ON");
+function pragmaSetup(conn) {
+  conn.run("PRAGMA foreign_keys = ON");
 }
 function createNewDb() {
   db = new SQL.Database();
-  pragmaSetup();
+  pragmaSetup(db);
   db.run(SCHEMA_SQL);
   db.run(SEED_SQL);
 }
 function loadDbFromBytes(bytes) {
   db = new SQL.Database(bytes);
-  pragmaSetup();
+  pragmaSetup(db);
 }
 function exportDbBytes() {
   return db.export();
 }
+function createNewProjektDb() {
+  projektDb = new SQL.Database();
+  pragmaSetup(projektDb);
+  projektDb.run(SCHEMA_SQL);
+  projektDb.run(PROJEKT_SEED_SQL);
+}
+function loadProjektDbFromBytes(bytes) {
+  projektDb = new SQL.Database(bytes);
+  pragmaSetup(projektDb);
+}
+function exportProjektDbBytes() {
+  return projektDb.export();
+}
 
-function loadFieldDefinitions() {
-  fieldDefsByEntity = {};
-  const res = db.exec(
+function loadFieldDefinitions(conn) {
+  const res = conn.exec(
     "SELECT entity_type,key,label,datentyp,optionen,format_hinweis,sop_hinweis,freitext_erlaubt,pflichtfeld,gruppe,sortierung,benoetigt_fuer " +
     "FROM field_definitions ORDER BY entity_type, sortierung"
   );
   if (!res.length) return;
   res[0].values.forEach((row) => {
     const [entity_type, key, label, datentyp, optionen, format_hinweis, sop_hinweis, freitext_erlaubt, pflichtfeld, gruppe, sortierung, benoetigt_fuer] = row;
+    // entity_type gehoert entweder komplett zur System- oder komplett zur
+    // Projekt-DB (keine Ueberlappung) - beim (Neu-)Laden einer der beiden DBs
+    // die zugehoerigen Definitionen ersetzen, die der anderen DB unangetastet lassen.
+    if (!fieldDefsByEntity[entity_type] || fieldDefsByEntity[entity_type]._conn !== conn) {
+      fieldDefsByEntity[entity_type] = [];
+      fieldDefsByEntity[entity_type]._conn = conn;
+    }
     const def = {
       entity_type, key, label, datentyp,
       optionen: optionen ? JSON.parse(optionen) : null,
@@ -105,7 +146,7 @@ function loadFieldDefinitions() {
       gruppe, sortierung,
       benoetigt_fuer: benoetigt_fuer ? JSON.parse(benoetigt_fuer) : ["immer"],
     };
-    (fieldDefsByEntity[entity_type] ||= []).push(def);
+    fieldDefsByEntity[entity_type].push(def);
   });
 }
 function defFor(entity, fieldKey) {
@@ -122,9 +163,9 @@ function groupsFor(entityType) {
   return groups;
 }
 
-function getAllRecordsWithValues(entityType) {
+function getAllRecordsWithValues(conn, entityType) {
   const byId = {};
-  const res = db.exec(
+  const res = conn.exec(
     `SELECT r.id, r.status, fv.field_key, fv.wert FROM records r ` +
     `LEFT JOIN field_values fv ON fv.record_id = r.id WHERE r.entity_type = '${entityType}'`
   );
@@ -137,20 +178,23 @@ function getAllRecordsWithValues(entityType) {
   return Object.values(byId);
 }
 function loadPersonCache() {
-  personCache = getAllRecordsWithValues("person").map((r) => ({
+  personCache = getAllRecordsWithValues(db, "person").map((r) => ({
     id: r.id, name: r.values.name || "(ohne Namen)", stelle: r.values.stelle || "", abteilung: r.values.abteilung || "",
   }));
 }
 function loadSystemCache() {
-  systemCache = getAllRecordsWithValues("system");
+  systemCache = getAllRecordsWithValues(db, "system");
 }
-function getRelatedRecords(entityType, systemId) {
-  if (systemId == null) return [];
-  const res = db.exec(
+function loadProjektCache() {
+  projektCache = getAllRecordsWithValues(projektDb, "projekt");
+}
+function getRelatedRecords(conn, entityType, parentId) {
+  if (parentId == null) return [];
+  const res = conn.exec(
     `SELECT r.id, fv.field_key, fv.wert FROM relations rel ` +
     `JOIN records r ON r.id = rel.from_record_id ` +
     `LEFT JOIN field_values fv ON fv.record_id = r.id ` +
-    `WHERE rel.to_record_id = ${systemId} AND rel.relation_type = 'gehoert_zu' AND r.entity_type = '${entityType}'`
+    `WHERE rel.to_record_id = ${parentId} AND rel.relation_type = 'gehoert_zu' AND r.entity_type = '${entityType}'`
   );
   const byId = {};
   if (res.length) {
@@ -163,46 +207,46 @@ function getRelatedRecords(entityType, systemId) {
 }
 
 // ------------------------------------------------------ Speichern (write)
-function upsertFieldValue(recordId, key, value) {
-  const stmt = db.prepare(
+function upsertFieldValue(conn, recordId, key, value) {
+  const stmt = conn.prepare(
     "INSERT INTO field_values (record_id, field_key, wert) VALUES (?,?,?) " +
     "ON CONFLICT(record_id, field_key) DO UPDATE SET wert=excluded.wert"
   );
   stmt.run([recordId, key, value]);
   stmt.free();
 }
-function insertChangeLog(recordId, key, alt, neu) {
-  const stmt = db.prepare(
+function insertChangeLog(conn, recordId, key, alt, neu) {
+  const stmt = conn.prepare(
     "INSERT INTO change_log (record_id, field_key, alter_wert, neuer_wert, geaendert_von) VALUES (?,?,?,?,?)"
   );
   stmt.run([recordId, key, alt, neu, "Browser-Nutzer"]);
   stmt.free();
 }
-function createRecord(entityType) {
-  const stmt = db.prepare("INSERT INTO records (entity_type, status, erstellt_von) VALUES (?, 'entwurf', 'Browser-Nutzer')");
+function createRecord(conn, entityType) {
+  const stmt = conn.prepare("INSERT INTO records (entity_type, status, erstellt_von) VALUES (?, 'entwurf', 'Browser-Nutzer')");
   stmt.run([entityType]);
   stmt.free();
-  return db.exec("SELECT last_insert_rowid()")[0].values[0][0];
+  return conn.exec("SELECT last_insert_rowid()")[0].values[0][0];
 }
-function linkToSystem(recordId, systemId) {
-  const stmt = db.prepare("INSERT INTO relations (from_record_id, relation_type, to_record_id) VALUES (?, 'gehoert_zu', ?)");
-  stmt.run([recordId, systemId]);
+function linkToSystem(conn, recordId, targetId) {
+  const stmt = conn.prepare("INSERT INTO relations (from_record_id, relation_type, to_record_id) VALUES (?, 'gehoert_zu', ?)");
+  stmt.run([recordId, targetId]);
   stmt.free();
 }
 function createPerson(name, stelle, abteilung) {
-  const id = createRecord("person");
-  upsertFieldValue(id, "name", name || "");
-  upsertFieldValue(id, "stelle", stelle || "");
-  upsertFieldValue(id, "abteilung", abteilung || "");
+  const id = createRecord(db, "person");
+  upsertFieldValue(db, id, "name", name || "");
+  upsertFieldValue(db, id, "stelle", stelle || "");
+  upsertFieldValue(db, id, "abteilung", abteilung || "");
   return id;
 }
-function deleteRecord(id) {
-  db.run(`DELETE FROM records WHERE id = ${id}`); // Cascade loescht field_values/relations mit
+function deleteRecord(conn, id) {
+  conn.run(`DELETE FROM records WHERE id = ${id}`); // Cascade loescht field_values/relations mit
 }
 
-function collectFormValues() {
+function collectFormValuesFrom(formSelector) {
   const values = {};
-  document.querySelectorAll("#systemForm [data-key]").forEach((el) => {
+  document.querySelectorAll(`${formSelector} [data-key]`).forEach((el) => {
     const key = el.dataset.key;
     if (key.endsWith("__freitext")) return; // separat behandelt
     if (el.type === "radio") {
@@ -219,6 +263,8 @@ function collectFormValues() {
   });
   return values;
 }
+function collectFormValues() { return collectFormValuesFrom("#systemForm"); }
+function collectProjektFormValues() { return collectFormValuesFrom("#projektForm"); }
 
 function saveAll() {
   db.run("BEGIN");
@@ -237,29 +283,29 @@ function saveAll() {
 
     // 2. Systemdatensatz anlegen (Szenario 1/2) oder wiederverwenden (Szenario 3)
     let systemId = currentSystemId;
-    if (systemId == null) systemId = createRecord("system");
+    if (systemId == null) systemId = createRecord(db, "system");
 
     // 3. Werte upserten + grobe Historie fuer geaenderte Felder
     const values = collectFormValues();
     Object.entries(values).forEach(([key, val]) => {
       const alt = baseline[key];
-      if (alt !== undefined && alt !== val) insertChangeLog(systemId, key, alt, val);
-      upsertFieldValue(systemId, key, val);
+      if (alt !== undefined && alt !== val) insertChangeLog(db, systemId, key, alt, val);
+      upsertFieldValue(db, systemId, key, val);
     });
 
     // 4. Zusatzlisten (Anforderung/Risiko/Pruefschritt): neu/geaendert speichern, geloeschte entfernen
     Object.entries(listState).forEach(([entityType, rows]) => {
       rows.forEach((row) => {
         if (row.geloescht) {
-          if (row.id != null) deleteRecord(row.id);
+          if (row.id != null) deleteRecord(db, row.id);
           return;
         }
         let recId = row.id;
         if (recId == null) {
-          recId = createRecord(entityType);
-          linkToSystem(recId, systemId);
+          recId = createRecord(db, entityType);
+          linkToSystem(db, recId, systemId);
         }
-        Object.entries(row.werte).forEach(([k, v]) => upsertFieldValue(recId, k, v));
+        Object.entries(row.werte).forEach(([k, v]) => upsertFieldValue(db, recId, k, v));
         row.id = recId;
       });
       listState[entityType] = rows.filter((r) => !r.geloescht);
@@ -273,6 +319,64 @@ function saveAll() {
   } catch (e) {
     db.run("ROLLBACK");
     console.error("Speichern fehlgeschlagen", e);
+    return false;
+  }
+}
+
+function saveProjektAll() {
+  projektDb.run("BEGIN");
+  try {
+    // 0. Neue Personen (falls ein projekt-Feld je vom Typ person_referenz
+    // wird - aktuell nicht der Fall, aber fuer Konsistenz mit saveAll()
+    // vorgesehen). Personen leben in der System-DB, nicht der Projekt-DB.
+    document.querySelectorAll('#projektForm select[data-type="person"]').forEach((el) => {
+      if (el.value === "__new__" && db) {
+        const wrap = document.querySelector(`[data-personnew-for="${el.dataset.key}"]`);
+        const name = wrap.querySelector('[data-newperson-field="name"]').value;
+        const stelle = wrap.querySelector('[data-newperson-field="stelle"]').value;
+        const abteilung = wrap.querySelector('[data-newperson-field="abteilung"]').value;
+        const newId = createPerson(name, stelle, abteilung);
+        el.value = String(newId);
+      }
+    });
+
+    // 1. Projekt-Datensatz anlegen (Szenario "neu") oder wiederverwenden ("bearbeiten")
+    let projektId = currentProjektId;
+    if (projektId == null) projektId = createRecord(projektDb, "projekt");
+
+    // 2. Werte upserten + grobe Historie fuer geaenderte Felder
+    const values = collectProjektFormValues();
+    Object.entries(values).forEach(([key, val]) => {
+      const alt = projektBaseline[key];
+      if (alt !== undefined && alt !== val) insertChangeLog(projektDb, projektId, key, alt, val);
+      upsertFieldValue(projektDb, projektId, key, val);
+    });
+
+    // 3. Zusatzlisten (Versionshistorie/Lieferanten-Verantwortlichkeit)
+    Object.entries(projektListState).forEach(([entityType, rows]) => {
+      rows.forEach((row) => {
+        if (row.geloescht) {
+          if (row.id != null) deleteRecord(projektDb, row.id);
+          return;
+        }
+        let recId = row.id;
+        if (recId == null) {
+          recId = createRecord(projektDb, entityType);
+          linkToSystem(projektDb, recId, projektId);
+        }
+        Object.entries(row.werte).forEach(([k, v]) => upsertFieldValue(projektDb, recId, k, v));
+        row.id = recId;
+      });
+      projektListState[entityType] = rows.filter((r) => !r.geloescht);
+    });
+
+    projektDb.run("COMMIT");
+    currentProjektId = projektId;
+    loadProjektCache();
+    return true;
+  } catch (e) {
+    projektDb.run("ROLLBACK");
+    console.error("Speichern (Projekt-DB) fehlgeschlagen", e);
     return false;
   }
 }
@@ -359,9 +463,45 @@ function renderForm() {
   recomputeTesttiefe();
 }
 
+function renderProjektForm() {
+  const form = document.getElementById("projektForm");
+  form.innerHTML = "";
+  groupsFor("projekt").forEach((group) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `<h2>${escapeHtml(group.name)}<span class="tag">CS-VP</span></h2>`;
+    const fieldsDiv = document.createElement("div");
+    fieldsDiv.className = "fields";
+    group.fields.forEach((def) => { fieldsDiv.innerHTML += fieldInputHtml(def, def.key); });
+    card.appendChild(fieldsDiv);
+    form.appendChild(card);
+  });
+  form.querySelectorAll("[data-key]").forEach((el) => {
+    el.addEventListener("input", () => onFieldUpdate(el));
+    el.addEventListener("change", () => onFieldUpdate(el));
+  });
+}
+
+// Ermittelt, zu welchem Formular/welcher Liste ein Eingabeelement gehoert -
+// System-Formular/-Listen oder Projekt-Formular/-Listen. Listen-Zeilen sind
+// KEIN Nachkomme von <form> (branchArea/projektBranchArea sind Geschwister-
+// Divs), deshalb reicht "closest('form')" allein nicht.
+const LIST_ENTITY_CONTEXT = {
+  anforderung: "system", risiko: "system", pruefschritt: "system",
+  versionshistorie_eintrag: "projekt", lieferant_verantwortlichkeit: "projekt",
+};
+function contextFor(el) {
+  const prefix = (el.dataset.key || "").split(".")[0];
+  if (LIST_ENTITY_CONTEXT[prefix]) return LIST_ENTITY_CONTEXT[prefix];
+  const form = el.closest("form");
+  return form && form.id === "projektForm" ? "projekt" : "system";
+}
+function baselineFor(ctx) { return ctx === "projekt" ? projektBaseline : baseline; }
+
 function onFieldUpdate(el) {
   const key = el.dataset.key;
   if (key && key.endsWith("__freitext")) { markDirty(); return; }
+  const ctx = contextFor(el);
   if (el.dataset.type === "person") {
     const personArea = document.querySelector(`[data-personnew-for="${key}"]`);
     const infoArea = document.querySelector(`[data-personinfo-for="${key}"]`);
@@ -393,59 +533,74 @@ function onFieldUpdate(el) {
       }
     }
   }
-  markChanged(el);
+  markChanged(el, ctx);
   markDirty();
-  if (key === "gxp_kritikalitaet" || key === "gamp_kategorie") recomputeTesttiefe();
+  if (ctx === "system" && (key === "gxp_kritikalitaet" || key === "gamp_kategorie")) recomputeTesttiefe();
 }
 
 function recomputeTesttiefe() {
   const el = document.getElementById("testtiefeWert");
   if (!el) return;
-  const krit = fieldValue("gxp_kritikalitaet");
-  const gamp = fieldValue("gamp_kategorie");
+  const krit = fieldValueIn("#systemForm", "gxp_kritikalitaet");
+  const gamp = fieldValueIn("#systemForm", "gamp_kategorie");
   const row = TESTTIEFE_MATRIX[krit];
   const result = row ? row[gamp] : null;
   el.textContent = result || "– bitte GxP-Kritikalität und GAMP-Kategorie wählen –";
 }
-function fieldValue(key) {
-  const el = document.querySelector(`#systemForm [data-key="${key}"]`);
+function fieldValueIn(formSelector, key) {
+  const el = document.querySelector(`${formSelector} [data-key="${key}"]`);
   if (!el) return "";
   if (el.type === "radio") {
-    const checked = document.querySelector(`#systemForm input[name="${key}"]:checked`);
+    const checked = document.querySelector(`${formSelector} input[name="${key}"]:checked`);
     return checked ? checked.value : "";
   }
   return el.value;
 }
-function markChanged(el) {
+function fieldValue(key) { return fieldValueIn("#systemForm", key); }
+function markChanged(el, ctx) {
   const key = el.dataset.key;
   const wrap = el.closest(".field");
   if (!wrap) return;
-  const val = fieldValue(key);
-  if (baseline[key] !== undefined && val !== baseline[key]) wrap.classList.add("changed");
+  const baselineObj = baselineFor(ctx || contextFor(el));
+  const val = el.type === "radio" ? (document.querySelector(`input[name="${key}"]:checked`)?.value || "") : el.value;
+  if (baselineObj[key] !== undefined && val !== baselineObj[key]) wrap.classList.add("changed");
   else wrap.classList.remove("changed");
 }
 
-function fillFormWithValues(values) {
-  baseline = { ...values };
+function fillFormValuesInto(formSelector, values, baselineSetter) {
+  baselineSetter({ ...values });
   Object.entries(values).forEach(([key, val]) => {
-    document.querySelectorAll(`#systemForm [data-key="${key}"]`).forEach((el) => {
+    document.querySelectorAll(`${formSelector} [data-key="${key}"]`).forEach((el) => {
       if (el.type === "radio") el.checked = el.value === val;
       else el.value = val || "";
     });
-    document.querySelectorAll(`#systemForm [data-key="${key}"][data-type="person"]`).forEach((el) => onFieldUpdate(el));
-    document.querySelectorAll(`#systemForm select[data-key="${key}"]`).forEach((el) => onFieldUpdate(el));
+    document.querySelectorAll(`${formSelector} [data-key="${key}"][data-type="person"]`).forEach((el) => onFieldUpdate(el));
+    document.querySelectorAll(`${formSelector} select[data-key="${key}"]`).forEach((el) => onFieldUpdate(el));
   });
-  document.querySelectorAll("#systemForm .field").forEach((w) => w.classList.remove("changed"));
+  document.querySelectorAll(`${formSelector} .field`).forEach((w) => w.classList.remove("changed"));
+}
+function clearFormFieldsIn(formSelector, baselineSetter) {
+  baselineSetter({});
+  document.querySelectorAll(`${formSelector} input[type=text], ${formSelector} textarea, ${formSelector} input[type=date]`).forEach((el) => (el.value = ""));
+  document.querySelectorAll(`${formSelector} select`).forEach((el) => { el.value = ""; onFieldUpdate(el); });
+  document.querySelectorAll(`${formSelector} input[type=radio]`).forEach((el) => (el.checked = false));
+  document.querySelectorAll(`${formSelector} .field`).forEach((w) => w.classList.remove("changed"));
+  document.querySelectorAll(`${formSelector} .person-new`).forEach((el) => (el.style.display = "none"));
+}
+
+function fillFormWithValues(values) {
+  fillFormValuesInto("#systemForm", values, (v) => (baseline = v));
   recomputeTesttiefe();
 }
 function clearFormFields() {
-  baseline = {};
-  document.querySelectorAll("#systemForm input[type=text], #systemForm textarea, #systemForm input[type=date]").forEach((el) => (el.value = ""));
-  document.querySelectorAll("#systemForm select").forEach((el) => { el.value = ""; onFieldUpdate(el); });
-  document.querySelectorAll("#systemForm input[type=radio]").forEach((el) => (el.checked = false));
-  document.querySelectorAll("#systemForm .field").forEach((w) => w.classList.remove("changed"));
-  document.querySelectorAll(".person-new").forEach((el) => (el.style.display = "none"));
+  clearFormFieldsIn("#systemForm", (v) => (baseline = v));
   recomputeTesttiefe();
+}
+function fillProjektFormWithValues(values) {
+  fillFormValuesInto("#projektForm", values, (v) => (projektBaseline = v));
+}
+function clearProjektFormFields() {
+  clearFormFieldsIn("#projektForm", (v) => (projektBaseline = v));
 }
 
 // ------------------------------------------------------ Suche (Kopie/Bearbeiten)
@@ -504,10 +659,91 @@ function selectSource(id) {
   document.getElementById("statusNote").textContent = "Werte übernommen (blau umrandet = von dir geändert).";
 }
 
+// ------------------------------------------------------ Suche (Projekt-Tab)
+function projektLabel(record) {
+  const v = record.values;
+  return `${v.projektbezeichnung || "(ohne Projektbezeichnung)"} · MLCS-ID ${v.mlcs_id || "–"} · FV ${v.folgeversion || "–"}`;
+}
+function renderProjektSourceResults(query) {
+  const results = document.getElementById("projektSourceResults");
+  const q = query.trim().toLowerCase();
+  const matches = projektCache.filter((r) => !q || searchableText(r).includes(q));
+  if (!matches.length) {
+    results.innerHTML = `<div class="combo-empty">Keine Treffer – Suchbegriff anpassen.</div>`;
+  } else {
+    results.innerHTML = matches
+      .slice(0, 50)
+      .map((r) => `<div class="combo-item" data-id="${r.id}"><b>${escapeHtml(r.values.projektbezeichnung || "(ohne Projektbezeichnung)")}</b><span>MLCS-ID ${escapeHtml(r.values.mlcs_id || "–")} · Folgeversion ${escapeHtml(r.values.folgeversion || "–")}</span></div>`)
+      .join("");
+  }
+  results.classList.add("open");
+}
+function selectProjektSource(id) {
+  const record = projektCache.find((r) => String(r.id) === String(id));
+  if (!record) return;
+  const search = document.getElementById("projektSourceSearch");
+  const selected = document.getElementById("projektSourceSelected");
+  const results = document.getElementById("projektSourceResults");
+  results.classList.remove("open");
+  search.value = "";
+  selected.classList.add("visible");
+  selected.innerHTML = `Ausgewählt: <b>${escapeHtml(projektLabel(record))}</b><button type="button" id="projektSourceChangeBtn">anderes wählen</button>`;
+  document.getElementById("projektSourceChangeBtn").addEventListener("click", () => {
+    selected.classList.remove("visible");
+    search.value = "";
+    search.focus();
+    renderProjektSourceResults("");
+    resetToProjektScenario(projektScenario);
+  });
+  currentProjektId = record.id;
+  fillProjektFormWithValues(record.values);
+  loadProjektListsForBranch(record.id);
+  document.getElementById("statusNote").textContent = "Werte übernommen (blau umrandet = von dir geändert).";
+}
+
+// Hilfsmittel im Projekt-Tab: System suchen, um nur das mlcs_id-Feld im
+// Projekt-Formular korrekt zu befuellen (keine feste Verknuepfung, nur ein
+// Feldwert - siehe KONZEPT.md Abschnitt 2.1).
+function renderSystemHelperResults(query) {
+  const results = document.getElementById("systemHelperResults");
+  const q = query.trim().toLowerCase();
+  const matches = systemCache.filter((r) => !q || searchableText(r).includes(q));
+  if (!matches.length) {
+    results.innerHTML = `<div class="combo-empty">Keine Treffer – Suchbegriff anpassen.</div>`;
+  } else {
+    results.innerHTML = matches
+      .slice(0, 50)
+      .map((r) => `<div class="combo-item" data-id="${r.id}"><b>${escapeHtml(r.values.systemname || "(ohne Namen)")}</b><span>MLCS-ID ${escapeHtml(r.values.mlcs_id || "–")} · Anlage ${escapeHtml(r.values.anlage || "–")} · ${escapeHtml(r.values.gebaeude || "–")}</span></div>`)
+      .join("");
+  }
+  results.classList.add("open");
+}
+function selectSystemHelper(id) {
+  const record = systemCache.find((r) => String(r.id) === String(id));
+  if (!record) return;
+  const search = document.getElementById("systemHelperSearch");
+  const selected = document.getElementById("systemHelperSelected");
+  const results = document.getElementById("systemHelperResults");
+  results.classList.remove("open");
+  search.value = "";
+  selected.classList.add("visible");
+  selected.innerHTML = `Ausgewählt: <b>${escapeHtml(systemLabel(record))}</b><button type="button" id="systemHelperChangeBtn">anderes wählen</button>`;
+  document.getElementById("systemHelperChangeBtn").addEventListener("click", () => {
+    selected.classList.remove("visible");
+    search.value = "";
+    search.focus();
+  });
+  const mlcsField = document.querySelector('#projektForm [data-key="mlcs_id"]');
+  if (mlcsField) {
+    mlcsField.value = record.values.mlcs_id || "";
+    onFieldUpdate(mlcsField);
+  }
+}
+
 // ---------------------------------------------------------------- Szenarien
 function setScenario(newScenario) {
   scenario = newScenario;
-  document.querySelectorAll(".scenario-btn").forEach((b) => b.classList.toggle("active", b.dataset.scenario === newScenario));
+  document.querySelectorAll("#systemTabContent .scenario-btn").forEach((b) => b.classList.toggle("active", b.dataset.scenario === newScenario));
   resetToScenario(newScenario);
 }
 function resetToScenario(newScenario) {
@@ -538,25 +774,61 @@ function resetToScenario(newScenario) {
   }
 }
 
+function setProjektScenario(newScenario) {
+  projektScenario = newScenario;
+  document.querySelectorAll("#projektTabContent .scenario-btn").forEach((b) => b.classList.toggle("active", b.dataset.scenario === newScenario));
+  resetToProjektScenario(newScenario);
+}
+function resetToProjektScenario(newScenario) {
+  const picker = document.getElementById("projektSourcePicker");
+  const note = document.getElementById("statusNote");
+  document.getElementById("projektSourceSearch").value = "";
+  document.getElementById("projektSourceSelected").classList.remove("visible");
+  document.getElementById("projektSourceResults").classList.remove("open");
+  currentProjektId = null;
+  clearProjektFormFields();
+  loadProjektListsForBranch(null);
+
+  if (newScenario === "neu") {
+    picker.classList.remove("visible");
+    note.textContent = "Neues Projekt – wird beim Speichern angelegt. MLCS-ID unten eintragen (Hilfsmittel: System suchen).";
+  } else if (newScenario === "bearbeiten") {
+    picker.classList.add("visible");
+    note.textContent = "Bitte Projekt wählen.";
+  }
+}
+
 // ---------------------------------------------------------------- Zusatzlisten (Branch)
+// Alle Listen-Funktionen nehmen "store" (das jeweilige *ListState-Objekt)
+// und "rerender" (Callback, der die Liste neu zeichnet) als Parameter -
+// dieselben Funktionen bedienen sowohl die System-DB-Listen (Anforderung/
+// Risiko/Prüfschritt, store=listState) als auch die Projekt-DB-Listen
+// (Versionshistorie/Lieferanten-Verantwortlichkeit, store=projektListState).
 function loadListsForBranch(systemId) {
   listState = {
-    anforderung: getRelatedRecords("anforderung", systemId),
-    risiko: getRelatedRecords("risiko", systemId),
-    pruefschritt: getRelatedRecords("pruefschritt", systemId),
+    anforderung: getRelatedRecords(db, "anforderung", systemId),
+    risiko: getRelatedRecords(db, "risiko", systemId),
+    pruefschritt: getRelatedRecords(db, "pruefschritt", systemId),
   };
   renderBranch(currentDocType);
 }
-function addListRow(entityType) {
-  listState[entityType].push({ id: null, geloescht: false, werte: {} });
-  renderBranch(currentDocType);
+function loadProjektListsForBranch(projektId) {
+  projektListState = {
+    versionshistorie_eintrag: getRelatedRecords(projektDb, "versionshistorie_eintrag", projektId),
+    lieferant_verantwortlichkeit: getRelatedRecords(projektDb, "lieferant_verantwortlichkeit", projektId),
+  };
+  renderProjektBranch();
+}
+function addListRow(store, entityType, rerender) {
+  store[entityType].push({ id: null, geloescht: false, werte: {} });
+  rerender();
   markDirty();
 }
-function removeListRow(entityType, index) {
-  const row = listState[entityType][index];
-  if (row.id == null) listState[entityType].splice(index, 1);
+function removeListRow(store, entityType, index, rerender) {
+  const row = store[entityType][index];
+  if (row.id == null) store[entityType].splice(index, 1);
   else row.geloescht = true;
-  renderBranch(currentDocType);
+  rerender();
   markDirty();
 }
 function renderListRow(entityType, row, index) {
@@ -573,12 +845,12 @@ function renderListRow(entityType, row, index) {
   wrap.appendChild(fieldsDiv);
   return wrap;
 }
-function renderBranchSection(entityType, isOptional) {
+function renderBranchSection(store, entityType, isOptional, tagLabel, rerender) {
   const card = document.createElement("div");
   card.className = "card branch" + (isOptional ? " optional" : "");
-  const tag = isOptional ? `optional · ${currentDocType}` : `pflicht · ${currentDocType}`;
+  const tag = isOptional ? `optional · ${tagLabel}` : `pflicht · ${tagLabel}`;
   card.innerHTML = `<h2>${escapeHtml(ENTITY_LABEL[entityType])}<span class="tag">${escapeHtml(tag)}</span></h2>`;
-  const rows = listState[entityType] || [];
+  const rows = store[entityType] || [];
   const body = document.createElement("div");
   body.style.padding = "16px";
   rows.forEach((row, i) => { if (!row.geloescht) body.appendChild(renderListRow(entityType, row, i)); });
@@ -586,30 +858,30 @@ function renderBranchSection(entityType, isOptional) {
   addBtn.type = "button";
   addBtn.className = "add-row-btn";
   addBtn.textContent = `+ ${ENTITY_LABEL[entityType]} hinzufügen`;
-  addBtn.addEventListener("click", () => addListRow(entityType));
+  addBtn.addEventListener("click", () => addListRow(store, entityType, rerender));
   body.appendChild(addBtn);
   card.appendChild(body);
   return card;
 }
-function bindListRowInputs(container, entityType) {
+function bindListRowInputs(container, entityType, store, rerender) {
   container.querySelectorAll(`[data-key^="${entityType}."]`).forEach((el) => {
-    el.addEventListener("input", () => syncListRowValue(el, entityType));
-    el.addEventListener("change", () => { onFieldUpdate(el); syncListRowValue(el, entityType); });
+    el.addEventListener("input", () => syncListRowValue(el, entityType, store));
+    el.addEventListener("change", () => { onFieldUpdate(el); syncListRowValue(el, entityType, store); });
   });
   container.querySelectorAll("[data-remove]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const [ent, idx] = btn.dataset.remove.split(":");
-      removeListRow(ent, Number(idx));
+      removeListRow(store, ent, Number(idx), rerender);
     });
   });
 }
-function syncListRowValue(el, entityType) {
+function syncListRowValue(el, entityType, store) {
   const parts = el.dataset.key.split(".");
   if (parts.length < 3) return;
   const index = Number(parts[1]);
   const fieldKey = parts.slice(2).join(".");
   if (fieldKey.endsWith("__freitext")) return;
-  const row = listState[entityType][index];
+  const row = store[entityType][index];
   if (!row) return;
   if (el.type === "radio") { if (el.checked) row.werte[fieldKey] = el.value; }
   else row.werte[fieldKey] = el.value;
@@ -618,6 +890,7 @@ function syncListRowValue(el, entityType) {
 function renderBranch(docType) {
   currentDocType = docType;
   const area = document.getElementById("branchArea");
+  const rerender = () => renderBranch(currentDocType);
   area.innerHTML = "";
   if (!docType) {
     area.innerHTML = `<div class="branch-note">Kein Dokument gewählt – es werden nur die dokumentübergreifenden Basisdaten oben erfasst.</div>`;
@@ -630,14 +903,14 @@ function renderBranch(docType) {
     heading.className = "branch-heading";
     heading.textContent = `Notwendige Zusatzfelder für ${docType}`;
     area.appendChild(heading);
-    branch.pflicht.forEach((ent) => area.appendChild(renderBranchSection(ent, false)));
+    branch.pflicht.forEach((ent) => area.appendChild(renderBranchSection(listState, ent, false, docType, rerender)));
   }
   if (branch.optional.length) {
     const heading = document.createElement("h3");
     heading.className = "branch-heading optional";
     heading.innerHTML = `Optionale Zusatzfelder für ${docType} <span class="tag">kannst du überspringen</span>`;
     area.appendChild(heading);
-    branch.optional.forEach((ent) => area.appendChild(renderBranchSection(ent, true)));
+    branch.optional.forEach((ent) => area.appendChild(renderBranchSection(listState, ent, true, docType, rerender)));
     // appendChild (nicht innerHTML+=) - sonst wuerden die per addEventListener
     // gebundenen Klick-Handler der oben bereits eingefuegten Buttons beim
     // Neu-Parsen des HTML-Strings verloren gehen (siehe Bugfix E2E-Test).
@@ -649,28 +922,41 @@ function renderBranch(docType) {
   if (!branch.pflicht.length && !branch.optional.length) {
     area.innerHTML = `<div class="branch-note">Für ${escapeHtml(docType)} sind aktuell noch keine dokumentspezifischen Zusatzfelder erfasst – nur die Basisdaten oben werden verwendet.</div>`;
   }
-  ["anforderung", "risiko", "pruefschritt"].forEach((ent) => bindListRowInputs(area, ent));
+  ["anforderung", "risiko", "pruefschritt"].forEach((ent) => bindListRowInputs(area, ent, listState, rerender));
+}
+
+// Projekt-DB-Aequivalent zu renderBranch(): immer beide Listen zeigen (nicht
+// dokumenttyp-abhaengig - die Projekt-DB ist inhaltlich ohnehin auf CS-VP
+// ausgelegt, siehe seed_field_definitions_projekt.sql).
+function renderProjektBranch() {
+  const area = document.getElementById("projektBranchArea");
+  const rerender = () => renderProjektBranch();
+  area.innerHTML = "";
+  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit"].forEach((ent) => {
+    area.appendChild(renderBranchSection(projektListState, ent, false, "CS-VP", rerender));
+  });
+  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit"].forEach((ent) => bindListRowInputs(area, ent, projektListState, rerender));
 }
 
 // ---------------------------------------------------------------- Dirty/Save/Load-UI
 function markDirty() { setDirty(true); }
 function setDirty(value) {
-  isDirty = value;
+  if (activeTab === "projekt") projektDirty = value; else systemDirty = value;
+  const current = activeTab === "projekt" ? projektDirty : systemDirty;
   document.querySelectorAll(".dirty-indicator").forEach((el) => {
-    el.textContent = value ? "● Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen";
-    el.classList.toggle("dirty", value);
+    el.textContent = current ? "● Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen";
+    el.classList.toggle("dirty", current);
   });
 }
 window.addEventListener("beforeunload", (e) => {
-  if (!isDirty) return;
+  if (!systemDirty && !projektDirty) return;
   e.preventDefault();
   e.returnValue = "";
 });
 
-async function writeDbToDisk() {
-  const bytes = exportDbBytes();
-  if (fileHandle) {
-    const writable = await fileHandle.createWritable();
+async function writeBytesToDisk(bytes, handle, suggestedName) {
+  if (handle) {
+    const writable = await handle.createWritable();
     await writable.write(bytes);
     await writable.close();
     return "geschrieben";
@@ -679,64 +965,137 @@ async function writeDbToDisk() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = "masterform.sqlite";
+  a.download = suggestedName;
   document.body.appendChild(a);
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
   return "heruntergeladen";
 }
+async function writeDbToDisk() { return writeBytesToDisk(exportDbBytes(), fileHandle, "masterform_system.sqlite"); }
+async function writeProjektDbToDisk() { return writeBytesToDisk(exportProjektDbBytes(), projektFileHandle, "masterform_projekt.sqlite"); }
 
 async function onSaveClick() {
-  const ok = saveAll();
-  if (!ok) {
-    document.getElementById("statusNote").textContent = "Fehler beim Speichern – siehe Konsole.";
-    return;
+  if (activeTab === "projekt") {
+    const ok = saveProjektAll();
+    if (!ok) {
+      document.getElementById("statusNote").textContent = "Fehler beim Speichern (Projekt-DB) – siehe Konsole.";
+      return;
+    }
+    const how = await writeProjektDbToDisk();
+    setDirty(false);
+    document.getElementById("statusNote").textContent =
+      how === "geschrieben" ? "Projekt-Datenbank gespeichert." : "Projekt-Datenbank zum Download bereitgestellt (siehe Download-Ordner).";
+    loadProjektListsForBranch(currentProjektId);
+  } else {
+    const ok = saveAll();
+    if (!ok) {
+      document.getElementById("statusNote").textContent = "Fehler beim Speichern – siehe Konsole.";
+      return;
+    }
+    const how = await writeDbToDisk();
+    setDirty(false);
+    document.getElementById("statusNote").textContent =
+      how === "geschrieben" ? "Gespeichert." : "Datenbank zum Download bereitgestellt (siehe Download-Ordner).";
+    loadListsForBranch(currentSystemId);
   }
-  const how = await writeDbToDisk();
-  setDirty(false);
-  document.getElementById("statusNote").textContent =
-    how === "geschrieben" ? "Gespeichert." : "Datenbank zum Download bereitgestellt (siehe Download-Ordner).";
-  loadListsForBranch(currentSystemId);
 }
 function onCancelClick() {
-  if (isDirty && !confirm("Ungespeicherte Änderungen verwerfen?")) return;
-  resetToScenario(scenario);
+  const dirty = activeTab === "projekt" ? projektDirty : systemDirty;
+  if (dirty && !confirm("Ungespeicherte Änderungen verwerfen?")) return;
+  if (activeTab === "projekt") resetToProjektScenario(projektScenario);
+  else resetToScenario(scenario);
   setDirty(false);
   document.getElementById("statusNote").textContent = "Abgebrochen, Formular zurückgesetzt.";
 }
 
-// ---------------------------------------------------------------- Start-Bildschirm
-function showAppScreen(label) {
+// ---------------------------------------------------------------- Start-Bildschirm / Tabs
+let systemDbLabel = null;   // null => System-DB nicht geladen
+let projektDbLabel = null;  // null => Projekt-DB nicht geladen
+
+function updateHeaderAndTabs() {
+  document.getElementById("dbFileLabel").textContent =
+    `System: ${systemDbLabel || "nicht geladen"} · Projekt: ${projektDbLabel || "nicht geladen"}`;
+  document.getElementById("tabBtnSystem").disabled = !db;
+  document.getElementById("tabBtnProjekt").disabled = !projektDb;
+  document.getElementById("fsWarningBanner").style.display = hasFSAccess ? "none" : "block";
+
+  const banner = document.getElementById("loadOtherDbBanner");
+  const missing = activeTab === "system" ? !projektDb : !db;
+  if (missing) {
+    const missingLabel = activeTab === "system" ? "Projekt-Datenbank" : "System-Datenbank";
+    document.getElementById("loadOtherDbText").textContent = `${missingLabel} ist noch nicht geladen - für diesen Tab wird sie gebraucht, um Daten einzugeben.`;
+    const btnNew = document.getElementById("btnNewOtherDb");
+    const btnOpen = document.getElementById("btnOpenOtherDb");
+    btnNew.textContent = `${missingLabel} anlegen`;
+    btnOpen.textContent = `${missingLabel} öffnen`;
+    btnNew.onclick = activeTab === "system" ? handleNewProjektDb : handleNewDb;
+    btnOpen.onclick = activeTab === "system" ? handleOpenProjektDb : handleOpenDb;
+    banner.classList.remove("hidden");
+  } else {
+    banner.classList.add("hidden");
+  }
+
+  const activeHandle = activeTab === "projekt" ? projektFileHandle : fileHandle;
+  const activeDb = activeTab === "projekt" ? projektDb : db;
+  document.getElementById("btnLinkFile").classList.toggle("hidden", !!activeHandle || !hasFSAccess || !activeDb);
+}
+
+function setActiveTab(tab) {
+  if (tab === "projekt" && !projektDb) { updateHeaderAndTabs(); return; }
+  if (tab === "system" && !db) { updateHeaderAndTabs(); return; }
+  activeTab = tab;
+  document.getElementById("tabBtnSystem").classList.toggle("active", tab === "system");
+  document.getElementById("tabBtnProjekt").classList.toggle("active", tab === "projekt");
+  document.getElementById("systemTabContent").classList.toggle("hidden", tab !== "system");
+  document.getElementById("projektTabContent").classList.toggle("hidden", tab !== "projekt");
+  const current = tab === "projekt" ? projektDirty : systemDirty;
+  document.querySelectorAll(".dirty-indicator").forEach((el) => {
+    el.textContent = current ? "● Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen";
+    el.classList.toggle("dirty", current);
+  });
+  document.getElementById("statusNote").textContent = "";
+  updateHeaderAndTabs();
+}
+
+function showAppScreen(which, label) {
   document.getElementById("startScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
-  document.getElementById("dbFileLabel").textContent = label;
-  document.getElementById("fsWarningBanner").style.display = hasFSAccess ? "none" : "block";
-  document.getElementById("btnLinkFile").classList.toggle("hidden", !!fileHandle || !hasFSAccess);
-  loadFieldDefinitions();
-  loadPersonCache();
-  loadSystemCache();
-  renderForm();
-  setScenario("leer");
-  setDirty(false);
+  if (which === "system") {
+    systemDbLabel = label;
+    loadFieldDefinitions(db);
+    loadPersonCache();
+    loadSystemCache();
+    renderForm();
+    setScenario("leer");
+    systemDirty = false; // clearFormFields() beim Reset markiert ueber onFieldUpdate() faelschlich dirty
+  } else {
+    projektDbLabel = label;
+    loadFieldDefinitions(projektDb);
+    loadProjektCache();
+    renderProjektForm();
+    setProjektScenario("neu");
+    projektDirty = false; // s.o.
+  }
+  setActiveTab(which);
 }
 
 async function handleNewDb() {
   createNewDb();
-  let label = "Neue Datenbank (noch nicht gespeichert)";
+  let label = "neue Datenbank (noch nicht gespeichert)";
   if (hasFSAccess) {
     try {
       fileHandle = await window.showSaveFilePicker({
-        suggestedName: "masterform.sqlite",
+        suggestedName: "masterform_system.sqlite",
         types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite"] } }],
       });
       await writeDbToDisk();
-      label = "Datei: " + fileHandle.name;
+      label = "Datei " + fileHandle.name;
     } catch (e) {
       // Nutzer hat den Speicherdialog abgebrochen - Datenbank bleibt im Speicher, ohne Datei-Handle.
     }
   }
-  showAppScreen(label);
+  showAppScreen("system", label);
 }
 async function handleOpenDb() {
   if (hasFSAccess) {
@@ -748,7 +1107,7 @@ async function handleOpenDb() {
       const file = await handle.getFile();
       const bytes = new Uint8Array(await file.arrayBuffer());
       loadDbFromBytes(bytes);
-      showAppScreen("Datei: " + handle.name);
+      showAppScreen("system", "Datei " + handle.name);
     } catch (e) {
       // abgebrochen
     }
@@ -756,17 +1115,61 @@ async function handleOpenDb() {
     document.getElementById("fileInputFallback").click();
   }
 }
+async function handleNewProjektDb() {
+  createNewProjektDb();
+  let label = "neue Datenbank (noch nicht gespeichert)";
+  if (hasFSAccess) {
+    try {
+      projektFileHandle = await window.showSaveFilePicker({
+        suggestedName: "masterform_projekt.sqlite",
+        types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite"] } }],
+      });
+      await writeProjektDbToDisk();
+      label = "Datei " + projektFileHandle.name;
+    } catch (e) {
+      // abgebrochen - Datenbank bleibt im Speicher, ohne Datei-Handle.
+    }
+  }
+  showAppScreen("projekt", label);
+}
+async function handleOpenProjektDb() {
+  if (hasFSAccess) {
+    try {
+      const [handle] = await window.showOpenFilePicker({
+        types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite", ".db"] } }],
+      });
+      projektFileHandle = handle;
+      const file = await handle.getFile();
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      loadProjektDbFromBytes(bytes);
+      showAppScreen("projekt", "Datei " + handle.name);
+    } catch (e) {
+      // abgebrochen
+    }
+  } else {
+    document.getElementById("fileInputFallbackProjekt").click();
+  }
+}
 
 async function handleLinkFile() {
   if (!hasFSAccess) return;
   try {
-    fileHandle = await window.showSaveFilePicker({
-      suggestedName: "masterform.sqlite",
-      types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite"] } }],
-    });
-    await writeDbToDisk();
-    document.getElementById("dbFileLabel").textContent = "Datei: " + fileHandle.name;
-    document.getElementById("btnLinkFile").classList.add("hidden");
+    if (activeTab === "projekt") {
+      projektFileHandle = await window.showSaveFilePicker({
+        suggestedName: "masterform_projekt.sqlite",
+        types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite"] } }],
+      });
+      await writeProjektDbToDisk();
+      projektDbLabel = "Datei " + projektFileHandle.name;
+    } else {
+      fileHandle = await window.showSaveFilePicker({
+        suggestedName: "masterform_system.sqlite",
+        types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite"] } }],
+      });
+      await writeDbToDisk();
+      systemDbLabel = "Datei " + fileHandle.name;
+    }
+    updateHeaderAndTabs();
     document.getElementById("statusNote").textContent = "Ab jetzt speichert „Speichern“ direkt in diese Datei.";
   } catch (e) {
     // Nutzer hat den Dialog abgebrochen - kein Problem, "Speichern" bleibt beim Download-Fallback.
@@ -782,13 +1185,17 @@ async function main() {
   document.getElementById("fsNote").classList.toggle("ok", hasFSAccess);
   document.getElementById("btnLinkFile").addEventListener("click", handleLinkFile);
 
-  // Eingebettete Startdatenbank vorhanden? Dann direkt loslegen, kein
+  // Eingebettete Startdatenbank(en) vorhanden? Dann direkt loslegen, kein
   // Anlegen/Öffnen-Dialog. "Speichern" laedt zunaechst herunter, bis man
   // sich optional ueber "Mit Datei verknuepfen" mit einer Datei verbindet.
   if (STARTER_DB_B64) {
     loadDbFromBytes(base64ToBytes(STARTER_DB_B64));
-    showAppScreen("Eingebettete Datenbank (noch nicht mit einer Datei verknüpft)");
-    if (hasFSAccess) document.getElementById("btnLinkFile").classList.remove("hidden");
+    showAppScreen("system", "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)");
+  }
+  if (STARTER_PROJEKT_DB_B64) {
+    loadProjektDbFromBytes(base64ToBytes(STARTER_PROJEKT_DB_B64));
+    showAppScreen("projekt", "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)");
+    if (STARTER_DB_B64) setActiveTab("system"); // System zeigen, wenn beide eingebettet sind
   }
 
   document.getElementById("btnNewDb").addEventListener("click", handleNewDb);
@@ -799,28 +1206,60 @@ async function main() {
     const bytes = new Uint8Array(await file.arrayBuffer());
     fileHandle = null;
     loadDbFromBytes(bytes);
-    showAppScreen("Datei: " + file.name + " (Speichern lädt eine neue Version herunter)");
+    showAppScreen("system", "Datei " + file.name + " (Speichern lädt eine neue Version herunter)");
+  });
+  document.getElementById("btnNewProjektDb").addEventListener("click", handleNewProjektDb);
+  document.getElementById("btnOpenProjektDb").addEventListener("click", handleOpenProjektDb);
+  document.getElementById("fileInputFallbackProjekt").addEventListener("change", async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    projektFileHandle = null;
+    loadProjektDbFromBytes(bytes);
+    showAppScreen("projekt", "Datei " + file.name + " (Speichern lädt eine neue Version herunter)");
   });
 
-  document.querySelectorAll(".scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));
+  document.getElementById("tabBtnSystem").addEventListener("click", () => setActiveTab("system"));
+  document.getElementById("tabBtnProjekt").addEventListener("click", () => setActiveTab("projekt"));
+
+  document.querySelectorAll("#systemTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));
   document.getElementById("sourceSearch").addEventListener("input", (e) => renderSourceResults(e.target.value));
   document.getElementById("sourceSearch").addEventListener("focus", (e) => renderSourceResults(e.target.value));
   document.getElementById("sourceResults").addEventListener("click", (e) => {
     const item = e.target.closest(".combo-item");
     if (item) selectSource(item.dataset.id);
   });
-  document.addEventListener("click", (e) => {
-    if (!e.target.closest(".combo")) document.getElementById("sourceResults").classList.remove("open");
-  });
   document.getElementById("docSelect").addEventListener("change", (e) => { loadListsForBranch(currentSystemId); renderBranch(e.target.value); });
+
+  document.querySelectorAll("#projektTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setProjektScenario(btn.dataset.scenario)));
+  document.getElementById("projektSourceSearch").addEventListener("input", (e) => renderProjektSourceResults(e.target.value));
+  document.getElementById("projektSourceSearch").addEventListener("focus", (e) => renderProjektSourceResults(e.target.value));
+  document.getElementById("projektSourceResults").addEventListener("click", (e) => {
+    const item = e.target.closest(".combo-item");
+    if (item) selectProjektSource(item.dataset.id);
+  });
+  document.getElementById("systemHelperSearch").addEventListener("input", (e) => renderSystemHelperResults(e.target.value));
+  document.getElementById("systemHelperSearch").addEventListener("focus", (e) => renderSystemHelperResults(e.target.value));
+  document.getElementById("systemHelperResults").addEventListener("click", (e) => {
+    const item = e.target.closest(".combo-item");
+    if (item) selectSystemHelper(item.dataset.id);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".combo")) return;
+    document.querySelectorAll(".combo-results").forEach((r) => r.classList.remove("open"));
+  });
 
   document.getElementById("btnSaveTop").addEventListener("click", onSaveClick);
   document.getElementById("btnSaveBottom").addEventListener("click", onSaveClick);
   document.getElementById("btnCancelTop").addEventListener("click", onCancelClick);
   document.getElementById("btnCancelBottom").addEventListener("click", onCancelClick);
   document.getElementById("btnCloseDb").addEventListener("click", () => {
-    if (isDirty && !confirm("Ungespeicherte Änderungen verwerfen und Datenbank schließen?")) return;
-    db = null; fileHandle = null; currentSystemId = null; setDirty(false);
+    if ((systemDirty || projektDirty) && !confirm("Ungespeicherte Änderungen verwerfen und Datenbank(en) schließen?")) return;
+    db = null; projektDb = null; fileHandle = null; projektFileHandle = null;
+    currentSystemId = null; currentProjektId = null;
+    systemDbLabel = null; projektDbLabel = null;
+    systemDirty = false; projektDirty = false;
     document.getElementById("appScreen").classList.add("hidden");
     document.getElementById("startScreen").classList.remove("hidden");
   });

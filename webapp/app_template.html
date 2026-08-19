@@ -37,6 +37,18 @@
   .start-btn:hover { border-color: var(--accent); background: var(--accent-light); }
   .fs-note { margin-top: 18px; font-size: 11.5px; color: var(--muted); }
   .fs-note.ok { color: #1c7293; }
+  .db-section-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+    color: var(--muted); margin: 22px 0 8px; }
+  .db-section-label:first-of-type { margin-top: 0; }
+
+  .tab-bar { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab-btn { padding: 8px 18px; border: 1.5px solid var(--border); border-radius: 8px 8px 0 0; background: var(--group-bg);
+    cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--muted); border-bottom: none; }
+  .tab-btn.active { color: var(--accent); background: white; border-color: var(--accent); }
+  .tab-btn:disabled { cursor: not-allowed; opacity: .55; }
+  .load-other-db { background: var(--hint-bg); border: 1px solid var(--hint-border); border-radius: 8px;
+    padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #7a5c00; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .load-other-db button { flex-shrink: 0; }
 
   .banner { background: #fff8e1; border-bottom: 1px solid #f0d98c; color: #6b5300; font-size: 13px; padding: 8px 28px; }
 
@@ -123,31 +135,47 @@
 
 <div id="startScreen" class="start-card">
   <h2>Masterform</h2>
-  <p class="lead">Systemdaten erfassen &amp; für Qualifizierungsdokumente vorausfüllen.</p>
+  <p class="lead">Systemdaten &amp; Projektdaten erfassen &amp; für Qualifizierungsdokumente vorausfüllen. Beides sind zwei unabhängige Datenbanken (verknüpft über die MLCS-ID) - du kannst mit einer von beiden anfangen und die andere später dazu laden.</p>
+
+  <p class="db-section-label">System-Datenbank</p>
   <div class="start-options">
     <button type="button" class="start-btn" id="btnNewDb">
       <b>Neue Datenbank anlegen</b>
-      <span>Legt eine leere Datenbank mit dem aktuellen Schema an. Du wählst gleich, wo sie gespeichert wird.</span>
+      <span>Legt eine leere System-Datenbank mit dem aktuellen Schema an. Du wählst gleich, wo sie gespeichert wird.</span>
     </button>
     <button type="button" class="start-btn" id="btnOpenDb">
       <b>Vorhandene Datenbank öffnen</b>
-      <span>Öffnet eine bereits gespeicherte .sqlite-Datei.</span>
+      <span>Öffnet eine bereits gespeicherte System-.sqlite-Datei.</span>
     </button>
     <input type="file" id="fileInputFallback" accept=".sqlite,.db" class="hidden">
   </div>
+
+  <p class="db-section-label">Projekt-Datenbank</p>
+  <div class="start-options">
+    <button type="button" class="start-btn" id="btnNewProjektDb">
+      <b>Neue Projekt-Datenbank anlegen</b>
+      <span>Legt eine leere Projekt-Datenbank an (Folgeprojekt/Change-Control-Historie, Verantwortlichkeiten, Testkonzept, …).</span>
+    </button>
+    <button type="button" class="start-btn" id="btnOpenProjektDb">
+      <b>Vorhandene Projekt-Datenbank öffnen</b>
+      <span>Öffnet eine bereits gespeicherte Projekt-.sqlite-Datei.</span>
+    </button>
+    <input type="file" id="fileInputFallbackProjekt" accept=".sqlite,.db" class="hidden">
+  </div>
+
   <p class="fs-note" id="fsNote"></p>
 </div>
 
 <div id="appScreen" class="hidden">
   <header>
-    <h1>Masterform – Systemdaten erfassen</h1>
-    <p id="dbFileLabel">Objektart: System</p>
+    <h1>Masterform – Daten erfassen</h1>
+    <p id="dbFileLabel">System: – · Projekt: –</p>
   </header>
   <div class="topbar">
     <span class="dirty-indicator" id="dirtyIndicatorTop">Keine ungespeicherten Änderungen</span>
     <div class="topbar-actions">
       <button type="button" class="action-btn hidden" id="btnLinkFile">Mit Datei verknüpfen</button>
-      <button type="button" class="action-btn" id="btnCloseDb">Datenbank schließen</button>
+      <button type="button" class="action-btn" id="btnCloseDb">Datenbank(en) schließen</button>
       <button type="button" class="action-btn" id="btnCancelTop">Abbrechen</button>
       <button type="button" class="action-btn primary" id="btnSaveTop">Speichern</button>
     </div>
@@ -157,39 +185,88 @@
   </div>
 
   <main>
-    <div class="scenario-picker">
-      <button class="scenario-btn active" data-scenario="leer"><b>1 · Neuanlage (leer)</b><span>System ist unbekannt, alles neu eingeben</span></button>
-      <button class="scenario-btn" data-scenario="kopie"><b>2 · Kopie von ähnlichem System</b><span>Werte übernehmen, abweichende überschreiben</span></button>
-      <button class="scenario-btn" data-scenario="bearbeiten"><b>3 · Bestehendes System bearbeiten</b><span>Vorhandene Werte anzeigen, ändern was nötig ist</span></button>
+    <div class="tab-bar">
+      <button type="button" class="tab-btn active" id="tabBtnSystem" data-tab="system">System</button>
+      <button type="button" class="tab-btn" id="tabBtnProjekt" data-tab="projekt">Projekt</button>
     </div>
 
-    <div class="source-picker" id="sourcePicker">
-      <label id="sourceLabel">Als Vorlage übernehmen von:</label>
-      <div class="combo">
-        <input type="text" id="sourceSearch" placeholder="System suchen: MLCS-ID, Gerätename, Hersteller/Lieferant, Software, Gebäude, … " autocomplete="off">
-        <div class="combo-results" id="sourceResults"></div>
+    <div class="load-other-db hidden" id="loadOtherDbBanner">
+      <span id="loadOtherDbText"></span>
+      <div class="topbar-actions">
+        <button type="button" class="action-btn" id="btnNewOtherDb"></button>
+        <button type="button" class="action-btn" id="btnOpenOtherDb"></button>
       </div>
-      <div class="combo-selected" id="sourceSelected"></div>
-      <div class="hint" id="sourceHint"></div>
+      <input type="file" id="fileInputFallbackOther" accept=".sqlite,.db" class="hidden">
     </div>
 
-    <div class="doc-picker visible" id="docPicker">
-      <label>Für welches Dokument bereitest du die Daten vor?</label>
-      <select id="docSelect">
-        <option value="">Nur Basisdaten (dokumentübergreifend)</option>
-        <option value="VQ">Vereinfachte Qualifizierung (VQ)</option>
-        <option value="CS-VP">CS Validierungsplan (CS-VP)</option>
-        <option value="CS-VB">CS Validierungsbericht (CS-VB)</option>
-        <option value="xQTP">xQ-Testplan (IQ/OQ/PQ)</option>
-      </select>
-      <div class="hint">Die Basisdaten unten werden von allen Dokumenten gemeinsam genutzt. Je nach Auswahl erscheinen zusätzlich nur die Felder, die speziell für dieses Dokument benötigt werden.</div>
+    <div id="systemTabContent">
+      <div class="scenario-picker">
+        <button class="scenario-btn active" data-scenario="leer"><b>1 · Neuanlage (leer)</b><span>System ist unbekannt, alles neu eingeben</span></button>
+        <button class="scenario-btn" data-scenario="kopie"><b>2 · Kopie von ähnlichem System</b><span>Werte übernehmen, abweichende überschreiben</span></button>
+        <button class="scenario-btn" data-scenario="bearbeiten"><b>3 · Bestehendes System bearbeiten</b><span>Vorhandene Werte anzeigen, ändern was nötig ist</span></button>
+      </div>
+
+      <div class="source-picker" id="sourcePicker">
+        <label id="sourceLabel">Als Vorlage übernehmen von:</label>
+        <div class="combo">
+          <input type="text" id="sourceSearch" placeholder="System suchen: MLCS-ID, Gerätename, Hersteller/Lieferant, Software, Gebäude, … " autocomplete="off">
+          <div class="combo-results" id="sourceResults"></div>
+        </div>
+        <div class="combo-selected" id="sourceSelected"></div>
+        <div class="hint" id="sourceHint"></div>
+      </div>
+
+      <div class="doc-picker visible" id="docPicker">
+        <label>Für welches Dokument bereitest du die Daten vor?</label>
+        <select id="docSelect">
+          <option value="">Nur Basisdaten (dokumentübergreifend)</option>
+          <option value="VQ">Vereinfachte Qualifizierung (VQ)</option>
+          <option value="CS-VP">CS Validierungsplan (CS-VP)</option>
+          <option value="CS-VB">CS Validierungsbericht (CS-VB)</option>
+          <option value="xQTP">xQ-Testplan (IQ/OQ/PQ)</option>
+        </select>
+        <div class="hint">Die Basisdaten unten werden von allen Dokumenten gemeinsam genutzt. Je nach Auswahl erscheinen zusätzlich nur die Felder, die speziell für dieses Dokument benötigt werden.</div>
+      </div>
+
+      <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
+
+      <form id="systemForm"></form>
+
+      <div id="branchArea"></div>
     </div>
 
-    <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
+    <div id="projektTabContent" class="hidden">
+      <div class="scenario-picker">
+        <button class="scenario-btn active" data-scenario="neu"><b>1 · Neues Projekt</b><span>Projekt zu einem System neu anlegen</span></button>
+        <button class="scenario-btn" data-scenario="bearbeiten"><b>2 · Bestehendes Projekt bearbeiten</b><span>Vorhandene Werte anzeigen, ändern was nötig ist</span></button>
+      </div>
 
-    <form id="systemForm"></form>
+      <div class="source-picker" id="projektSourcePicker">
+        <label>Zu bearbeitendes Projekt:</label>
+        <div class="combo">
+          <input type="text" id="projektSourceSearch" placeholder="Projekt suchen: Projektbezeichnung, MLCS-ID, … " autocomplete="off">
+          <div class="combo-results" id="projektSourceResults"></div>
+        </div>
+        <div class="combo-selected" id="projektSourceSelected"></div>
+        <div class="hint">Der BESTEHENDE Projekt-Datensatz wird geladen und beim Speichern aktualisiert (kein neuer Datensatz).</div>
+      </div>
 
-    <div id="branchArea"></div>
+      <div class="source-picker visible" id="systemHelperPicker">
+        <label>System suchen (Hilfsmittel, um die MLCS-ID unten korrekt zu befüllen):</label>
+        <div class="combo">
+          <input type="text" id="systemHelperSearch" placeholder="System suchen: MLCS-ID, Gerätename, Hersteller/Lieferant, Software, Gebäude, … " autocomplete="off">
+          <div class="combo-results" id="systemHelperResults"></div>
+        </div>
+        <div class="combo-selected" id="systemHelperSelected"></div>
+        <div class="hint">Setzt nur das MLCS-ID-Feld im Formular unten - die Verknüpfung zur System-Datenbank ist ein reiner Feldwert, keine feste Verknüpfung.</div>
+      </div>
+
+      <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
+
+      <form id="projektForm"></form>
+
+      <div id="projektBranchArea"></div>
+    </div>
 
     <div class="status-note" id="statusNote"></div>
 
@@ -206,10 +283,12 @@
 <script>
 const SCHEMA_SQL = /*__SCHEMA_SQL__*/"";
 const SEED_SQL = /*__SEED_SQL__*/"";
+const PROJEKT_SEED_SQL = /*__PROJEKT_SEED_SQL__*/"";
 const WASM_B64 = /*__WASM_B64__*/"";
 // Falls nicht leer: eine fertige .sqlite-Datenbank (Base64), die beim Start
 // direkt geladen wird - ohne Anlegen/Öffnen-Dialog. Siehe build.js.
 const STARTER_DB_B64 = /*__STARTER_DB_B64__*/"";
+const STARTER_PROJEKT_DB_B64 = /*__STARTER_PROJEKT_DB_B64__*/"";
 </script>
 <script>/*__SQLJS_LIB__*/</script>
 <script src="app.js"></script>

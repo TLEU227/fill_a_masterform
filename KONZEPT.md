@@ -126,6 +126,21 @@ IQ, OQ, PQ). `versionshistorie_eintrag` deckt aktuell nur die eine
 übergeordnete Zeile ab; ob die anderen zehn ebenfalls strukturiert erfasst
 werden sollen, ist noch offen.
 
+**Stand 19.08. (Nachtrag): UI-Integration erledigt.** Die Browser-App
+(`webapp/`) verwaltet jetzt beide Datenbanken gleichzeitig - zwei
+unabhängige sql.js-Verbindungen (`db` für System, `projektDb` für Projekt),
+zwei Tabs ("System"/"Projekt") im selben Fenster, jeweils eigenes
+Speichern/Datei-Verknüpfen. Ein Tab ist deaktiviert, solange die zugehörige
+Datenbank nicht geladen ist; ein Hinweisbanner bietet dann direkt "anlegen"/
+"öffnen" für die fehlende Datenbank an. Im Projekt-Tab gibt es zusätzlich
+eine System-Suche als reines Hilfsmittel, um das `mlcs_id`-Feld korrekt zu
+befüllen (setzt nur den Feldwert, keine feste Verknüpfung). `build.js` kann
+optional befüllte Startdatenbanken für beide Seiten einbetten
+(`--system=`/`--projekt=`). E2E-Tests: `test_e2e_3.js` deckt den
+kompletten Projekt-Tab-Ablauf ab (beide DBs anlegen, System-Hilfssuche,
+Projekt-Formular, Lieferanten-Verantwortlichkeit-Liste, Speichern,
+Byte-Integritätsprüfung inkl. "keine System-Datensätze in der Projekt-Datei").
+
 ## 3. Einheitliche Markierungen in den Dokumenten
 
 Platzhalter-Konvention (bereits so im bestehenden `masterform`-Code
