@@ -137,12 +137,11 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- ---------------------------------------------------------------------------
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
 ('system', 'ist_aktuelle_version', 'Ist aktuelle Version?', 'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'Status', 10),
-('system', 'herkunft', 'Herkunft', 'text', NULL, 0, NULL, NULL, '["immer"]', 'Status', 20),
--- Change-Control-Nummer der aktuellen Validierung (z.B. "Die Validierung
--- erfolgt im Rahmen des Change Controls XXXXXXX..." im CS-Validierungsplan).
--- Optional: bei Neuanlage/Kopie meist noch leer, wird i.d.R. erst im Projekt-
--- verlauf bekannt und nachgetragen.
-('system', 'change_control_nummer', 'Change-Control-Nummer', 'text', NULL, 0, 'z.B. CC-2024-001234', NULL, '["CS-VP","CS-VB"]', 'Status', 30);
+('system', 'herkunft', 'Herkunft', 'text', NULL, 0, NULL, NULL, '["immer"]', 'Status', 20);
+-- Change-Control-Nummer ist NICHT hier, sondern in der Projekt-DB
+-- (seed_field_definitions_projekt.sql, Objektart 'projekt') - sie gehört zu
+-- einem konkreten Projekt/einer konkreten Validierung, nicht dauerhaft zum
+-- System (dasselbe System kann mehrere Projekte über die Zeit durchlaufen).
 
 -- ---------------------------------------------------------------------------
 -- Anforderung (URS-Punkt) – für URS-Tabelle / Traceability Matrix.

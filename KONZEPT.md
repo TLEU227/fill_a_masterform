@@ -84,6 +84,48 @@ Warum dieses "generische" Modell (statt fixer Tabellen pro Dokumenttyp)?
 - Nachteil: Abfragen sind etwas technischer (Key-Value statt normaler
   Spalten) – das UI kapselt das aber vollständig, du siehst nur Formulare.
 
+### 2.1 Zwei Datenbanken: System-DB + Projekt-DB
+
+Ergänzung vom 19.08.: neben den Systemdaten (oben, "System-DB") gibt es
+**Projektdaten**, die für jedes Validierungsprojekt neu anfallen und sich
+auch bei unverändertem System von Projekt zu Projekt unterscheiden können
+(z.B. weil dasselbe System mehrfach re-validiert wird). Diese kommen in
+eine **zweite, eigenständige .sqlite-Datei** ("Projekt-DB") - gleiches
+generisches Schema (`schema.sql`), eigene Start-Feldliste
+(`seed_field_definitions_projekt.sql`), Objektarten `projekt` und
+`versionshistorie_eintrag`. Verknüpfung zur System-DB über den **Feldwert**
+`mlcs_id` (kein klassischer Fremdschlüssel - zwei unabhängige Dateien).
+
+Bei der Erstellung eines CS-Validierungsplans werden **beide** Datenbanken
+gebraucht.
+
+Beispiele für Projektdaten (nicht System-DB):
+- Ist dies ein Folgeprojekt? Falls ja: Vorgänger-Dokument (Dok-ID + Version)
+  → daraus abgeleitet die **Folgeversion (FV)** dieses Dokuments:
+  - kein Folgeprojekt → FV = 1.0, die "V2.0 (CC Nummer): ..."-Zeilen im VP
+    entfallen komplett (keine Historie).
+  - FV = 2.0 → diese Zeilen bleiben, befüllt mit der Change-Control-Nummer
+    dieses Projekts.
+  - FV ≥ 3.0 → die V2.0-Zeile bleibt als Historie erhalten, zusätzlich
+    kommt eine neue Zeile für die aktuelle FV + ihre CC-Nummer dazu
+    (Objektart `versionshistorie_eintrag`, eine Liste/Historie statt eines
+    einzelnen Feldes - analog zu den URS/RA/Prüfschritt-Listen).
+- Change-Control-Nummer dieses Projekts (vorher irrtümlich in der System-DB
+  angelegt, jetzt hierher verschoben).
+- Hauptfunktion des Systems (Kap. 1.1/1.4 CS-VP) - kann von Projekt zu
+  Projekt variieren, deshalb nicht in der System-DB.
+- Dok-ID + Version der zu **diesem** Projekt gehörenden Systembewertung
+  (kann von der beim Excel-Import gefundenen abweichen, falls das System
+  zwischenzeitlich neu bewertet wurde).
+
+Offen/vereinfacht: der CS-Validierungsplan hat neben der einen
+übergeordneten "V2.0 (CC Nummer): Beschreibung der Änderung..."-Zeile noch
+10 weitere, kapitelspezifische Varianten davon (Systembewertung,
+Verantwortlichkeiten, Lieferanten, Risikoanalyse, DQ, Traceability Matrix,
+IQ, OQ, PQ). `versionshistorie_eintrag` deckt aktuell nur die eine
+übergeordnete Zeile ab; ob die anderen zehn ebenfalls strukturiert erfasst
+werden sollen, ist noch offen.
+
 ## 3. Einheitliche Markierungen in den Dokumenten
 
 Platzhalter-Konvention (bereits so im bestehenden `masterform`-Code
