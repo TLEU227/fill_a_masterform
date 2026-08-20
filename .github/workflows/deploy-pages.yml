@@ -1,0 +1,53 @@
+name: Masterform-App zu GitHub Pages veröffentlichen
+
+# Baut webapp/app.html (per node build.js - keine npm-Abhaengigkeiten
+# noetig, siehe build.js) und veroeffentlicht sie als GitHub-Pages-Site.
+# Ergebnis: eine feste Web-Adresse, unter der die App direkt im Browser
+# laeuft - kein manuelles Herunterladen/Verschicken der Datei mehr nötig.
+# Läuft bei jedem Push auf diesen Branch automatisch erneut, die Adresse
+# zeigt danach immer die zuletzt gebaute Version.
+
+on:
+  push:
+    branches: [ claude/python-word-template-fill-pzenol ]
+    paths:
+      - "webapp/**"
+      - "db/schema.sql"
+      - "db/seed_field_definitions.sql"
+      - "db/seed_field_definitions_projekt.sql"
+      - ".github/workflows/deploy-pages.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: app.html bauen (leere Datenbanken, keine echten Daten)
+        run: node webapp/build.js
+      - name: Als Pages-Site vorbereiten
+        run: |
+          mkdir -p _site
+          cp webapp/app.html _site/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
