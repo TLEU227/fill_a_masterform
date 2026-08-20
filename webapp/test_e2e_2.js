@@ -26,7 +26,7 @@ async function main() {
   await page.goto("file://" + APP_PATH);
 
   // --- Vorhandene Datenbank ueber den Fallback-Datei-Input oeffnen ---
-  await page.click("#btnOpenDb");
+  await page.click("#lnkLoadSystemDirect");
   await page.setInputFiles("#fileInputFallback", EXISTING_DB);
   await page.waitForSelector("#appScreen:not(.hidden)", { timeout: 10000 });
   assert(true, "Vorhandene Datenbank per Datei-Upload geöffnet");

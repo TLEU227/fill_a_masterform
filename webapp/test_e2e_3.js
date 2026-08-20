@@ -24,16 +24,18 @@ async function main() {
 
   await page.goto("file://" + APP_PATH);
 
-  // --- Beide Datenbanken anlegen (System zuerst, dann Projekt dazu) ---
-  await page.click("#btnNewDb");
+  // --- Dokumentart "CS-Validierungsplan" waehlen: braucht System- UND
+  // Projekt-DB, beide werden dafuer automatisch angelegt (kein separates
+  // "Neu anlegen"/"Öffnen" mehr noetig) ---
+  await page.click('.doctype-btn[data-doctype="CS-VP"]');
   await page.waitForSelector("#appScreen:not(.hidden)", { timeout: 10000 });
+  assert(!(await page.isDisabled("#tabBtnProjekt")), "Projekt-Tab ist nach Wahl der Dokumentart CS-VP sofort aktiv (Projekt-DB automatisch angelegt)");
+  assert(await page.locator("#loadOtherDbBanner").evaluate((el) => el.classList.contains("hidden")), "Kein Hinweis-Banner mehr noetig, da beide Datenbanken schon bereitstehen");
+
   await page.fill('#systemForm [data-key="systemname"]', "E2E Projekt-Testsystem");
   await page.fill('#systemForm [data-key="mlcs_id"]', "7777");
 
-  assert(await page.isDisabled("#tabBtnProjekt"), "Projekt-Tab ist deaktiviert, solange keine Projekt-DB geladen ist");
-  assert(!(await page.locator("#loadOtherDbBanner").evaluate((el) => el.classList.contains("hidden"))), "Hinweis-Banner für fehlende Projekt-DB sichtbar");
-
-  // System zuerst speichern, damit es fuer die System-Hilfsmittel-Suche im
+  // System speichern, damit es fuer die System-Hilfsmittel-Suche im
   // Projekt-Tab ueberhaupt in systemCache auffindbar ist (Cache wird aus der
   // DB geladen, nicht aus dem offenen Formular).
   const [sysDownload] = await Promise.all([
@@ -41,14 +43,11 @@ async function main() {
     page.click("#btnSaveBottom"),
   ]);
   await sysDownload.saveAs(path.join(DOWNLOAD_DIR, "masterform_system_fuer_projekt_e2e.sqlite"));
-  assert(true, "System vor dem Anlegen der Projekt-DB gespeichert (für Hilfsmittel-Suche)");
+  assert(true, "System gespeichert (für Hilfsmittel-Suche im Projekt-Tab)");
 
-  await page.click("#btnNewOtherDb"); // Hinweis-Banner im appScreen, nicht der Start-Bildschirm-Button
-  await page.waitForFunction(() => !document.getElementById("tabBtnProjekt").disabled);
-  assert(true, "Projekt-Datenbank angelegt, Projekt-Tab jetzt aktiv/wählbar");
-
-  // showAppScreen("projekt", ...) aktiviert automatisch den Projekt-Tab
-  assert(await page.locator("#tabBtnProjekt").evaluate((el) => el.classList.contains("active")), "Nach Anlegen der Projekt-DB ist der Projekt-Tab aktiv");
+  // --- Zum Projekt-Tab wechseln (die Projekt-DB/UI existiert schon) ---
+  await page.click("#tabBtnProjekt");
+  assert(await page.locator("#tabBtnProjekt").evaluate((el) => el.classList.contains("active")), "Projekt-Tab ist nach Klick aktiv");
   const nProjektFields = await page.evaluate(() => document.querySelectorAll("#projektForm [data-key]").length);
   assert(nProjektFields > 15, `Projekt-Formular hat ${nProjektFields} Eingabefelder gerendert`);
 

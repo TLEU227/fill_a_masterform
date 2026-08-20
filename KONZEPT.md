@@ -141,6 +141,26 @@ kompletten Projekt-Tab-Ablauf ab (beide DBs anlegen, System-Hilfssuche,
 Projekt-Formular, Lieferanten-Verantwortlichkeit-Liste, Speichern,
 Byte-Integritätsprüfung inkl. "keine System-Datensätze in der Projekt-Datei").
 
+**Stand 20.08. (Nachtrag): Einstieg jetzt Dokumentart-first statt
+Datenbank-first.** Rückmeldung: der Startbildschirm sollte nicht zuerst
+"welche Datenbank anlegen/öffnen?" fragen, sondern "welches Dokument willst
+du vorbereiten?" - Datenbanken sollen nie eine bewusste Aktion sein, sondern
+im Hintergrund automatisch bereitstehen, sobald sie gebraucht werden. Der
+Startbildschirm zeigt jetzt Dokumentart-Kacheln (Systembewertung, CS-VP,
+CS-VB, VQ, xQTP); Klick auf eine Kachel legt automatisch die dafür laut
+`DOC_DB_REQUIREMENTS` nötige(n) Datenbank(en) an (leer, in-memory) und
+öffnet direkt das passende Formular - kein separates "Neu"/"Öffnen" mehr
+nötig. Wer den Ablauf schon kennt, kann über "Direkt zu den Daten" (nur
+Systembewertung/Basisdaten) oder "Datenbank-Datei laden" (System/Projekt
+direkt per Datei öffnen) weiterhin ohne Dokumentart-Auswahl einsteigen. Ein
+kleiner Hinweis im App-Header ("Dokument: ... ändern") erlaubt jederzeit den
+Wechsel der Dokumentart. Das alte Hinweisbanner für "andere Datenbank noch
+nicht geladen" bleibt als Rückfallebene bestehen, greift aber jetzt nur noch,
+wenn die für die gewählte Dokumentart nötige DB aus irgendeinem Grund fehlt
+(im Normalfall werden ja beide beim Kachel-Klick sofort angelegt). Diese
+Neuinterpretation der Nutzerrückmeldung ist noch nicht vom Nutzer
+gegengeprüft - ggf. Anpassungsbedarf nach Feedback.
+
 ## 3. Einheitliche Markierungen in den Dokumenten
 
 Platzhalter-Konvention (bereits so im bestehenden `masterform`-Code

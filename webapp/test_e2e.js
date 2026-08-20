@@ -27,8 +27,8 @@ async function main() {
   const hasFSAccess = await page.evaluate(() => "showOpenFilePicker" in window);
   console.log("File System Access API im Test-Browser verfügbar:", hasFSAccess);
 
-  // --- Neue Datenbank anlegen ---
-  await page.click("#btnNewDb");
+  // --- Neue Datenbank anlegen (ueber "Direkt zu den Daten", ohne Dokumentart) ---
+  await page.click("#lnkSkipToData");
   await page.waitForSelector("#appScreen:not(.hidden)", { timeout: 10000 });
   assert(true, "Neue Datenbank angelegt, App-Bildschirm sichtbar");
 

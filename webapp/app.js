@@ -63,6 +63,24 @@ const BRANCH_CONFIG = {
   "CS-VP": { pflicht: [], optional: [] },
   "CS-VB": { pflicht: [], optional: [] },
 };
+// Welche Datenbank(en) fuer welche Dokumentart gebraucht werden - steuert,
+// was beim Waehlen der Dokumentart auf dem Startbildschirm automatisch (im
+// Hintergrund, ohne Anlegen/Oeffnen-Klick) bereitgestellt wird.
+const DOC_DB_REQUIREMENTS = {
+  "": ["system"],
+  "CS-VP": ["system", "projekt"],
+  "CS-VB": ["system", "projekt"],
+  "VQ": ["system"],
+  "xQTP": ["system"],
+};
+const DOC_TYPE_LABELS = {
+  "": "Systembewertung (nur Basisdaten)",
+  "CS-VP": "CS-Validierungsplan",
+  "CS-VB": "CS-Validierungsbericht",
+  "VQ": "Vereinfachte Qualifizierung",
+  "xQTP": "xQ-Testplan",
+};
+let currentDocTypeChosen = "";
 // Ableitungstabelle Testtiefe (Kapitel 8 der Systembewertung, QU-MT-0001344).
 const TESTTIEFE_MATRIX = {
   Critical: { "1": "Mittel", "3": "Mittel", "4": "Hoch", "5": "Hoch" },
@@ -1021,7 +1039,11 @@ function updateHeaderAndTabs() {
   document.getElementById("fsWarningBanner").style.display = hasFSAccess ? "none" : "block";
 
   const banner = document.getElementById("loadOtherDbBanner");
-  const missing = activeTab === "system" ? !projektDb : !db;
+  // Nur nerven, wenn die fehlende DB fuer die gewaehlte Dokumentart auch
+  // wirklich gebraucht wird - sonst wuerde z.B. bei "Systembewertung"
+  // (braucht nur die System-DB) staendig ein Projekt-DB-Hinweis erscheinen.
+  const neededForDocType = new Set(DOC_DB_REQUIREMENTS[currentDocTypeChosen] || ["system"]);
+  const missing = activeTab === "system" ? (!projektDb && neededForDocType.has("projekt")) : (!db && neededForDocType.has("system"));
   if (missing) {
     const missingLabel = activeTab === "system" ? "Projekt-Datenbank" : "System-Datenbank";
     document.getElementById("loadOtherDbText").textContent = `${missingLabel} ist noch nicht geladen - für diesen Tab wird sie gebraucht, um Daten einzugeben.`;
@@ -1058,26 +1080,81 @@ function setActiveTab(tab) {
   updateHeaderAndTabs();
 }
 
+// initSystemUi()/initProjektUi() sind idempotent-gesteuert (systemUiReady/
+// projektUiReady) - sie duerfen nur EINMAL laufen, weil sie das Formular
+// zuruecksetzen (clearFormFields ueber setScenario). Fuer "Datenbank ist
+// schon geladen, UI muss aber trotzdem einmal aufgebaut werden" (z.B. beim
+// erstmaligen Aufdecken nach dem Dokumentart-Wählen, auch wenn eine
+// eingebettete Startdatenbank schon beim Boot geladen wurde).
+let systemUiReady = false;
+let projektUiReady = false;
+function initSystemUi() {
+  loadFieldDefinitions(db);
+  loadPersonCache();
+  loadSystemCache();
+  renderForm();
+  setScenario("leer");
+  systemDirty = false; // clearFormFields() beim Reset markiert ueber onFieldUpdate() faelschlich dirty
+  systemUiReady = true;
+}
+function initProjektUi() {
+  loadFieldDefinitions(projektDb);
+  loadProjektCache();
+  renderProjektForm();
+  setProjektScenario("neu");
+  projektDirty = false; // s.o.
+  projektUiReady = true;
+}
+
+// showAppScreen(): fuer EXPLIZITE Nutzeraktionen (Neu anlegen/Datei oeffnen,
+// auch ueber den "andere Datenbank laden"-Banner) - baut die UI fuer diese
+// Seite immer frisch auf (auch wenn sie vorher schon einmal initialisiert
+// war), weil der Nutzer bewusst eine andere/neue Datei geladen hat.
 function showAppScreen(which, label) {
   document.getElementById("startScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
-  if (which === "system") {
-    systemDbLabel = label;
-    loadFieldDefinitions(db);
-    loadPersonCache();
-    loadSystemCache();
-    renderForm();
-    setScenario("leer");
-    systemDirty = false; // clearFormFields() beim Reset markiert ueber onFieldUpdate() faelschlich dirty
-  } else {
-    projektDbLabel = label;
-    loadFieldDefinitions(projektDb);
-    loadProjektCache();
-    renderProjektForm();
-    setProjektScenario("neu");
-    projektDirty = false; // s.o.
-  }
+  if (which === "system") { systemDbLabel = label; initSystemUi(); }
+  else { projektDbLabel = label; initProjektUi(); }
   setActiveTab(which);
+  updateDocIndicator();
+}
+
+// ---------------------------------------------------------------- Dokumentart-first-Einstieg
+// Der Startbildschirm fragt zuerst "welches Dokument?", nicht "welche
+// Datenbank?". Je nach Antwort werden die dafuer noetigen Datenbank(en) im
+// Hintergrund bereitgestellt (leer, in-memory, oder eine bereits geladene
+// eingebettete Startdatenbank) - kein Anlegen/Oeffnen-Klick noetig. Wer
+// stattdessen eine eigene Datei laden will, kann das ueber die Direkt-
+// Laden-Links auf dem Startbildschirm weiterhin tun.
+function provisionForDocType(docType) {
+  currentDocTypeChosen = docType;
+  const needed = DOC_DB_REQUIREMENTS[docType] || ["system"];
+  if (needed.includes("system")) {
+    if (!db) { createNewDb(); systemDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
+    if (!systemUiReady) initSystemUi();
+  }
+  if (needed.includes("projekt")) {
+    if (!projektDb) { createNewProjektDb(); projektDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
+    if (!projektUiReady) initProjektUi();
+  }
+  document.getElementById("startScreen").classList.add("hidden");
+  document.getElementById("appScreen").classList.remove("hidden");
+  document.getElementById("docSelect").value = docType;
+  loadListsForBranch(currentSystemId);
+  renderBranch(docType);
+  setActiveTab("system"); // Systemdaten sind immer die Grundlage, unabhaengig von der Dokumentart
+  updateDocIndicator();
+}
+function updateDocIndicator() {
+  const el = document.getElementById("docIndicator");
+  if (!el) return;
+  const label = DOC_TYPE_LABELS[currentDocTypeChosen] ?? "keine Dokumentart gewählt";
+  el.innerHTML = `Dokument: <b>${escapeHtml(label)}</b> <a href="#" id="lnkChangeDoc">ändern</a>`;
+  document.getElementById("lnkChangeDoc").addEventListener("click", (e) => {
+    e.preventDefault();
+    document.getElementById("appScreen").classList.add("hidden");
+    document.getElementById("startScreen").classList.remove("hidden");
+  });
 }
 
 async function handleNewDb() {
@@ -1185,21 +1262,31 @@ async function main() {
   document.getElementById("fsNote").classList.toggle("ok", hasFSAccess);
   document.getElementById("btnLinkFile").addEventListener("click", handleLinkFile);
 
-  // Eingebettete Startdatenbank(en) vorhanden? Dann direkt loslegen, kein
-  // Anlegen/Öffnen-Dialog. "Speichern" laedt zunaechst herunter, bis man
-  // sich optional ueber "Mit Datei verknuepfen" mit einer Datei verbindet.
+  // Eingebettete Startdatenbank(en) vorhanden? Nur laden (in den Speicher,
+  // OHNE schon die App-Oberflaeche zu zeigen) - der Startbildschirm fragt
+  // trotzdem zuerst "welches Dokument?"; provisionForDocType() erkennt dann,
+  // dass diese Datenbank(en) schon da sind, und baut nur noch die UI dafuer
+  // auf (siehe initSystemUi()/initProjektUi()).
   if (STARTER_DB_B64) {
     loadDbFromBytes(base64ToBytes(STARTER_DB_B64));
-    showAppScreen("system", "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)");
+    systemDbLabel = "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)";
   }
   if (STARTER_PROJEKT_DB_B64) {
     loadProjektDbFromBytes(base64ToBytes(STARTER_PROJEKT_DB_B64));
-    showAppScreen("projekt", "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)");
-    if (STARTER_DB_B64) setActiveTab("system"); // System zeigen, wenn beide eingebettet sind
+    projektDbLabel = "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)";
   }
 
-  document.getElementById("btnNewDb").addEventListener("click", handleNewDb);
-  document.getElementById("btnOpenDb").addEventListener("click", handleOpenDb);
+  // --- Startbildschirm: Dokumentart waehlen (Haupteinstieg) ---
+  document.querySelectorAll(".doctype-btn").forEach((btn) => {
+    btn.addEventListener("click", () => provisionForDocType(btn.dataset.doctype));
+  });
+  document.getElementById("lnkSkipToData").addEventListener("click", (e) => {
+    e.preventDefault();
+    provisionForDocType(""); // "ich kenne mich aus" - nur Basisdaten, wie vorher der Direkteinstieg
+  });
+  document.getElementById("lnkLoadSystemDirect").addEventListener("click", (e) => { e.preventDefault(); handleOpenDb(); });
+  document.getElementById("lnkLoadProjektDirect").addEventListener("click", (e) => { e.preventDefault(); handleOpenProjektDb(); });
+
   document.getElementById("fileInputFallback").addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1208,8 +1295,6 @@ async function main() {
     loadDbFromBytes(bytes);
     showAppScreen("system", "Datei " + file.name + " (Speichern lädt eine neue Version herunter)");
   });
-  document.getElementById("btnNewProjektDb").addEventListener("click", handleNewProjektDb);
-  document.getElementById("btnOpenProjektDb").addEventListener("click", handleOpenProjektDb);
   document.getElementById("fileInputFallbackProjekt").addEventListener("change", async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1229,7 +1314,7 @@ async function main() {
     const item = e.target.closest(".combo-item");
     if (item) selectSource(item.dataset.id);
   });
-  document.getElementById("docSelect").addEventListener("change", (e) => { loadListsForBranch(currentSystemId); renderBranch(e.target.value); });
+  document.getElementById("docSelect").addEventListener("change", (e) => provisionForDocType(e.target.value));
 
   document.querySelectorAll("#projektTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setProjektScenario(btn.dataset.scenario)));
   document.getElementById("projektSourceSearch").addEventListener("input", (e) => renderProjektSourceResults(e.target.value));
@@ -1260,6 +1345,7 @@ async function main() {
     currentSystemId = null; currentProjektId = null;
     systemDbLabel = null; projektDbLabel = null;
     systemDirty = false; projektDirty = false;
+    systemUiReady = false; projektUiReady = false; currentDocTypeChosen = "";
     document.getElementById("appScreen").classList.add("hidden");
     document.getElementById("startScreen").classList.remove("hidden");
   });
