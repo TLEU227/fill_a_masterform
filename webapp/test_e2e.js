@@ -48,7 +48,7 @@ async function main() {
   // --- Person "+ Neue Person anlegen" fuer Ersteller ---
   await page.selectOption('[data-key="rolle_ersteller"]', "__new__");
   await page.fill('[data-personnew-for="rolle_ersteller"] [data-newperson-field="name"]', "E2E, Tester");
-  await page.fill('[data-personnew-for="rolle_ersteller"] [data-newperson-field="stelle"]', "QA Bot");
+  await page.fill('[data-personnew-for="rolle_ersteller"] [data-newperson-field="funktion"]', "QA Bot");
   await page.fill('[data-personnew-for="rolle_ersteller"] [data-newperson-field="abteilung"]', "Automatisierte Tests");
 
   const dirtyText = await page.textContent("#dirtyIndicatorBottom");

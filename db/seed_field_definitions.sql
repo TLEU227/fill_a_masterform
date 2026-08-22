@@ -32,7 +32,7 @@ INSERT INTO entity_types (key, label) VALUES
 -- ---------------------------------------------------------------------------
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
 ('person', 'name',      'Name',                'text', NULL, 1, 'Nachname, Vorname', NULL, '["immer"]', 'Person', 10),
-('person', 'stelle',    'Stelle/Funktion',     'text', NULL, 0, 'z.B. CSV Specialist', NULL, '["immer"]', 'Person', 20),
+('person', 'funktion',  'Funktion',            'text', NULL, 0, 'z.B. CSV Specialist', NULL, '["immer"]', 'Person', 20),
 ('person', 'abteilung', 'Abteilung',           'text', NULL, 0, 'z.B. FBC Campus Management Engineering CSV', NULL, '["immer"]', 'Person', 30);
 
 -- ---------------------------------------------------------------------------

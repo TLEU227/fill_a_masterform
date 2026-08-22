@@ -197,7 +197,7 @@ function getAllRecordsWithValues(conn, entityType) {
 }
 function loadPersonCache() {
   personCache = getAllRecordsWithValues(db, "person").map((r) => ({
-    id: r.id, name: r.values.name || "(ohne Namen)", stelle: r.values.stelle || "", abteilung: r.values.abteilung || "",
+    id: r.id, name: r.values.name || "(ohne Namen)", funktion: r.values.funktion || "", abteilung: r.values.abteilung || "",
   }));
 }
 function loadSystemCache() {
@@ -251,10 +251,10 @@ function linkToSystem(conn, recordId, targetId) {
   stmt.run([recordId, targetId]);
   stmt.free();
 }
-function createPerson(name, stelle, abteilung) {
+function createPerson(name, funktion, abteilung) {
   const id = createRecord(db, "person");
   upsertFieldValue(db, id, "name", name || "");
-  upsertFieldValue(db, id, "stelle", stelle || "");
+  upsertFieldValue(db, id, "funktion", funktion || "");
   upsertFieldValue(db, id, "abteilung", abteilung || "");
   return id;
 }
@@ -292,9 +292,9 @@ function saveAll() {
       if (el.value === "__new__") {
         const wrap = document.querySelector(`[data-personnew-for="${el.dataset.key}"]`);
         const name = wrap.querySelector('[data-newperson-field="name"]').value;
-        const stelle = wrap.querySelector('[data-newperson-field="stelle"]').value;
+        const funktion = wrap.querySelector('[data-newperson-field="funktion"]').value;
         const abteilung = wrap.querySelector('[data-newperson-field="abteilung"]').value;
-        const newId = createPerson(name, stelle, abteilung);
+        const newId = createPerson(name, funktion, abteilung);
         el.value = String(newId);
       }
     });
@@ -351,9 +351,9 @@ function saveProjektAll() {
       if (el.value === "__new__" && db) {
         const wrap = document.querySelector(`[data-personnew-for="${el.dataset.key}"]`);
         const name = wrap.querySelector('[data-newperson-field="name"]').value;
-        const stelle = wrap.querySelector('[data-newperson-field="stelle"]').value;
+        const funktion = wrap.querySelector('[data-newperson-field="funktion"]').value;
         const abteilung = wrap.querySelector('[data-newperson-field="abteilung"]').value;
-        const newId = createPerson(name, stelle, abteilung);
+        const newId = createPerson(name, funktion, abteilung);
         el.value = String(newId);
       }
     });
@@ -413,7 +413,7 @@ function fieldInputHtml(def, uniqueKey) {
       <div class="person-info" data-personinfo-for="${uniqueKey}"></div>
       <div class="person-new" data-personnew-for="${uniqueKey}" style="display:none">
         <input type="text" placeholder="Name (Nachname, Vorname)" data-newperson-field="name">
-        <input type="text" placeholder="Stelle/Funktion" data-newperson-field="stelle">
+        <input type="text" placeholder="Funktion" data-newperson-field="funktion">
         <input type="text" placeholder="Abteilung" data-newperson-field="abteilung">
       </div>`;
   } else if (def.datentyp === "auswahl") {
@@ -529,7 +529,7 @@ function onFieldUpdate(el) {
     } else {
       personArea.style.display = "none";
       const person = personCache.find((p) => String(p.id) === el.value);
-      infoArea.textContent = person ? `${person.stelle} · ${person.abteilung}` : "";
+      infoArea.textContent = person ? `${person.funktion} · ${person.abteilung}` : "";
     }
   }
   if (el.tagName === "SELECT" && el.dataset.entity && el.dataset.fieldkey) {

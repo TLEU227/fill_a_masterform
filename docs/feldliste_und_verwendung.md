@@ -63,24 +63,26 @@ mehreren Systemen/Dokumenten vor).
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `name` | Name | ⬜ Vermutlich Rollen-/Freigabetabelle (Autor/Prüfer/Genehmiger) in allen vier Templates – laut `docs/analyse_weitere_templates.md` vorhanden, aber noch nicht konkret an einer Vorlage nachvollzogen. |
-| `stelle` | Stelle/Funktion | ⬜ s.o. |
-| `abteilung` | Abteilung | ⬜ s.o. |
+| `name` | Name | ✅ CS-VP Tabelle 1 (Rollen/Freigabe, 2. Tabelle im Dokument): wird zusammen mit `funktion` in die Spalte "Funktion" der jeweiligen Rollen-Zeile **ergänzt** (angehängt an den bestehenden generischen Rollentext, z.B. "Technical System Owner (TSO) — Max Mustermann, Senior CSV Engineer") |
+| `funktion` | Funktion (vorher "Stelle/Funktion") | ✅ s.o. – Spaltenname "Funktion" in Tabelle 1 entspricht jetzt bewusst dem DB-Feldnamen |
+| `abteilung` | Abteilung | ⬜ Nicht Teil der Tabelle-1-Ergänzung (bewusst ausgeschlossen) – sonst kein bekanntes Template-Vorkommen |
 
 ### 1.2 Objektart `system` – Personen/Rollen
 
 Jedes Feld verweist auf einen `person`-Datensatz (Auswahl/Neuanlage), kein
-Freitext-Name.
+Freitext-Name. Tabelle 1 in CS-VP hat 6 feste Zeilen (Rolle | Funktion |
+Beschreibung) – `rolle_sme` und `rolle_si_pl` teilen sich dieselbe Zeile
+("Prüfer | Projektleiter/SME"), alle anderen haben eine eigene Zeile.
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `rolle_ersteller` | Ersteller | ⬜ Noch nicht an einer Vorlage nachvollzogen (vermutlich Rollentabelle, s.o.) |
-| `rolle_sme` | SME | ⬜ |
-| `rolle_si_pl` | SI/PL | ⬜ |
-| `rolle_tso` | TSO | ⬜ |
-| `rolle_bso` | BSO | ⬜ |
-| `rolle_bqr` | BQR | ⬜ |
-| `rolle_csq` | CSQ | ⬜ |
+| `rolle_ersteller` | Ersteller | ✅ CS-VP Tabelle 1, Zeile "Autor" |
+| `rolle_sme` | SME | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_si_pl`) |
+| `rolle_si_pl` | SI/PL | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_sme`) |
+| `rolle_tso` | TSO | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Technical System Owner (TSO)" |
+| `rolle_bso` | BSO | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Business System Owner (BSO)" |
+| `rolle_bqr` | BQR | ✅ CS-VP Tabelle 1, Zeile "Freigeber / Business Quality Representative (BQR)" |
+| `rolle_csq` | CSQ | ✅ CS-VP Tabelle 1, Zeile "Freigeber / Computerized System Quality Expert (CSQ)" |
 
 ### 1.3 Objektart `system` – Stammdaten
 
@@ -240,9 +242,10 @@ Frage, siehe `KONZEPT.md` Abschnitt 2.1).
 
 ## Kurz zusammengefasst: wo es noch am dünnsten ist
 
-- **Personen/Rollen** (Ersteller/SME/SI-PL/TSO/BSO/BQR/CSQ): in keinem der
-  vier Templates konkret nachvollzogen, obwohl alle vier vermutlich eine
-  Rollen-/Freigabetabelle haben.
+- **Personen/Rollen** (Ersteller/SME/SI-PL/TSO/BSO/BQR/CSQ): für **CS-VP**
+  jetzt bekannt (Tabelle 1, Spalte "Funktion" wird um Name+Funktion der
+  zugewiesenen Person ergänzt) und geprüft. Für CS-VB/VQ/xQTP noch offen,
+  ob/wo die gleiche Rollen-/Freigabetabelle existiert.
 - **Systembewertung selbst**: Merge-Feldnamen für die meisten
   Checkbox-Gruppen sind bekannt, aber es existiert noch **kein**
   Fill-Code (MERGEFIELD-Unterstützung ist bisher nur analysiert, nicht
