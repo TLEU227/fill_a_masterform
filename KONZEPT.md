@@ -202,6 +202,15 @@ Nutzer, **nicht** im Git-Repo (siehe Abschnitt 0 - Code ins Repo, echte
 Daten bleiben lokal). Danach wird die Datenbank über das Formular selbst
 weitergepflegt, in drei Fällen:
 
+**Ausnahme (20.08.):** `examples/cs_vp_demo/` enthält bewusst ein
+ausgefülltes CS-VP-Demo-Dokument samt Fill-Skript und Zuordnungstabelle -
+auf expliziten Wunsch ins Repo aufgenommen, weil die Daten darin komplett
+**fiktiv** sind (kein echtes System, keine echten Personen). Die Regel
+"befüllte/generierte Dokumente bleiben lokal" gilt weiterhin für **echte**
+Daten (z.B. eine mit realen Systemdaten befüllte `app.html` oder ein mit
+echten Projektdaten ausgefülltes VP) - die bleiben wie bisher außerhalb
+des Repos.
+
 1. **Neuanlage, alles leer**: leeres, aber gruppiertes Formular mit
    Dropdowns für die kategorialen Felder (GxP-Kritikalität,
    Gerätekategorie, ...) statt Freitext.
