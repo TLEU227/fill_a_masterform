@@ -45,11 +45,12 @@ async function main() {
   const testtiefe = await page.textContent("#testtiefeWert");
   assert(testtiefe.trim() === "Mittel", `Testtiefe automatisch berechnet: '${testtiefe.trim()}' (erwartet: Mittel, Major+Kat.4)`);
 
-  // --- Person "+ Neue Person anlegen" fuer Ersteller ---
-  await page.selectOption('[data-key="rolle_ersteller"]', "__new__");
-  await page.fill('[data-personnew-for="rolle_ersteller"] [data-newperson-field="name"]', "E2E, Tester");
-  await page.fill('[data-personnew-for="rolle_ersteller"] [data-newperson-field="funktion"]', "QA Bot");
-  await page.fill('[data-personnew-for="rolle_ersteller"] [data-newperson-field="abteilung"]', "Automatisierte Tests");
+  // Personen/Rollen-Gruppe ist im System-Formular bewusst ausgeblendet
+  // (Nutzer-Rückmeldung: fürs CS-VP-Template aktuell nicht gebraucht,
+  // field_definitions bleiben aber in der DB erhalten) - kein UI-Szenario
+  // dafür mehr, siehe HIDDEN_GROUPS in app.js.
+  const rolleFieldVisible = await page.locator('[data-key="rolle_ersteller"]').count();
+  assert(rolleFieldVisible === 0, "Personen/Rollen-Gruppe ist im System-Formular ausgeblendet (HIDDEN_GROUPS)");
 
   const dirtyText = await page.textContent("#dirtyIndicatorBottom");
   assert(dirtyText.includes("Ungespeicherte"), "Dirty-Indikator zeigt ungespeicherte Änderungen an");
@@ -89,11 +90,6 @@ async function main() {
   assert(sysValues.systemname === "E2E Testsystem Zentrifuge", "Systemname korrekt in Datei gespeichert: " + sysValues.systemname);
   assert(sysValues.mlcs_id === "5555", "MLCS-ID korrekt gespeichert");
   assert(sysValues.gxp_relevant === "ja", "gxp_relevant korrekt gespeichert");
-
-  const persons = verifyDb.exec("SELECT fv.field_key, fv.wert FROM records r JOIN field_values fv ON fv.record_id=r.id WHERE r.entity_type='person'");
-  const personRows = {};
-  persons[0].values.forEach(([k, v]) => { personRows[k] ||= []; personRows[k].push(v); });
-  assert(personRows.name && personRows.name.includes("E2E, Tester"), "Neue Person wurde korrekt angelegt: " + JSON.stringify(personRows.name));
 
   const anf = verifyDb.exec("SELECT fv.field_key, fv.wert FROM records r JOIN field_values fv ON fv.record_id=r.id WHERE r.entity_type='anforderung'");
   const anfValues = Object.fromEntries(anf[0].values);

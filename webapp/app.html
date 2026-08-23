@@ -548,6 +548,13 @@ const GROUP_ORDER = {
   versionshistorie_eintrag: [null],
   lieferant_verantwortlichkeit: [null],
 };
+// Gruppen, die es zwar als field_definitions in der DB gibt (fuer spaeter),
+// die aber aktuell NICHT im Formular angezeigt werden sollen - Nutzer-
+// Rueckmeldung: die Personen/Rollen-Felder werden fuers CS-VP-Template
+// derzeit nicht gebraucht, sollen aber in der DB erhalten bleiben.
+const HIDDEN_GROUPS = {
+  system: ["Personen"],
+};
 const ENTITY_LABEL = {
   anforderung: "Anforderung (URS)",
   risiko: "Risiko (RA)",
@@ -676,10 +683,11 @@ function groupsFor(entityType) {
   const defs = fieldDefsByEntity[entityType] || [];
   const byGroup = {};
   defs.forEach((d) => { (byGroup[d.gruppe] ||= []).push(d); });
+  const hidden = new Set(HIDDEN_GROUPS[entityType] || []);
   const order = GROUP_ORDER[entityType] || Object.keys(byGroup);
   const groups = [];
-  order.forEach((g) => { if (byGroup[g]) groups.push({ name: g, fields: byGroup[g] }); });
-  Object.keys(byGroup).forEach((g) => { if (!order.includes(g)) groups.push({ name: g, fields: byGroup[g] }); });
+  order.forEach((g) => { if (byGroup[g] && !hidden.has(g)) groups.push({ name: g, fields: byGroup[g] }); });
+  Object.keys(byGroup).forEach((g) => { if (!order.includes(g) && !hidden.has(g)) groups.push({ name: g, fields: byGroup[g] }); });
   return groups;
 }
 

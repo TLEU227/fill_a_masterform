@@ -48,6 +48,37 @@ dieser Datei). Verlässlicher ist deshalb aktuell die Spalte "Verwendung im
 Template" unten – die basiert auf tatsächlicher Prüfung an der Vorlage,
 nicht auf der (vorläufigen) Einstufung in der DB.
 
+## Namensreferenz: Tabellen im CS-VP-Template (V9.0)
+
+Damit wir uns eindeutig auf Stellen im Dokument beziehen können: das
+Template hat **echte, benannte Tabellen-Captions** (Word-Formatvorlage
+"Caption", steht direkt über der jeweiligen Tabelle) – "Tabelle 1" meint
+also wirklich die Tabelle mit dieser Beschriftung im Dokument, nicht die
+Reihenfolge in irgendeiner Liste. Drei Tabellen haben **keine** Caption
+(unten als "–" markiert); für die verwenden wir einen beschreibenden
+Namen.
+
+| Name | Beschriftung im Dokument | Spalten |
+|---|---|---|
+| Kopf-Tabelle | – (keine Caption, ganz oben im Dokument) | Gebäude / Bereich / Systemname / MLCS-ID |
+| **Tabelle 1** | Dokumentenfreigabe | Rolle / Funktion / Beschreibung |
+| **Tabelle 2** | Gegenstand des Validierungsplans | System / Software / Hauptkomponenten / Hersteller-Lieferant |
+| **Tabelle 3** | Abkürzungen und Definitionen | Abkürzung / Beschreibung |
+| **Tabelle 4** | Definitionen | Definition / Beschreibung |
+| **Tabelle 5** | Mitgeltende SOPs/Vorgabedokumente | Dok-ID / Beschreibung |
+| **Tabelle 6** | Mitgeltende Unterlagen | Dok-ID / Beschreibung / Freigabedatum / Version |
+| **Tabelle 7** | Verantwortlichkeiten Validierungsteam | (Zeile) / C&Q / PL / SME / BSO / TSO / BQR / CSQ / Lieferant |
+| **Tabelle 8** | Lieferantenbewertung | Lieferant-Adresse / Dienstleistung-Service / Lieferantenbewertung |
+| KI-Tabelle | – (keine Caption, in Kap. 3.2 KI) | IDs / AI Standard / AI High |
+| **Tabelle 9** | Dokumentenübersicht | Dokumententyp / Verantwortlichkeit |
+| **Tabelle 10** | Weitere Validierungsdokumente | Prüfpunkte / Erforderlich / Nachweis (Dok-ID)/Begründung |
+| **Tabelle 11** | Anhänge | Anhang / Beschreibung-Dok-ID / Version |
+| **Tabelle 12** | Änderungshistorie | Freigabedatum/Version / Change Control / Grund der Erstellung/Änderung |
+
+(Eine weitere, ebenfalls unbeschriftete Tabelle steht in Kap. 3.7 –
+Validierungsaktivitäten je GAMP-5-Software-Kategorie/Life-Cycle-Phase,
+reine Nachschlagetabelle, wird nicht befüllt.)
+
 ---
 
 ## 1. System-DB (`db/seed_field_definitions.sql`)
@@ -61,28 +92,37 @@ gegenüber der Projekt-DB).
 Eigene Objektart statt Freitext-Name je Rolle (dieselbe Person kommt in
 mehreren Systemen/Dokumenten vor).
 
+**Stand 20.08.: In der Web-Oberfläche aktuell ausgeblendet.** Nutzer-
+Rückmeldung: die Personen/Rollen-Felder werden fürs CS-VP-Template derzeit
+nicht gebraucht. Die `field_definitions` bleiben unverändert in der DB
+(für später), werden aber im System-Formular nicht mehr angezeigt
+(`HIDDEN_GROUPS` in `webapp/app.js`) – die Spalte "Verwendung im Template"
+unten beschreibt weiterhin, wo sie **im Fill-Mechanismus** (Proof-of-Concept-
+Skript) verwendet werden, unabhängig von der Web-Oberfläche.
+
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `name` | Name | ✅ CS-VP Tabelle 1 (Rollen/Freigabe, 2. Tabelle im Dokument): wird zusammen mit `funktion` in die Spalte "Funktion" der jeweiligen Rollen-Zeile **ergänzt** (angehängt an den bestehenden generischen Rollentext, z.B. "Technical System Owner (TSO) — Max Mustermann, Senior CSV Engineer") |
+| `name` | Name | ✅ CS-VP **Tabelle 1: Dokumentenfreigabe** (echte Caption im Dokument, 2. Tabelle): wird zusammen mit `funktion` in die Spalte "Funktion" der jeweiligen Rollen-Zeile **ergänzt** (angehängt an den bestehenden generischen Rollentext, z.B. "Technical System Owner (TSO) — Max Mustermann, Senior CSV Engineer") |
 | `funktion` | Funktion (vorher "Stelle/Funktion") | ✅ s.o. – Spaltenname "Funktion" in Tabelle 1 entspricht jetzt bewusst dem DB-Feldnamen |
 | `abteilung` | Abteilung | ⬜ Nicht Teil der Tabelle-1-Ergänzung (bewusst ausgeschlossen) – sonst kein bekanntes Template-Vorkommen |
 
 ### 1.2 Objektart `system` – Personen/Rollen
 
 Jedes Feld verweist auf einen `person`-Datensatz (Auswahl/Neuanlage), kein
-Freitext-Name. Tabelle 1 in CS-VP hat 6 feste Zeilen (Rolle | Funktion |
+Freitext-Name. **In der Web-Oberfläche aktuell ausgeblendet** (s.o.).
+Tabelle 1: Dokumentenfreigabe hat 6 feste Datenzeilen (Rolle | Funktion |
 Beschreibung) – `rolle_sme` und `rolle_si_pl` teilen sich dieselbe Zeile
 ("Prüfer | Projektleiter/SME"), alle anderen haben eine eigene Zeile.
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `rolle_ersteller` | Ersteller | ✅ CS-VP Tabelle 1, Zeile "Autor" |
-| `rolle_sme` | SME | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_si_pl`) |
-| `rolle_si_pl` | SI/PL | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_sme`) |
-| `rolle_tso` | TSO | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Technical System Owner (TSO)" |
-| `rolle_bso` | BSO | ✅ CS-VP Tabelle 1, Zeile "Prüfer / Business System Owner (BSO)" |
-| `rolle_bqr` | BQR | ✅ CS-VP Tabelle 1, Zeile "Freigeber / Business Quality Representative (BQR)" |
-| `rolle_csq` | CSQ | ✅ CS-VP Tabelle 1, Zeile "Freigeber / Computerized System Quality Expert (CSQ)" |
+| `rolle_ersteller` | Ersteller | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Autor" |
+| `rolle_sme` | SME | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_si_pl`) |
+| `rolle_si_pl` | SI/PL | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_sme`) |
+| `rolle_tso` | TSO | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Technical System Owner (TSO)" |
+| `rolle_bso` | BSO | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Business System Owner (BSO)" |
+| `rolle_bqr` | BQR | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Freigeber / Business Quality Representative (BQR)" |
+| `rolle_csq` | CSQ | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Freigeber / Computerized System Quality Expert (CSQ)" |
 
 ### 1.3 Objektart `system` – Stammdaten
 
@@ -174,7 +214,7 @@ V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp is
 | `mlcs_id` | MLCS-ID (Verknüpfung System-DB) | – Reines Verknüpfungsfeld (Wert, keine Fremdschlüssel-Beziehung), kein eigener Template-Platzhalter |
 | `ist_folgeprojekt` | Folgeprojekt? | ✅ Steuert zusammen mit `folgeversion`, ob die Versionshistorie-Zeilen (s. `versionshistorie_eintrag` unten) überhaupt erscheinen |
 | `vorgaenger_dok_id` / `vorgaenger_version` | Vorgänger-Dokument: Dok-ID/Version | ⬜ Aktuell nur zur Ableitung der Folgeversion gedacht, noch nicht selbst in einen Platzhalter eingesetzt |
-| `folgeversion` | Folgeversion (FV) dieses Dokuments | ✅ FV ≤ 1.0 → alle Versionshistorie-Zeilen entfallen; FV = 2.0 → Zeilen bleiben, mit CC-Nummer befüllt; FV ≥ 3.0 → zusätzlich neue Zeile in Kap. 1.1 + Kapitel 6 Änderungshistorie-Tabelle |
+| `folgeversion` | Folgeversion (FV) dieses Dokuments | ✅ FV ≤ 1.0 → alle Versionshistorie-Zeilen entfallen; FV = 2.0 → Zeilen bleiben, mit CC-Nummer befüllt; FV ≥ 3.0 → zusätzlich neue Zeile in Kap. 1.1 + Tabelle 12: Änderungshistorie |
 | `change_control_nummer` | Change-Control-Nummer dieses Projekts | ✅ Kap. 1.1 ("Change Controls XXXXXXX" → echte CC-Nummer) |
 
 ### 2.2 Systembeschreibung + Referenzdokumente
@@ -204,7 +244,7 @@ V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp is
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `verantwortlich_funktionsspezifikation` | Verantwortlich: Funktionsspezifikation | ✅ Tabelle "Dokumententyp / Verantwortlichkeit" (Zelle "Firma/Lieferant" → Lieferant/Sanofi) |
+| `verantwortlich_funktionsspezifikation` | Verantwortlich: Funktionsspezifikation | ✅ Tabelle 9: Dokumentenübersicht (Zelle "Firma/Lieferant" → Lieferant/Sanofi) |
 | `verantwortlich_hds` | Verantwortlich: HDS | ✅ s.o. |
 | `verantwortlich_sds` | Verantwortlich: SDS | ✅ s.o. |
 | `verantwortlich_ra` | Verantwortlich: Risikoanalyse | ✅ s.o. |
@@ -216,9 +256,9 @@ V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp is
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `version` | Version | ✅ Kap. 1.1 übergeordnete Zeile + ggf. neue Zeile bei FV≥3.0; Kapitel 6 Änderungshistorie-Tabelle (neue Zeile je Eintrag, wenn FV≥2.0); außerdem: Abgleich gegen die 10 **kapitelspezifischen** "V-x.x (CC Nummer): …"-Zeilen, um dort **nur** die CC-Nummer einzusetzen |
+| `version` | Version | ✅ Kap. 1.1 übergeordnete Zeile + ggf. neue Zeile bei FV≥3.0; Tabelle 12: Änderungshistorie (neue Zeile je Eintrag, wenn FV≥2.0); außerdem: Abgleich gegen die 10 **kapitelspezifischen** "V-x.x (CC Nummer): …"-Zeilen, um dort **nur** die CC-Nummer einzusetzen |
 | `cc_nummer` | Change-Control-Nummer | ✅ s.o. |
-| `beschreibung` | Beschreibung der Änderung | ✅ Kap. 1.1 (übergeordnete Zeile + neue Zeilen); Kapitel 6 Änderungshistorie-Tabelle. **Nicht** in die 10 kapitelspezifischen Zeilen übernommen – dort bleibt der Beschreibungstext Freitext (siehe Einschränkung unten) |
+| `beschreibung` | Beschreibung der Änderung | ✅ Kap. 1.1 (übergeordnete Zeile + neue Zeilen); Tabelle 12: Änderungshistorie. **Nicht** in die 10 kapitelspezifischen Zeilen übernommen – dort bleibt der Beschreibungstext Freitext (siehe Einschränkung unten) |
 
 **Bekannte Einschränkung:** CS-VP hat neben der einen übergeordneten
 "V2.0 (CC Nummer): …"-Zeile (Kap. 1.1) noch **10 weitere**,
