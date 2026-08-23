@@ -8,11 +8,14 @@ Stelle im CS-VP V9.0, an der laut der eigenen Farbkonvention des Templates
 durchsucht (nicht nur die, die im Demo v8 zufällig vorkamen). Ziel: eine
 vollständige Inventur, nicht nur ein Beispiel.
 
-**Ergebnis vorab:** von allen gefundenen Stellen sind **die meisten bereits
-abgedeckt** (✅, geprüft im Demo-Skript `fill_demo8.py`). Es gibt aber
-**3 neu gefundene Lücken** (🟡, siehe unten) und mehrere Stellen, die
-**bewusst nicht** aus der DB befüllt werden (–, feste Referenz-/
-Beispielinhalte laut Template selbst).
+**Ergebnis (Stand 23.08., nach Demo v9):** von allen gefundenen Stellen sind
+**alle** entweder ✅ abgedeckt (geprüft im Demo-Skript, zuletzt `fill_demo9.py`)
+oder bewusst nicht aus der DB befüllt (–, feste Referenz-/Beispielinhalte
+laut Template selbst). Ursprünglich gab es **3 Lücken** (🟡, in Demo v8 noch
+offen) - die wurden mit 6 neuen Projekt-DB-Feldern in Demo v9 geschlossen,
+siehe Zusammenfassung am Ende dieser Datei. Verbleibende bekannte
+Einschränkungen: `raum` (Marker-Kollision, s.u.) und 17 von 18 Prüfpunkten
+in Tabelle 10 ohne eigenes Feld.
 
 Status-Symbole wie in `docs/feldliste_und_verwendung.md`: ✅ abgedeckt |
 🟡 Lücke, noch kein DB-Feld | – bewusst nicht befüllbar (fixer Referenz-/
@@ -24,7 +27,7 @@ Beispielinhalt) | ⬜ unklar/offen
 
 | Stelle | Was steht dort | Feld/DB | Status |
 |---|---|---|---|
-| Hinweis + Folgedokument-Satz | "XXXXXX (Version 1.0) ist das Folgedokument von XXXXXX (Version xx)" - nur relevant, wenn ein Vorgängerdokument mit neuer Dok-ID existiert | PDB: `vorgaenger_dok_id`, `vorgaenger_version` (für den zweiten Teil "von XXXXXX (Version xx)") | 🟡 **NEU GEFUNDEN, nicht implementiert.** Der erste Teil ("XXXXXX (Version 1.0)" - die Dok-ID/Version DIESES Dokuments) ist ohnehin erst nach Erzeugung durch QualiPSO bekannt, könnte also nur teilweise vorausgefüllt werden. |
+| Hinweis + Folgedokument-Satz | "XXXXXX (Version 1.0) ist das Folgedokument von XXXXXX (Version xx)" - nur relevant, wenn ein Vorgängerdokument mit neuer Dok-ID existiert | PDB: `vorgaenger_dok_id`, `vorgaenger_version` (für den zweiten Teil "von XXXXXX (Version xx)") | ✅ **Stand 23.08. implementiert** (Demo v9). `ist_folgeprojekt=nein` streicht Hinweis+Satz komplett. Der erste Teil ("XXXXXX (Version 1.0)" - die Dok-ID/Version DIESES Dokuments) bleibt weiterhin Platzhalter - erst nach Erzeugung durch QualiPSO bekannt. |
 
 ## Kopf-Tabelle
 
@@ -94,7 +97,7 @@ Beispielinhalt) | ⬜ unklar/offen
 | Zeile "Systembewertung gemäß…" | PDB: `systembewertung_dok_id`, `systembewertung_version` | ✅ |
 | Zeile "URS" | PDB: `urs_dok_id`, `urs_version` | ✅ |
 | Neue Zeile "Funktionsspezifikation" | PDB: `fs_dok_id`, `fs_version` | ✅ |
-| Zeile "\<Bericht Lieferantenauditierung\>" | – | 🟡 **NEU GEFUNDEN.** Kein passendes PDB-Feld (z.B. `lieferantenaudit_dok_id`/`_version`) - Zeile bleibt komplett unangetastet |
+| Zeile "\<Bericht Lieferantenauditierung\>" | PDB: `lieferantenaudit_dok_id`, `lieferantenaudit_version` | ✅ **Stand 23.08. implementiert** (Demo v9, neue PDB-Felder) |
 
 ## Kap. 2.2 Verantwortlichkeiten des Lieferanten
 
@@ -199,8 +202,8 @@ Testvorschriften, PQ-Testplan, CS-Validierungsbericht) sind **immer**
 
 | Stelle | Was steht dort | Feld/DB | Status |
 |---|---|---|---|
-| Anhang 1 "xxx Risikobewertung", Version-Spalte leer | vermutlich Version der Risikoanalyse | – | 🟡 **NEU GEFUNDEN.** Kein PDB-Feld für die Version der RA/des Prüfplans an dieser Stelle |
-| Anhang 2 "Prüfplan/-Protokoll Dokumentation", Version-Spalte leer | vermutlich Version des Testplans | – | 🟡 **NEU GEFUNDEN.** s.o. |
+| Anhang 1 "xxx Risikobewertung", Version-Spalte leer | Dok-ID/Version der Risikoanalyse | PDB: `ra_dok_id`, `ra_version` | ✅ **Stand 23.08. implementiert** (Demo v9, neue PDB-Felder) |
+| Anhang 2 "Prüfplan/-Protokoll Dokumentation", Version-Spalte leer | Dok-ID/Version des Testplans | PDB: `testplan_dok_id`, `testplan_version` | ✅ **Stand 23.08. implementiert** (Demo v9). Version wird im Platzhalter "Version x.x" **innerhalb** der Beschreibungszelle ersetzt (Template-Eigenheit); die Dok-ID hat dort keinen eigenen Platz und wird in die sonst leere Version-Spalte ergänzt. |
 
 ## Tabelle 12: Änderungshistorie
 
@@ -210,16 +213,20 @@ Testvorschriften, PQ-Testplan, CS-Validierungsbericht) sind **immer**
 
 ---
 
-## Zusammenfassung der 3 neu gefundenen Lücken (nicht implementiert)
+## Zusammenfassung der 3 gefundenen Lücken - Stand 23.08.: alle geschlossen
 
 1. **Folgedokument-Hinweis am Dokumentanfang** ("XXXXXX (Version 1.0) ist das
-   Folgedokument von XXXXXX (Version xx)") - `vorgaenger_dok_id`/
-   `vorgaenger_version` existieren in der PDB, werden aber an dieser Stelle
-   noch nicht eingesetzt.
-2. **Tabelle 6, Zeile "Bericht Lieferantenauditierung"** - kein PDB-Feld.
-3. **Tabelle 11 (Anhänge), Version-Spalte** für Risikobewertung/Prüfplan -
-   kein PDB-Feld.
+   Folgedokument von XXXXXX (Version xx)") - ✅ implementiert (Demo v9) mit
+   `vorgaenger_dok_id`/`vorgaenger_version`.
+2. **Tabelle 6, Zeile "Bericht Lieferantenauditierung"** - ✅ implementiert
+   (Demo v9), neue PDB-Felder `lieferantenaudit_dok_id`/`_version`.
+3. **Tabelle 11 (Anhänge)** für Risikobewertung/Prüfplan - ✅ implementiert
+   (Demo v9), neue PDB-Felder `ra_dok_id`/`_version`, `testplan_dok_id`/
+   `_version`.
 
-Alles andere im Template ist entweder ✅ bereits abgedeckt oder – bewusst
-fixer Referenz-/Beispielinhalt (Glossare, RACI-Matrix, GAMP-5-Lifecycle-
-Tabelle, die konkreten Traceability-IDs in der AI-Tabelle).
+Damit ist das gesamte CS-VP-Template (V9.0) entweder ✅ abgedeckt oder –
+bewusst fixer Referenz-/Beispielinhalt (Glossare, RACI-Matrix,
+GAMP-5-Lifecycle-Tabelle, die konkreten Traceability-IDs in der
+AI-Tabelle) - abgesehen von der bekannten Einschränkung bei `raum`
+(Marker-Kollision mit `gebaeude`, siehe Kap. 1.4 oben) und den 17 von 18
+Prüfpunkten in Tabelle 10 ohne eigenes Feld.

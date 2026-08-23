@@ -72,6 +72,24 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('projekt', 'fs_dok_id',             'Funktionsspezifikation: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 50),
 ('projekt', 'fs_version',            'Funktionsspezifikation: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 55),
 
+-- Tabelle "Mitgeltende Unterlagen": Bericht Lieferantenauditierung - dafür
+-- gibt es bereits eine (bisher unbefuellte) Zeile im Template.
+('projekt', 'lieferantenaudit_dok_id',  'Bericht Lieferantenauditierung: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 60),
+('projekt', 'lieferantenaudit_version', 'Bericht Lieferantenauditierung: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 65),
+
+-- Anhang 1 ("Risikobewertung") der Tabelle "Anhänge" - Dok-ID ersetzt das
+-- "xxx" in der Beschreibungszelle, Version die (leere) Version-Spalte.
+('projekt', 'ra_dok_id',             'Risikobewertung/RA: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 70),
+('projekt', 'ra_version',            'Risikobewertung/RA: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 75),
+
+-- Anhang 2 ("Prüfplan/-Protokoll Dokumentation") der Tabelle "Anhänge" -
+-- Dok-ID/Version werden dort eingesetzt, wo im Template bereits "Version
+-- x.x" als Platzhalter in der Beschreibungszelle selbst steht (nicht in der
+-- separaten Version-Spalte - das ist die Template-eigene Inkonsistenz, wir
+-- folgen ihr, statt sie zu "reparieren").
+('projekt', 'testplan_dok_id',       'Prüfplan/Testplan: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 80),
+('projekt', 'testplan_version',      'Prüfplan/Testplan: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 85),
+
 -- Projektname/-bezeichnung: taucht als Freitext-Ersetzung in Fließtext-
 -- Passagen auf (z.B. Kap. 3.4.1 "...bezogen auf das Projektbezeichnung...").
 ('projekt', 'projektbezeichnung', 'Projektbezeichnung', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Projekt', 5),

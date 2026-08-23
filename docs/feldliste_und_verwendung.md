@@ -226,6 +226,9 @@ V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp is
 | `vmp_dok_id` / `_version` | VMP: Dok-ID/Version (dieses Projekt) | ✅ Nur relevant wenn `vmp_erforderlich=ja`: Tabelle 6 (Zeile VMP) und Kap. 3.1 ("Gemäß Doc ID-xxx") |
 | `urs_dok_id` / `_version` | URS: Dok-ID/Version (dieses Projekt) | ✅ Tabelle 6 Mitgeltende Unterlagen (Zeile "URS") |
 | `fs_dok_id` / `_version` | Funktionsspezifikation: Dok-ID/Version (dieses Projekt) | ✅ Tabelle 6 Mitgeltende Unterlagen – dafür gibt es **noch keine Zeile** im Template, wird als **neue Zeile** eingefügt, wenn ein Wert vorliegt |
+| `lieferantenaudit_dok_id` / `_version` | Bericht Lieferantenauditierung: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 6 Mitgeltende Unterlagen (Zeile "\<Bericht Lieferantenauditierung\>", bis dahin unbefüllt) |
+| `ra_dok_id` / `_version` | Risikobewertung/RA: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 11 Anhänge (Anhang 1, "xxx Risikobewertung" → Dok-ID; Version-Spalte) |
+| `testplan_dok_id` / `_version` | Prüfplan/Testplan: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 11 Anhänge (Anhang 2, "Prüfplan/-Protokoll Dokumentation; Version x.x" → Version wird im Platzhalter *innerhalb* der Beschreibungszelle ersetzt, Template-Eigenheit; Dok-ID wird in die sonst leere Version-Spalte ergänzt, da dort kein eigener Platz vorgesehen ist) |
 | `projektbezeichnung` | Projektbezeichnung | ✅ Kap. 3.5 ("bezogen auf das Projektbezeichnung" → echter Projektname) |
 
 ### 2.3 Vorgehensweise + Testkonzept (Kap. 3 CS-VP)
