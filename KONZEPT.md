@@ -305,3 +305,26 @@ Code/Schema) nachpflegen will - hier nur als Gedächtnisstütze festgehalten:
    (IDs/AI Standard/AI High) braucht noch eine Beschriftung/Caption.
 2. Kap. 3.5 (Konstruktion / Systemerstellung): dort muss noch ein Bezug
    auf das Projekt ergänzt werden (Detail vom Nutzer selbst noch offen).
+
+## 9. Bausteine des Projekts - Kürzel (Stand 23.08.)
+
+Ab jetzt verwendete Kürzel für die Bausteine, zur schnelleren Verständigung:
+
+| Kürzel | Baustein | Status |
+|---|---|---|
+| **SDB** | System-DB (SQLite) | ✅ fertig, produktiv |
+| **PDB** | Projekt-DB (SQLite) | ✅ fertig, produktiv |
+| **WE** | Webapp/Eingabe (`app.html`, Formular für SDB+PDB) | ✅ fertig, produktiv |
+| **FMech** | Fill-Mechanismus, gemeinsamer Kern (Marker ersetzen, Absatz behalten/streichen, Tabellenzeilen klonen, Ankreuzfelder umschalten) | 🟡 Proof-of-Concept vorhanden (aus der FVP-Arbeit entstanden), noch **nicht** als eigenständiges, wiederverwendbares Modul im Repo herausgelöst - aktuell steckt die Logik noch im FVP-Demo-Skript |
+| **FVP** | Fill CS-Validierungsplan (Konfiguration/Zuordnung auf FMech) | 🟡 am weitesten, mehrere Demo-Durchläufe gegen die reale V9.0-Vorlage geprüft |
+| **FVB** | Fill CS-Validierungsbericht (Konfiguration auf FMech) | ⬜ offen, nur grob analysiert |
+| **FVQ** | Fill Vereinfachte Qualifizierung (Konfiguration auf FMech + Tabellenzeilen-Klonen für URS/RA/Prüfschritte) | ⬜ offen, Tabellenstruktur bekannt |
+| **FxQTP** | Fill xQ-Testplan (Konfiguration auf FMech) | ⬜ offen, kaum analysiert - gleiches Muster wie FVQ (Prüfschritt-Tabellen) |
+
+**Bewusst NICHT mehr Teil dieses Projekts:** Fill Systembewertung
+(MERGEFIELD-basiert) - wird in einem anderen Projekt erledigt. **Offene
+Frage, noch ungelöst:** wie die beiden Projekte (dieses hier + das
+Systembewertungs-Projekt) am Ende zusammengeführt werden - z.B. ob SDB
+langfristig aus beiden Projekten gemeinsam genutzt wird, oder ob es zwei
+getrennte Datenbanken/Repos bleiben, die nur über die MLCS-ID
+korrespondieren. Muss geklärt werden, bevor FSysBew wieder relevant wird.
