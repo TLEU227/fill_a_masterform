@@ -315,11 +315,10 @@ Ab jetzt verwendete Kürzel für die Bausteine, zur schnelleren Verständigung:
 | **SDB** | System-DB (SQLite) | ✅ fertig, produktiv |
 | **PDB** | Projekt-DB (SQLite) | ✅ fertig, produktiv |
 | **WE** | Webapp/Eingabe (`app.html`, Formular für SDB+PDB) | ✅ fertig, produktiv |
-| **FMech** | Fill-Mechanismus, gemeinsamer Kern (Marker ersetzen, Absatz behalten/streichen, Tabellenzeilen klonen, Ankreuzfelder umschalten) | 🟡 Proof-of-Concept vorhanden (aus der FVP-Arbeit entstanden), noch **nicht** als eigenständiges, wiederverwendbares Modul im Repo herausgelöst - aktuell steckt die Logik noch im FVP-Demo-Skript |
-| **FVP** | Fill CS-Validierungsplan (Konfiguration/Zuordnung auf FMech) | 🟡 am weitesten, mehrere Demo-Durchläufe gegen die reale V9.0-Vorlage geprüft |
-| **FVB** | Fill CS-Validierungsbericht (Konfiguration auf FMech) | ⬜ offen, nur grob analysiert |
-| **FVQ** | Fill Vereinfachte Qualifizierung (Konfiguration auf FMech + Tabellenzeilen-Klonen für URS/RA/Prüfschritte) | ⬜ offen, Tabellenstruktur bekannt |
-| **FxQTP** | Fill xQ-Testplan (Konfiguration auf FMech) | ⬜ offen, kaum analysiert - gleiches Muster wie FVQ (Prüfschritt-Tabellen) |
+| **FVP** | Fill CS-Validierungsplan | 🟡 am weitesten, mehrere Demo-Durchläufe gegen die reale V9.0-Vorlage geprüft |
+| **FVB** | Fill CS-Validierungsbericht | ⬜ offen, nur grob analysiert |
+| **FVQ** | Fill Vereinfachte Qualifizierung | ⬜ offen, Tabellenstruktur bekannt |
+| **FxQTP** | Fill xQ-Testplan | ⬜ offen, kaum analysiert - gleiches Muster wie FVQ (Prüfschritt-Tabellen) |
 
 **Bewusst NICHT mehr Teil dieses Projekts:** Fill Systembewertung
 (MERGEFIELD-basiert) - wird in einem anderen Projekt erledigt. **Offene
