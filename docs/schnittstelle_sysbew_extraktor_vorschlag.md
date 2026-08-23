@@ -78,3 +78,24 @@ programmiert (nicht pro Lauf neu interpretiert).
 ## 4. Vorschlag für die Anfrage an das andere Projekt
 
 Text zum Kopieren/Anpassen, siehe Chat-Antwort.
+
+## 5. Status 23.08.
+
+Beide Seiten haben unabhängig voneinander einen Prototyp für Option A gebaut:
+
+- Hier: `db/export_normalized_snapshot.py` (dieses Repo).
+- SysBew_Extraktor: `lib/export_dekodiert.py`,
+  [PR #27](https://github.com/TLEU227/SysBew_Extraktor/pull/27).
+
+Das ist ein gutes Zeichen (zwei unabhängige Implementierungen kommen auf ein
+ähnliches Klartext-Feldschema), aber noch kein Beweis, dass beide Seiten die
+kniffligen Fälle gleich auflösen (z. B. Geraetekategorie
+Subkategorie+Sammelkategorie als *keine* Anomalie, `QUAL`/`VAL` als zwei
+unabhängige Flags statt einer Radiogruppe, mehrfach markierte Radiogruppen
+transparent statt geraten). Ein Feld-für-Feld-Abgleich der beiden Skripte
+vor der eigentlichen Nutzung wird empfohlen.
+
+Offen: ob/wie ein Export künftig geteilt wird (einmaliger Snapshot zum
+Testen vs. regelmäßig neu erzeugt) und die größere Frage einer gemeinsamen
+Datenhaltung – bewusst getrennt von der kurzfristigen Export-Frage
+behandelt.
