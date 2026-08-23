@@ -56,13 +56,27 @@ Beispielinhalt) | ⬜ unklar/offen
 |---|---|
 | Glossar-Tabellen | – feste Nachschlagetabellen, bleiben bei jedem Dokument identisch (bestätigt in `docs/analyse_weitere_templates.md`) |
 
+## Tabelle 2: Gegenstand des Validierungsplans
+
+**Nachtrag 23.08.:** diese Tabelle war in der ursprünglichen Blau-Text-Suche
+nicht aufgefallen, weil ihr Beispielinhalt (anders als die meisten anderen
+Stellen) **nicht** blau eingefärbt ist - reiner Methodik-Fehler dieser
+Inventur, nicht des Templates. Jetzt manuell nachgetragen und geschlossen.
+
+| Stelle | Feld/DB | Status |
+|---|---|---|
+| "Systemname" (Spalte System) | SDB: `systemname` | ✅ **Neu 23.08.** |
+| "SW Name und Version" (Spalte Software) | SDB: `sw_name`, `sw_version` | ✅ **Neu 23.08.** |
+| "Server, Clients, WTS, Datenbank" (Spalte Hauptkomponenten) | – | – kein DB-Feld vorgesehen, projektspezifische Detailinfo, bleibt unangetastet |
+| "Firma/Lieferant" (Spalte Hersteller/Lieferant) | SDB: `hersteller` | ✅ **Neu 23.08.** |
+
 ## Kap. 1.4 Systembeschreibung
 
 | Stelle | Feld/DB | Status |
 |---|---|---|
 | "Das System dient der …" (Hauptfunktion) | PDB: `hauptfunktion` | ✅ |
 | "wird im Gebäude XXX" | SDB: `gebaeude` | ✅ |
-| "Raum XXX" | SDB: `raum` | 🟡 Feld existiert, aber Marker "XXX" ist identisch zum Gebäude-Marker in derselben Zeile - aktueller Code trifft nur den ersten Treffer zuverlässig (bekannte Einschränkung aus `docs/feldliste_und_verwendung.md`) |
+| "Raum XXX" | SDB: `raum` | ✅ **Behoben 23.08.** Marker-Kollision mit dem Gebäude-Marker war das Problem (beide Runs hatten identischen Text "XXX") - jetzt über den eigenen Run direkt angesprochen (erkannt am vorangehenden "Raum "-Run) statt per Text-Suche |
 
 ## Kap. 1.5 Systemeinstufung
 
@@ -85,9 +99,15 @@ Beispielinhalt) | ⬜ unklar/offen
 
 ## Kap. 1.7 Schnittstellen
 
+Tatsächlich **5** Sätze, nicht 4 - der 5. ist generisch (kein Stichwort wie
+TCP/IP). Nutzer-Regel (23.08.): bleibt zusammen mit dem TCP/IP-Satz erhalten,
+wenn TCP/IP zutrifft; trifft keine der 4 Stichwort-Regeln zu, bleiben alle
+5 unangetastet.
+
 | Stelle | Feld/DB | Status |
 |---|---|---|
 | 4 feste Kandidaten-Sätze (TCP/IP, PRODIS, SAP, Sanofi-Laufwerke) | SDB: Stichwortsuche in `kurzbeschreibung`/`sw_name`/`systemname` | ✅ (heuristisch, geprüft) |
+| 5. generischer Satz ("…Datenaustausch kritischer GMP relevanter Daten mit einem anderen System…") | – (kein eigenes Feld, an TCP/IP-Treffer gekoppelt) | ✅ **Neu 23.08.** |
 
 ## Tabelle 6: Mitgeltende Unterlagen
 
@@ -114,10 +134,16 @@ Beispielinhalt) | ⬜ unklar/offen
 
 ## Tabelle 8: Lieferantenbewertung
 
+Hat **zwei** Lieferanten-Zeilen ("Lieferant A" und "Lieferant B", je eine
+pro bewerteter Dienstleistung/Service) - bis 23.08. wurde nur die erste
+befüllt.
+
 | Stelle | Feld/DB | Status |
 |---|---|---|
-| Lieferantenname | SDB: `hersteller` | ✅ |
-| "Ist durchzuführen" / QualiPSO-ID | SDB: `lieferantennummer` | ✅ |
+| Lieferantenname, Zeile 1 ("Lieferant A") | SDB: `hersteller` | ✅ |
+| "Ist durchzuführen" / QualiPSO-ID, Zeile 1 | SDB: `lieferantennummer` | ✅ |
+| Lieferantenname, Zeile 2 ("Lieferant B") | SDB: `hersteller` (derselbe Wert, da nur ein Lieferant je System erfasst wird) | ✅ **Neu 23.08.** |
+| Zeile 2, Spalten "Dienstleistung/Service" ("Computergestütztes System (CS)") und "Lieferantenbewertung" ("ID 000000") | – | ⬜ **Offen.** Unklare DB-Zuordnung (welches Feld genau, falls überhaupt) - Rückmeldung vom Nutzer ausstehend |
 
 ## Kap. 3.1 Validierungsstrategie gemäß VMP
 
@@ -148,6 +174,7 @@ Beispielinhalt) | ⬜ unklar/offen
 |---|---|---|
 | "(IQ, OQ, PQ)" Standardtestvorschrift-Phasen | PDB: `phase_*_geplant` | ✅ |
 | RA-Absatzblöcke (major/critical vs. minor/N.A. vs. "freigegebene RA muss vorliegen") | SDB: `gxp_kritikalitaet` | ✅ |
+| Kapitelspezifische Zeile "V2.0 (CC Nummer): Die Risikoanalyse wird aktualisiert…" | PDB: `versionshistorie_eintrag` (nur die CC-Nummer, wie bei den anderen 9 kapitelspezifischen Zeilen) | ✅ inhaltlich befüllt, aber **23.08.: Template-Korrektur** - die Zeile stand mitten im major/critical-Block, ergibt bei Minor aber keinen Sinn (dort wird ja "kein RA gefordert"). Auf Nutzer-Wunsch in `CS-VP_V9.0_TEMPLATE_KORRIGIERT_3.4.2.docx` an die Stelle NACH der Minor-Zeile verschoben (gilt dann für beide Fälle gleich) - Original-Vorlage bleibt bis zur offiziellen Übernahme unverändert, siehe Antwort im Chat |
 
 ## Kap. 3.5
 

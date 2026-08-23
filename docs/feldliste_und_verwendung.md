@@ -133,14 +133,14 @@ Beschreibung) – `rolle_sme` und `rolle_si_pl` teilen sich dieselbe Zeile
 | `gebaeude` | Gebäude | ✅ CS-VP Kopf-Tabelle (Zeile "Gebäude"); Kap. 1.4 Betriebsort ("wird im Gebäude XXX…") |
 | `dok_version` | Dokumentversion (Systembewertung) | ⬜ Vermutlich Kopf-Merge-Feld der Systembewertung selbst, noch nicht bestätigt |
 | `dok_nummer` | Dokumentnummer (Systembewertung) | ⬜ s.o. |
-| `systemname` | Systemname | ✅ CS-VP Kopf-Tabelle; Kap. 1.1 Fließtext; Kap. 3.5 ("an dem System …" statt generisch "den Systemen"); Kap. 3.9 Systemfreigabe (beide `<<System>>`-Alternativen) |
+| `systemname` | Systemname | ✅ CS-VP Kopf-Tabelle; **Tabelle 2** (Spalte "System"); Kap. 1.1 Fließtext; Kap. 3.5 ("an dem System …" statt generisch "den Systemen"); Kap. 3.9 Systemfreigabe (beide `<<System>>`-Alternativen) |
 | `anlage` | Anlage | ⬜ Noch nicht an einer Vorlage nachvollzogen |
-| `raum` | Raum | 🟡 CS-VP Kap. 1.4 Betriebsort ("… Raum XXX") – Marker-Text "XXX" ist im Template **identisch** zum Gebäude-Marker in derselben Zeile; der Proof-of-Concept-Code trifft aktuell nur den ersten "XXX" zuverlässig (im geprüften Demo-Datensatz war `raum` leer, daher ungetestet) – **bekannte Einschränkung, noch zu verbessern** |
+| `raum` | Raum | ✅ **Behoben 23.08.** CS-VP Kap. 1.4 Betriebsort ("… Raum XXX") – Marker-Kollision mit dem Gebäude-Marker (identischer Text "XXX") war das Problem, jetzt über den eigenen Run direkt angesprochen statt per Text-Suche |
 | `kurzbeschreibung` | Kurzbeschreibung | ✅ CS-VP Kap. 1.1 Systembeschreibung ("System zur/zum…."); außerdem Stichwort-Grundlage für Kap. 1.7 Schnittstellen (s.u.) |
-| `sw_name` | Software-Name | 🟡 Nur indirekt: Stichwort-Grundlage für die Schnittstellen-Erkennung in Kap. 1.7 CS-VP (TCP/IP, PRODIS, SAP, Sanofi-Laufwerke) – kein eigener Platzhalter dafür bekannt |
-| `sw_version` | Software-Version/Typ | ⬜ Noch nicht an einer Vorlage nachvollzogen |
+| `sw_name` | Software-Name | ✅ **Neu 23.08.** CS-VP **Tabelle 2** (Spalte "Software", zusammen mit `sw_version`); außerdem Stichwort-Grundlage für die Schnittstellen-Erkennung in Kap. 1.7 (TCP/IP, PRODIS, SAP, Sanofi-Laufwerke) |
+| `sw_version` | Software-Version/Typ | ✅ **Neu 23.08.** CS-VP Tabelle 2 (Spalte "Software", zusammen mit `sw_name`) |
 | `sw_hersteller` | Software-Hersteller | ⬜ |
-| `hersteller` | Hersteller/Lieferant | ✅ CS-VP Kap. 2.2 ("<<MUSTER>>" → Firmenname); Tabelle 8 Lieferantenbewertung (Zelle "Lieferant A" → Firmenname) |
+| `hersteller` | Hersteller/Lieferant | ✅ CS-VP Kap. 2.2 ("<<MUSTER>>" → Firmenname); **Tabelle 2** (Spalte "Hersteller/Lieferant"); Tabelle 8 Lieferantenbewertung (**beide** Zeilen "Lieferant A" und "Lieferant B" → Firmenname, seit 23.08.) |
 | `lieferantennummer` | QualiPSO Third Party/Customer-ID | ✅ CS-VP Tabelle 8 Lieferantenbewertung: wenn vorhanden, wird "Ist durchzuführen" gestrichen und "QualiPSO-ID: …" ergänzt |
 
 ### 1.4 Objektart `system` – GxP-Bewertung
