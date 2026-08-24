@@ -4,12 +4,15 @@ name: Masterform-App zu GitHub Pages veröffentlichen
 # noetig, siehe build.js) und veroeffentlicht sie als GitHub-Pages-Site.
 # Ergebnis: eine feste Web-Adresse, unter der die App direkt im Browser
 # laeuft - kein manuelles Herunterladen/Verschicken der Datei mehr nötig.
-# Läuft bei jedem Push auf diesen Branch automatisch erneut, die Adresse
-# zeigt danach immer die zuletzt gebaute Version.
+# Läuft bei jedem Push auf main automatisch erneut, die Adresse zeigt
+# danach immer die zuletzt gebaute Version. Bewusst nur main (nicht der
+# Feature-Branch), weil die GitHub-Pages-Environment aus Sicherheitsgründen
+# nur main als Deploy-Branch erlaubt - main wird ohnehin nach jedem
+# Feature-Branch-Push per Fast-Forward synchron gehalten.
 
 on:
   push:
-    branches: [ claude/python-word-template-fill-pzenol ]
+    branches: [ main ]
     paths:
       - "webapp/**"
       - "db/schema.sql"
