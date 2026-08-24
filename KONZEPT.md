@@ -321,9 +321,9 @@ Ab jetzt verwendete Kürzel für die Bausteine, zur schnelleren Verständigung:
 | **FxQTP** | Fill xQ-Testplan | ⬜ offen, kaum analysiert - gleiches Muster wie FVQ (Prüfschritt-Tabellen) |
 
 **Bewusst NICHT mehr Teil dieses Projekts:** Fill Systembewertung
-(MERGEFIELD-basiert) - wird in einem anderen Projekt erledigt. **Offene
-Frage, noch ungelöst:** wie die beiden Projekte (dieses hier + das
-Systembewertungs-Projekt) am Ende zusammengeführt werden - z.B. ob SDB
-langfristig aus beiden Projekten gemeinsam genutzt wird, oder ob es zwei
-getrennte Datenbanken/Repos bleiben, die nur über die MLCS-ID
-korrespondieren. Muss geklärt werden, bevor FSysBew wieder relevant wird.
+(MERGEFIELD-basiert) - wird in einem anderen Projekt (SysBew_Extraktor)
+erledigt. **Zusammenführung der beiden Projekte:** Architektur-Entwurf mit
+drei Ausbaustufen (Stand 24.08.) siehe
+`docs/architektur_zusammenfuehrung_projekte.md` - noch nicht umgesetzt,
+Empfehlung dort: Stufe 1 (gemeinsame Datenbasis, Code bleibt getrennt)
+zuerst angehen.
