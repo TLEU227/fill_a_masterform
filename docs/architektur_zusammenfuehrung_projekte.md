@@ -170,3 +170,24 @@ vorbereitet werden, keine Umsetzung im anderen Repo.
    openpyxl-Write in `word_parser_*.py`)
 5. Übergangsphase: Excel bleibt als Reporting-Export bestehen, wird aber
    nicht mehr die Quelle der Wahrheit
+
+## 7. Zurückgestellt: Systembewertungs-Template auf echte Checkboxen umstellen
+
+**Status: bewusst zurückgestellt (Ressourcenknappheit, Stand 24.08.) - für
+später vormerken, nicht jetzt angehen.**
+
+Idee: die alten Mailmerge-Feldfunktionen/Wingdings-Checkboxen im
+Systembewertungs-Template durch echte Word-Content-Control-Checkboxen
+ersetzen (wie bei Tabelle 10 im CS-VP erfolgreich umgesetzt) - dann
+könnten `word_parser_*.py` (Extraktion) und `webapp/app.py` (Fill-SB)
+direkt mit den Klartext-Feldern aus Abschnitt 3 arbeiten statt mit den 62
+Roh-Checkbox-Spalten.
+
+**Korrektur ggü. der ersten Einschätzung:** anders als beim CS-VP-Template
+ist das Systembewertungs-Template **kein offiziell freigegebenes/
+dokumentenkontrolliertes Dokument**, sondern informeller Natur - der
+Change-Control-Einwand (Freigabeprozess nötig) gilt hier also **nicht**.
+Trotzdem bleibt es ein eigenständiges, mittelgroßes Stück Arbeit (Template
+für 16 Gruppen/62 Checkboxen umbauen, `word_parser_*.py` +`webapp/app.py`
+anpassen, koordinierter Umstieg Schreib-/Leseseite) - deshalb zurückgestellt,
+nicht verworfen.
