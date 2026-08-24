@@ -33,14 +33,36 @@ optimiert ist, nicht für maschinelle Weiterverarbeitung.
 ## 2. Was "Zusammenführung" bedeuten könnte – drei Stufen
 
 ### Stufe 1 – Datenbasis verschmelzen, Code getrennt (kleinster Schritt)
-Beide Projekte bleiben eigene Repos/Codebasen. Die SDB übernimmt die Rolle
-der heutigen Excel-Datei als gemeinsame Stammdatenquelle:
-- SysBew_Extraktor schreibt bei Word-Import weiterhin die extrahierten
-  Werte, aber in die SDB statt ins Excel (oder zusätzlich/übergangsweise
-  in beides)
-- Fill-a-Masterform liest/schreibt wie bisher direkt in der SDB
+Beide Projekte bleiben eigene Repos/Codebasen. Statt der heutigen Excel-
+Datei gibt es eine gemeinsame **Main-DB** als Stammdatenquelle, mit klar
+getrennten Rollen (Stand 24.08., mit dem Nutzer abgestimmt):
+
+- **SysBew_Extraktor** ist der einzige Schreib-Weg in die Main-DB, und
+  auch das nur aus **freigegebenen** Systembewertungs-Dokumenten (wie
+  heute beim Excel: Word-Import per Drag&Drop). Mit der Main-DB können
+  neue Systembewertungen erstellt werden - Änderungen, die dabei
+  entstehen (auch aus der Nachbearbeitung/Freigabeschleife), fließen
+  **nicht direkt** zurück, sondern erst wieder über denselben Weg: sobald
+  das Dokument erneut freigegeben und importiert wird.
+- **Fill-a-Masterform** liest nur die Anfangsdaten aus der Main-DB (Kopie/
+  Startpunkt für unser System-Formular: leer/Kopie eines ähnlichen
+  Systems/bearbeiten). Diese drei Szenarien bleiben wie bisher nötig -
+  man braucht sie, solange für ein System noch keine (neue) SysBew
+  existiert. **Wichtig:** was dabei in unserem System-Formular entsteht
+  oder geändert wird, bleibt lokal/nur für unsere Fill-Zwecke (CS-VP/VB/
+  VQ/xQTP) - es fließt **nicht** in die Main-DB zurück. Die Main-DB wird
+  ausschließlich über den offiziellen SysBew_Extraktor-Weg aktualisiert
+  (freigegebene SysBew -> Import). Unsere eigene Projekt-DB (PDB) für
+  projektspezifische Zusatzdaten ist davon unberührt und bleibt wie
+  gewohnt bei uns.
 - Die Excel-Datei wird zum Auslaufmodell (oder bleibt als Export/Reporting-
   Format bestehen, aber nicht mehr als Schreib-Ziel)
+
+Damit gibt es pro Datensatz nur einen einzigen "offiziellen" Schreibpfad
+(SysBew_Extraktor, freigegebene Dokumente) - genau das Prinzip, das
+SysBew_Extraktor laut README schon für sich selbst anwendet (kein direkter
+Rückfluss aus der eigenen Webapp), hier nur auf beide Projekte
+ausgeweitet.
 
 **Aufwand:** mittel. **Risiko:** gering – kein Codebasen-Umbau, nur ein
 neuer Schreib-Adapter in SysBew_Extraktor (ersetzt die openpyxl-Schreib-
