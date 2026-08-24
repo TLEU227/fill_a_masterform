@@ -103,27 +103,32 @@ Abschnitt 9 KONZEPT.md – dieselbe Vorsicht gilt hier).
 Stand 24.08.: beide Datenquellen existieren bereits, nur in anderer Form -
 Main-DB heute als Excel-Datei, Projekt-DB heute als SharePoint-Liste. Frage
 war: was ist dafür serverunabhängig aus Python am praktikabelsten.
+**Ergebnis: beide laufen über Datei-Export/`openpyxl`, kein Live-API-
+Zugriff** (Begründung siehe unten).
 
 - **Main-DB (xlsx):** bleibt bei `openpyxl` - bereits im Einsatz
   (`db/import_excel.py`, `db/export_normalized_snapshot.py`), kein Server
   nötig.
-- **Projekt-DB (SharePoint-Liste):** am praktikabelsten ist ein
-  periodisches/lokales Python-Skript (wie der Excel-Import heute), das
-  direkt die **Microsoft Graph API** anspricht - kein eigener Server nötig.
-  Zwei gängige Bibliotheken:
-  - `msal` (Microsofts offizielle Auth-Lib) + `requests` für die
-    Graph-REST-Calls - schlank, volle Kontrolle. **Empfehlung.**
-  - `Office365-REST-Python-Client` - komfortabler, SharePoint-spezifische
-    Helfer (Listen/Felder/Items) inklusive.
-  - Auth ohne Server: Device-Code-Flow (in `msal` enthalten) - kein
-    Client-Secret nötig, einmalige interaktive Anmeldung im Browser, danach
-    läuft das Skript eigenständig.
-- **Offener organisatorischer Punkt (kein technisches Problem):** für den
-  produktiven Einsatz braucht es eine **App-Registrierung im Azure-AD-
-  Tenant** mit passender Berechtigung - für uns reicht rein lesend
-  `Sites.Read.All` (passt zur in Abschnitt 2 geklärten Read-only-Rolle von
-  Fill-a-Masterform gegenüber der Main-DB). Das kann nur die eigene
-  IT/Admin-Seite einrichten.
+- **Projekt-DB (SharePoint-Liste):** live über die Microsoft Graph API
+  wäre technisch möglich, braucht dafür aber eine App-Registrierung im
+  Azure-AD-Tenant (mind. `Sites.Read.All`) - dieser Zugang ist laut
+  Rückmeldung vom 24.08. **nicht zu bekommen**. Damit entschieden:
+  **Fällt weg.**
+- **Entscheidung 24.08.: bei Excel/Datei-Export bleiben, für beide
+  Quellen.** Die Projekt-DB wird - genau wie die Main-DB - über einen
+  **manuellen/periodischen Export** angebunden, nicht live:
+  - SharePoint-Listen lassen sich ohne Admin-Rechte über die Board-Funktion
+    **"Export to Excel"** (in der Listenansicht) als `.xlsx` exportieren -
+    das kann jeder mit Lesezugriff auf die Liste selbst auslösen, keine
+    IT/Azure-Freigabe nötig.
+  - Dieser Export wird dann genauso behandelt wie die Main-DB-xlsx: mit
+    `openpyxl` in Python eingelesen, per periodischem
+    Import-Skript (analog `db/import_excel.py`) in unsere lokale DB
+    übernommen.
+  - Konsequenz: kein Live-Zugriff, sondern ein Snapshot-Stand zum
+    Zeitpunkt des letzten Exports - für unseren Read-only-Bedarf (siehe
+    Abschnitt 2) ausreichend, solange der Export regelmäßig neu gemacht
+    wird.
 
 ## 4. Praktische Hürde, unabhängig von der gewählten Stufe
 
