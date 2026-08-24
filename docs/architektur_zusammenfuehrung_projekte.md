@@ -98,7 +98,34 @@ python-docx-Ansatz für CS-VP – eine "gemeinsame Engine" wäre nicht trivial
 (genau der Grund, warum FMech am 23.08. wieder verworfen wurde, siehe
 Abschnitt 9 KONZEPT.md – dieselbe Vorsicht gilt hier).
 
-## 3. Praktische Hürde, unabhängig von der gewählten Stufe
+## 3. Technische Anbindung: Main-DB (xlsx) und Projekt-DB (SharePoint-Liste)
+
+Stand 24.08.: beide Datenquellen existieren bereits, nur in anderer Form -
+Main-DB heute als Excel-Datei, Projekt-DB heute als SharePoint-Liste. Frage
+war: was ist dafür serverunabhängig aus Python am praktikabelsten.
+
+- **Main-DB (xlsx):** bleibt bei `openpyxl` - bereits im Einsatz
+  (`db/import_excel.py`, `db/export_normalized_snapshot.py`), kein Server
+  nötig.
+- **Projekt-DB (SharePoint-Liste):** am praktikabelsten ist ein
+  periodisches/lokales Python-Skript (wie der Excel-Import heute), das
+  direkt die **Microsoft Graph API** anspricht - kein eigener Server nötig.
+  Zwei gängige Bibliotheken:
+  - `msal` (Microsofts offizielle Auth-Lib) + `requests` für die
+    Graph-REST-Calls - schlank, volle Kontrolle. **Empfehlung.**
+  - `Office365-REST-Python-Client` - komfortabler, SharePoint-spezifische
+    Helfer (Listen/Felder/Items) inklusive.
+  - Auth ohne Server: Device-Code-Flow (in `msal` enthalten) - kein
+    Client-Secret nötig, einmalige interaktive Anmeldung im Browser, danach
+    läuft das Skript eigenständig.
+- **Offener organisatorischer Punkt (kein technisches Problem):** für den
+  produktiven Einsatz braucht es eine **App-Registrierung im Azure-AD-
+  Tenant** mit passender Berechtigung - für uns reicht rein lesend
+  `Sites.Read.All` (passt zur in Abschnitt 2 geklärten Read-only-Rolle von
+  Fill-a-Masterform gegenüber der Main-DB). Das kann nur die eigene
+  IT/Admin-Seite einrichten.
+
+## 4. Praktische Hürde, unabhängig von der gewählten Stufe
 
 Ich (diese Claude-Code-Session) habe aktuell **nur Zugriff auf
 `TLEU227/fill_a_masterform`**, nicht auf `TLEU227/SysBew_Extraktor`. Jede
@@ -108,7 +135,7 @@ der drei Stufen erfordert an irgendeinem Punkt Änderungen im anderen Repo
 benötigt. Bis dahin kann von hier aus nur die Planung/Spezifikation
 vorbereitet werden, keine Umsetzung im anderen Repo.
 
-## 4. Empfehlung
+## 5. Empfehlung
 
 **Stufe 1 zuerst, unabhängig davon ob später Stufe 2/3 folgen.** Begründung:
 - Löst das eigentliche, akute Problem (Excel als ungeeigneter Dauer-
@@ -124,7 +151,7 @@ vorbereitet werden, keine Umsetzung im anderen Repo.
   deterministisch zu Klartext-Feldern auflösen lässt, die 1:1 zu SDB-
   Feldern passen könnten).
 
-## 5. Nächste konkrete Schritte (falls Stufe 1 gewählt wird)
+## 6. Nächste konkrete Schritte (falls Stufe 1 gewählt wird)
 
 1. Session mit Zugriff auf beide Repos einrichten (Voraussetzung für alles
    Weitere)
