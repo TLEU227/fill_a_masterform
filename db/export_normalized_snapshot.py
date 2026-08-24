@@ -204,11 +204,8 @@ def write_json(rows: list[dict], path: Path) -> None:
     path.write_text(json.dumps(rows, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
-def write_csv(rows: list[dict], path: Path) -> None:
-    if not rows:
-        path.write_text("", encoding="utf-8")
-        return
-    # Spaltenreihenfolge: Vereinigung aller Keys, erste Zeile bestimmt die Basis-Reihenfolge,
+def alle_spaltennamen(rows: list[dict]) -> list[str]:
+    # Vereinigung aller Keys, erste Zeile bestimmt die Basis-Reihenfolge,
     # danach angehaengte Zeilen koennen zusaetzliche (Anomalie-)Spalten mitbringen.
     fieldnames = []
     seen = set()
@@ -217,6 +214,14 @@ def write_csv(rows: list[dict], path: Path) -> None:
             if k not in seen:
                 seen.add(k)
                 fieldnames.append(k)
+    return fieldnames
+
+
+def write_csv(rows: list[dict], path: Path) -> None:
+    if not rows:
+        path.write_text("", encoding="utf-8")
+        return
+    fieldnames = alle_spaltennamen(rows)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
@@ -224,23 +229,50 @@ def write_csv(rows: list[dict], path: Path) -> None:
             writer.writerow(r)
 
 
+def write_xlsx(rows: list[dict], path: Path) -> None:
+    """Bereinigte Master-DB als echtes Excel - gleiche Klartext-Felder wie
+    JSON/CSV, aber im Format, das im restlichen Ablauf (Datei-Export statt
+    Live-API, siehe docs/architektur_zusammenfuehrung_projekte.md) ohnehin
+    ueberall verwendet wird."""
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "MasterDB_bereinigt"
+    if not rows:
+        wb.save(path)
+        return
+    fieldnames = alle_spaltennamen(rows)
+    ws.append(fieldnames)
+    for r in rows:
+        # Listen (z.B. '..._mehrfach_markiert') als lesbaren Text statt Python-Repr
+        ws.append([", ".join(r[k]) if isinstance(r.get(k), list) else r.get(k) for k in fieldnames])
+    for col in ws.columns:
+        letter = col[0].column_letter
+        laenge = max((len(str(c.value)) for c in col if c.value is not None), default=10)
+        ws.column_dimensions[letter].width = min(laenge + 2, 60)
+    ws.freeze_panes = "A2"
+    wb.save(path)
+
+
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("xlsx_path", help="Pfad zu Systembewertungen_GESAMT.xlsx")
-    parser.add_argument("out_path", help="Pfad für die Ausgabedatei (.json oder .csv)")
-    parser.add_argument("--format", choices=["json", "csv"], default=None,
+    parser.add_argument("out_path", help="Pfad für die Ausgabedatei (.json, .csv oder .xlsx)")
+    parser.add_argument("--format", choices=["json", "csv", "xlsx"], default=None,
                          help="Standard: aus Dateiendung von out_path abgeleitet")
     parser.add_argument("--limit", type=int, default=None, help="nur die ersten N Systeme (zum Testen)")
     args = parser.parse_args(argv)
 
     xlsx_path = Path(args.xlsx_path)
     out_path = Path(args.out_path)
-    fmt = args.format or ("csv" if out_path.suffix.lower() == ".csv" else "json")
+    suffix = out_path.suffix.lower()
+    fmt = args.format or {"csv": "csv", "xlsx": "xlsx"}.get(suffix.lstrip("."), "json")
 
     rows, stats = export_rows(xlsx_path, limit=args.limit)
 
     if fmt == "csv":
         write_csv(rows, out_path)
+    elif fmt == "xlsx":
+        write_xlsx(rows, out_path)
     else:
         write_json(rows, out_path)
 
