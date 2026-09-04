@@ -140,6 +140,14 @@ der drei Stufen erfordert an irgendeinem Punkt Änderungen im anderen Repo
 benötigt. Bis dahin kann von hier aus nur die Planung/Spezifikation
 vorbereitet werden, keine Umsetzung im anderen Repo.
 
+**Gelöst (Stand 04.09.):** In claude.ai/code lässt sich beim Anlegen einer
+neuen Session über die Repo-Chip-Leiste (Klick auf "+") mehr als ein Repo
+gleichzeitig als Quelle hinzufügen. Eine solche Session (Zugriff auf beide
+Repos) hat den Architektur-Entwurf gelesen und den Plan aus diesem
+Dokument als Issue in `SysBew_Extraktor` eingestellt:
+[TLEU227/SysBew_Extraktor#39](https://github.com/TLEU227/SysBew_Extraktor/issues/39).
+Antwort von dort steht noch aus.
+
 ## 5. Empfehlung
 
 **Stufe 1 zuerst, unabhängig davon ob später Stufe 2/3 folgen.** Begründung:
