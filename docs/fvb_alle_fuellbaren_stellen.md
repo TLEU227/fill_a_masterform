@@ -54,6 +54,8 @@ bleibt weiterhin unangetastet.
 | Kap. 4.10 PPQ - ganzes Kapitel bei ppq_durchgefuehrt=nein | PDB `ppq_durchgefuehrt` | ✅ |
 | Kap. 4.12 / Tabelle 6 "Änderungen/Unexpected Events" | PDB `unexpected_event` (neue Liste) | ✅ inkl. "keine Änderungen"-Alternative |
 | Kap. 3 "Vorgehensweise bei der Validierung" - wie geplant/angepasst | PDB `vorgehensweise_wie_geplant`/`_anpassung_beschreibung` | ✅ **einziger** solcher Textbaustein im Dokument, siehe Hinweis unten |
+| Alle 8 "V2.0 (CC Nummer): ..."-Zeilen im gesamten Dokument | PDB `folgeversion` + `versionshistorie_eintrag` | ✅ generisch: FV≤1.0 entfernt, FV=2.0 befüllt, FV≥3.0 zusätzlich neue Zeile im gleichen Stil |
+| Kap. 1.2 "Initial-Validierung erfolgte im Rahmen des CC ..." | PDB `ist_folgeprojekt` (wiederverwendet) + `change_control_nummer` (wiederverwendet) | ✅ `ist_folgeprojekt=nein` (= das IST die Initial-Validierung) → CC-Nummer eingesetzt, Absatz bleibt; `=ja` (Folgeprojekt) → Absatz entfernt |
 
 ## Gefundene, noch offene Lücken (nicht gefüllt) und bewusste Vereinfachungen
 
@@ -93,6 +95,32 @@ Zeile). Genau dieses wird jetzt befüllt - **kein** separates Feld pro
 Phase, weil es dafür keine Textgrundlage im Dokument gibt. Der "Kap. 2.0
 Titel"-Platzhalter (mutmaßlich ein einzufügender Kapiteltitel für die
 Änderungsbeschreibung) bleibt unangetastet - kein PDB-Feld dafür vorgesehen.
+
+## Versionshistorie generisch für alle 8 "V2.0 (CC Nummer)"-Zeilen (Stand 04.09., Nachmittag)
+
+Bisher (v2/v3) wurde bei den 8 blau markierten "V2.0 (CC Nummer): ..."-
+Instruktionszeilen (Kap. 1.2, Lieferantenbewertung, Vorgehensweise, DQ, IQ,
+OQ, PQ, PPQ) nur der Platzhalter "(CC Nummer)" ersetzt - unabhängig von der
+tatsächlichen Dokumentversion. Nutzer-Rückmeldung: das Formular hat dafür
+schon ein Feld (`folgeversion`) - das soll jetzt generisch für **alle**
+diese Zeilen gelten, nicht nur für die eine Haupt-Zeile:
+- `folgeversion` ≤ 1.0 → Zeile komplett entfernt (kein Vorgänger).
+- `folgeversion` = 2.0 → Zeile bleibt, befüllt mit dem "2.0"-Eintrag aus
+  `versionshistorie_eintrag` (CC-Nummer + Beschreibung).
+- `folgeversion` ≥ 3.0 → die "2.0"-Zeile bleibt (Historie), **zusätzlich**
+  wird eine neue Zeile im gleichen Stil (Schriftart/-größe kopiert) für die
+  aktuelle Version eingefügt.
+
+**Bewusste Vereinfachung:** es gibt nur EINE allgemeine Beschreibung pro
+Version (`versionshistorie_eintrag.beschreibung`), keine kapitelspezifische
+- dieselbe Beschreibung wird daher in allen 8 Zeilen eingesetzt. Passt zum
+vom Nutzer selbst als Stil-Beispiel genannten Text ("Beschreibung der
+Änderung, die die Versionierung ... erforderlich macht"), der ebenfalls
+generisch statt kapitelspezifisch ist.
+
+Wechselwirkung mit anderen Regeln: liegt eine dieser Zeilen in einem später
+komplett gestrichenen Kapitel (z. B. PPQ bei `ppq_durchgefuehrt=nein`),
+verschwindet sie automatisch mit - kein Sonderfall nötig.
 
 ## Neue PDB-Felder (Stand 04.09.)
 
