@@ -49,7 +49,7 @@ bleibt weiterhin unangetastet.
 | Tabelle "Dokumentation Initial-Validierung" (5 von 17 Zeilen) | PDB | ✅ |
 | Tabelle "Weitere Validierungsdokumente" (PPQ-Checkbox) | PDB `phase_ppq_geplant` | ✅ |
 | Änderungshistorie | PDB `versionshistorie_eintrag` | ✅ |
-| Kap. 4.1 KI-Einsatz - "MIT KI"-Block bei ki_reifegrad N/A/I/II | SDB `ki_reifegrad` | ✅ nur diese Richtung, siehe Lücken |
+| Kap. 4.1 KI-Einsatz - "ohne KI"/"MIT KI"-Block (beide Richtungen) | SDB `ki_vorhanden`/`ki_autonomie_stufe`/`ki_steuerungsdesign_stufe` (→ `ki_reifegrad` abgeleitet, wie in der Webapp) | ✅ **Update 04.09.**: Umkehrfall (KI wird genutzt, Reifegrad III-VI) jetzt auch umgesetzt - vorher nur "ohne KI"-Richtung |
 | Kap. 4.2/4.7/4.8/4.9 (DQ/IQ/OQ/PQ) - "offene Anforderungen"-Absatz | PDB `{phase}_offene_anforderungen` | ✅ binäre Vereinfachung, siehe Lücken |
 | Kap. 4.10 PPQ - ganzes Kapitel bei ppq_durchgefuehrt=nein | PDB `ppq_durchgefuehrt` | ✅ |
 | Kap. 4.12 / Tabelle 6 "Änderungen/Unexpected Events" | PDB `unexpected_event` (neue Liste) | ✅ inkl. "keine Änderungen"-Alternative |
@@ -64,7 +64,7 @@ bleibt weiterhin unangetastet.
 | Tabelle 2 "Referenzdokumente" (nach Kap. 1.1) | Nur 1 Beispielzeile, Struktur noch unklar - nicht analysiert. |
 | Tabelle "Dokumentation Initial-Validierung" - 11 von 17 Zeilen | Ergebnis-Dokumente (Abschlussberichte, Testvorschriften, AFU, HDS/SDS, URS/TM) ohne PDB-Feld. |
 | Tabelle "Weitere Validierungsdokumente" - 17 von 18 Prüfpunkten | Gleiche Lücke wie bei CS-VP Tabelle 10. |
-| Kap. 4.1 KI-Einsatz - Umkehrfall (KI wird genutzt, ki_reifegrad III-VI) | Nur "keine KI" (N/A/I/II) umgesetzt, wie explizit angefordert ("wenigstens bei KI nicht verfügbar"). Bei aktiver KI-Nutzung bleiben aktuell BEIDE Blöcke stehen (Widerspruch im Dokument) - nächster Schritt. |
+| ~~Kap. 4.1 KI-Einsatz - Umkehrfall~~ | **Geschlossen 04.09. (Nachmittag).** Beide Richtungen jetzt umgesetzt, inkl. dem grauen "MIT Künstliche Intelligenz:"-Label (Bedienungshilfe, wird durch die bestehende Grautext-Regel entfernt) und dem "oder"-Trenner dazwischen. |
 | Kap. 4.7 IQ - "unkritisch, per Change Control nachverfolgt"-Variante | Template hat hier 3 statt 2 Alternativen; aktuell binär vereinfacht (ja=behoben bis PQ / nein=keine aufgetreten), die dritte Variante wird immer gestrichen. |
 | Kap. 4.8 OQ - "OQ-Abschlussbericht" vs. "in diesem Bericht" | Abgeleitet aus `phase_pq_geplant` (Annahme: Abschlussbericht existiert nur, wenn danach noch eine PQ-Phase folgt - im Template nicht 1:1 so benannt, aber konsistent zur Formulierung "(Falls keine PQ durchgeführt...)"). |
 | Kap. 4.9 PQ / Kap. 4.10 PPQ - "Abschlussbericht" vs. "in diesem Bericht" | Keine explizite Bedingung im Template (anders als bei OQ) - nicht automatisiert, beide Absätze bleiben unangetastet. |
