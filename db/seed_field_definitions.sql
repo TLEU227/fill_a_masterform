@@ -117,6 +117,20 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('system', 'business_critical',  'Business critical?',    'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'GxP-Bewertung', 90),
 ('system', 'vq_erforderlich',    'Vereinfachte Qualifizierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0021736', '["immer"]', 'GxP-Bewertung', 100),
 ('system', 'val_erforderlich',   'Validierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0049866 (Validierung computergestützter Systeme)', '["immer"]', 'GxP-Bewertung', 110),
+-- KI-Einstufung (Kap. "Einsatz von Künstlicher Intelligenz") - Nutzer-
+-- Rückmeldung 04.09.: ki_reifegrad ist eigentlich kein direkt erfasstes
+-- Feld, sondern ergibt sich aus zwei Vorfragen:
+--   1. ki_vorhanden = nein -> sofort Ende, kein Reifegrad nötig (häufigster Fall)
+--   2. ki_vorhanden = ja -> Autonomie-Stufe (0-5) + Steuerungsdesign-Stufe
+--      (0-5) abfragen, daraus ergibt sich der Reifegrad (I-VI) per Matrix
+--      (analog zu TESTTIEFE_MATRIX in webapp/app.js).
+-- Die Matrix (welche Autonomie/Steuerungsdesign-Kombination zu welchem
+-- Reifegrad führt) fehlt uns noch - ki_reifegrad bleibt bis dahin manuell
+-- auswählbar statt automatisch berechnet (siehe TODO in webapp/app.js).
+('system', 'ki_vorhanden', 'Wird im System Künstliche Intelligenz eingesetzt?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-OPE-2497575 (Risk Profile and Control Framework, Abschnitt 5)', '["immer"]', 'GxP-Bewertung', 111),
+('system', 'ki_autonomie_stufe', 'KI: Autonomie-Stufe', 'auswahl', '["0","1","2","3","4","5"]', 0, NULL, 'nur wenn ki_vorhanden = ja', '["immer"]', 'GxP-Bewertung', 112),
+('system', 'ki_steuerungsdesign_stufe', 'KI: Steuerungsdesign-Stufe', 'auswahl', '["0","1","2","3","4","5"]', 0, NULL, 'nur wenn ki_vorhanden = ja', '["immer"]', 'GxP-Bewertung', 113),
+
 -- KI-Reifegrad (Kap. "Einsatz von Künstlicher Intelligenz"): I/II = ohne KI
 -- (parallel zum Prozess bzw. konventionelle Anwendung ohne ML), III/IV = mit
 -- KI (geschlossenes bzw. autonomes KI-gestütztes CS). V/VI sind laut Template
@@ -130,7 +144,7 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
    {"wert":"IV","erklaerung":"KI-gestütztes CS ist autonom mit selbstauslösendem Neutraining, mit menschlichem Eingriff und Kontrolle der Updates."},
    {"wert":"V","erklaerung":"Im GxP-Umfeld nicht zugelassen."},
    {"wert":"VI","erklaerung":"Im GxP-Umfeld nicht zugelassen."}]',
- 0, NULL, 'gemäß QU-OPE-2497575 (Risk Profile and Control Framework, Abschnitt 5 „RISK DOMAIN: Artificial Intelligence“)', '["immer"]', 'GxP-Bewertung', 120);
+ 0, NULL, 'wenn ki_vorhanden=nein automatisch N/A; sonst ergibt sich aus ki_autonomie_stufe + ki_steuerungsdesign_stufe (Matrix noch nicht hinterlegt, siehe TODO webapp/app.js) - bis dahin manuell', '["immer"]', 'GxP-Bewertung', 120);
 
 -- ---------------------------------------------------------------------------
 -- System: Status/Nachverfolgung
