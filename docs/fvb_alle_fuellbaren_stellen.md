@@ -17,12 +17,23 @@ bleibt weiterhin unangetastet.
 ## Generelle Konvention (ab jetzt, alle Dokumenttypen)
 
 - **Legendebox** ("Diese Legendebox dient nur zur Orientierung...", jedes
-  Template) wird grundsätzlich komplett gestrichen.
+  Template) wird grundsätzlich komplett entfernt.
 - **Tabelle 1 Dokumentenfreigabe (Rollen)**: KEINE Personen-Ergänzung mehr
   (Rücknahme der ursprünglichen CS-VP-Funktion) - Tabelle bleibt in allen
   Dokumenttypen unangetastet.
 - **Grauer Text** (#A6A6A6, "Info: ..."/"Nach finaler Eintragung...") wird
-  im gesamten Dokument durchgestrichen/rot markiert (wie beim CS-VP).
+  im gesamten Dokument entfernt.
+- **Konventions-Update 04.09. (Nachmittag): Löschungen werden tatsächlich
+  ausgeführt, nicht mehr nur durchgestrichen/rot markiert.** Bisheriges
+  "nichts real entfernen"-Prinzip war unnötige Nacharbeit für die
+  menschliche Prüfung - Nutzer-Entscheidung: "das gilt für alles". Betroffen:
+  Legendebox, grauer Text, nicht zutreffende Alternativ-Absätze (inkl. der
+  dazwischenliegenden "Oder:"-Trenner), komplett entfallende Kapitel (KI-
+  Block, PPQ). Einzige technisch bedingte Ausnahme: der letzte Absatz einer
+  Tabellenzelle kann laut OOXML nie vollständig entfernt werden (mind. 1
+  Absatz Pflicht) - dort bleibt es beim Durchstreichen (z. B. Tabelle 6
+  Beispielzeile). Gelbe Markierung für eingefügte/beibehaltene Werte bleibt
+  unverändert - betrifft nur die Löschungen.
 
 ## Was in Demo v2 gefüllt wird
 

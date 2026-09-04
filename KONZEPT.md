@@ -163,6 +163,21 @@ gegengeprüft - ggf. Anpassungsbedarf nach Feedback.
 
 ## 3. Einheitliche Markierungen in den Dokumenten
 
+**Tatsächlich umgesetzte Konvention (Stand 04.09., ersetzt die ältere
+{{platzhalter}}-Überlegung unten für den echten Fill-Mechanismus):**
+- **Gelb hinterlegt** = automatisch eingefügter/geänderter/beibehaltener
+  Wert. Bleibt im Dokument sichtbar markiert, damit die menschliche Prüfung
+  erkennt, was automatisch erzeugt wurde.
+- **Löschungen werden ab jetzt tatsächlich durchgeführt, nicht nur
+  markiert.** Früher (bis 03.09.) wurde "zu löschender" Text nur
+  durchgestrichen+rot markiert und real im Dokument gelassen ("nichts wird
+  unsichtbar entfernt"-Prinzip). **Nutzer-Entscheidung 04.09.: das kostet
+  unnötig Nacharbeit - alles, was ohnehin sicher gelöscht werden soll
+  (graue Bedienungshilfe-Texte, Legendebox, nicht zutreffende
+  Alternativ-Absätze, ganze nicht-durchgeführte Kapitel), wird direkt
+  entfernt.** Gilt fuer alle Dokumenttypen (CS-VP/VB/VQ/xQTP), nicht nur
+  fuer graue Texte im Speziellen.
+
 Platzhalter-Konvention (bereits so im bestehenden `masterform`-Code
 umgesetzt): `{{entity_typ.feld_key}}`, z.B.
 
