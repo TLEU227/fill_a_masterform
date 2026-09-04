@@ -316,7 +316,7 @@ Ab jetzt verwendete Kürzel für die Bausteine, zur schnelleren Verständigung:
 | **PDB** | Projekt-DB (SQLite) | ✅ fertig, produktiv |
 | **WE** | Webapp/Eingabe (`app.html`, Formular für SDB+PDB) | ✅ fertig, produktiv |
 | **FVP** | Fill CS-Validierungsplan | 🟡 am weitesten, mehrere Demo-Durchläufe gegen die reale V9.0-Vorlage geprüft |
-| **FVB** | Fill CS-Validierungsbericht | ⬜ offen, nur grob analysiert |
+| **FVB** | Fill CS-Validierungsbericht | 🟡 erster Fill-Durchlauf gegen die reale Vorlage (Kopf, Rollen, Referenzdok., Änderungshistorie, PPQ-Checkbox) - Ergebnis-Text-Abschnitte bewusst nicht automatisiert, siehe `docs/fvb_alle_fuellbaren_stellen.md` |
 | **FVQ** | Fill Vereinfachte Qualifizierung | ⬜ offen, Tabellenstruktur bekannt |
 | **FxQTP** | Fill xQ-Testplan | ⬜ offen, kaum analysiert - gleiches Muster wie FVQ (Prüfschritt-Tabellen) |
 

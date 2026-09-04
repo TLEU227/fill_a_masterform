@@ -213,7 +213,7 @@ V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp is
 |---|---|---|
 | `mlcs_id` | MLCS-ID (Verknüpfung System-DB) | – Reines Verknüpfungsfeld (Wert, keine Fremdschlüssel-Beziehung), kein eigener Template-Platzhalter |
 | `ist_folgeprojekt` | Folgeprojekt? | ✅ Steuert zusammen mit `folgeversion`, ob die Versionshistorie-Zeilen (s. `versionshistorie_eintrag` unten) überhaupt erscheinen |
-| `vorgaenger_dok_id` / `vorgaenger_version` | Vorgänger-Dokument: Dok-ID/Version | ⬜ Aktuell nur zur Ableitung der Folgeversion gedacht, noch nicht selbst in einen Platzhalter eingesetzt |
+| `vorgaenger_dok_id` / `vorgaenger_version` | Vorgänger-Dokument: Dok-ID/Version | ✅ CS-VP + CS-VB: Folgedokument-Hinweis am Dokumentanfang ("… ist das Folgedokument von XXXXXX (Version xx)") |
 | `folgeversion` | Folgeversion (FV) dieses Dokuments | ✅ FV ≤ 1.0 → alle Versionshistorie-Zeilen entfallen; FV = 2.0 → Zeilen bleiben, mit CC-Nummer befüllt; FV ≥ 3.0 → zusätzlich neue Zeile in Kap. 1.1 + Tabelle 12: Änderungshistorie |
 | `change_control_nummer` | Change-Control-Nummer dieses Projekts | ✅ Kap. 1.1 ("Change Controls XXXXXXX" → echte CC-Nummer) |
 
@@ -228,7 +228,8 @@ V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp is
 | `fs_dok_id` / `_version` | Funktionsspezifikation: Dok-ID/Version (dieses Projekt) | ✅ Tabelle 6 Mitgeltende Unterlagen – dafür gibt es **noch keine Zeile** im Template, wird als **neue Zeile** eingefügt, wenn ein Wert vorliegt |
 | `lieferantenaudit_dok_id` / `_version` | Bericht Lieferantenauditierung: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 6 Mitgeltende Unterlagen (Zeile "\<Bericht Lieferantenauditierung\>", bis dahin unbefüllt) |
 | `ra_dok_id` / `_version` | Risikobewertung/RA: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 11 Anhänge (Anhang 1, "xxx Risikobewertung" → Dok-ID; Version-Spalte) |
-| `testplan_dok_id` / `_version` | Prüfplan/Testplan: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 11 Anhänge (Anhang 2, "Prüfplan/-Protokoll Dokumentation; Version x.x" → Version wird im Platzhalter *innerhalb* der Beschreibungszelle ersetzt, Template-Eigenheit; Dok-ID wird in die sonst leere Version-Spalte ergänzt, da dort kein eigener Platz vorgesehen ist) |
+| `testplan_dok_id` / `_version` | Prüfplan/Testplan: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 11 Anhänge (Anhang 2, "Prüfplan/-Protokoll Dokumentation; Version x.x" → Version wird im Platzhalter *innerhalb* der Beschreibungszelle ersetzt, Template-Eigenheit; Dok-ID wird in die sonst leere Version-Spalte ergänzt, da dort kein eigener Platz vorgesehen ist). Auch CS-VB: Tabelle "Dokumentation Initial-Validierung" (Zeile "IQ/OQ-Testplan"). |
+| `vp_dok_id` / `_version` | Validierungsplan (CS-VP): Dok-ID/Version (dieses Projekt) | ✅ **Neu 04.09.** Nur CS-VB: ersetzt den 5-X-Marker "XXXXX" nach "Validierungsplan" an >10 Stellen im Fließtext (generischer Scan über das ganze Dokument, kein Text-Matching pro Absatz nötig) sowie in der Tabelle "Dokumentation Initial-Validierung" (Zeile "CS Validierungsplan (CS-VP)") |
 | `projektbezeichnung` | Projektbezeichnung | ✅ Kap. 3.5 ("bezogen auf das Projektbezeichnung" → echter Projektname) |
 
 ### 2.3 Vorgehensweise + Testkonzept (Kap. 3 CS-VP)
