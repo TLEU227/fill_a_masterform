@@ -97,6 +97,16 @@ const TESTTIEFE_MATRIX = {
   Minor: { "1": "Gering", "3": "Gering", "4": "Gering", "5": "Mittel" },
   "N/A": { "1": "N/A", "3": "N/A", "4": "N/A", "5": "N/A", "N/A": "N/A" },
 };
+// KI-Reifegrad: Autonomie-Stufe (0-5) x Steuerungsdesign-Stufe (1-5) -> Reifegrad I-VI.
+// Vom Nutzer bestätigt (Stand 04.09.), Steuerungsdesign-Stufe 3 = wie Stufe 2.
+const KI_REIFEGRAD_MATRIX = {
+  "0": { "1": "I", "2": "II", "3": "II", "4": "II", "5": "II" },
+  "1": { "1": "I", "2": "III", "3": "III", "4": "III", "5": "III" },
+  "2": { "1": "I", "2": "IV", "3": "IV", "4": "V", "5": "V" },
+  "3": { "1": "I", "2": "IV", "3": "IV", "4": "V", "5": "V" },
+  "4": { "1": "I", "2": "VI", "3": "VI", "4": "VI", "5": "VI" },
+  "5": { "1": "I", "2": "VI", "3": "VI", "4": "VI", "5": "VI" },
+};
 
 // ---------------------------------------------------------------- Hilfsfunktionen
 function escapeHtml(s) {
@@ -484,11 +494,24 @@ function renderForm() {
     </div>`;
   form.appendChild(card);
 
+  // KI-Reifegrad: automatisch berechnet, kein Eingabefeld
+  const kiCard = document.createElement("div");
+  kiCard.className = "card computed";
+  kiCard.innerHTML = `<h2>KI-Reifegrad (automatisch)<span class="tag">immer</span></h2>
+    <div style="padding:14px 16px">
+      <div class="field computed">
+        <div class="value" id="kiReifegradWert">– bitte "KI vorhanden?" beantworten –</div>
+        <div class="basis">Wenn "KI vorhanden?" = nein: automatisch N/A. Sonst abgeleitet aus KI-Autonomie-Stufe + KI-Steuerungsdesign-Stufe, gemäß QU-OPE-2497575. Kein Eingabefeld.</div>
+      </div>
+    </div>`;
+  form.appendChild(kiCard);
+
   form.querySelectorAll("[data-key]").forEach((el) => {
     el.addEventListener("input", () => onFieldUpdate(el));
     el.addEventListener("change", () => onFieldUpdate(el));
   });
   recomputeTesttiefe();
+  recomputeKiReifegrad();
 }
 
 function renderProjektForm() {
@@ -564,6 +587,7 @@ function onFieldUpdate(el) {
   markChanged(el, ctx);
   markDirty();
   if (ctx === "system" && (key === "gxp_kritikalitaet" || key === "gamp_kategorie")) recomputeTesttiefe();
+  if (ctx === "system" && (key === "ki_vorhanden" || key === "ki_autonomie_stufe" || key === "ki_steuerungsdesign_stufe")) recomputeKiReifegrad();
 }
 
 function recomputeTesttiefe() {
@@ -574,6 +598,24 @@ function recomputeTesttiefe() {
   const row = TESTTIEFE_MATRIX[krit];
   const result = row ? row[gamp] : null;
   el.textContent = result || "– bitte GxP-Kritikalität und GAMP-Kategorie wählen –";
+}
+function recomputeKiReifegrad() {
+  const el = document.getElementById("kiReifegradWert");
+  if (!el) return;
+  const vorhanden = fieldValueIn("#systemForm", "ki_vorhanden");
+  if (vorhanden === "nein") {
+    el.textContent = "N/A (keine KI im Einsatz)";
+    return;
+  }
+  if (vorhanden !== "ja") {
+    el.textContent = "– bitte \"KI vorhanden?\" beantworten –";
+    return;
+  }
+  const autonomie = fieldValueIn("#systemForm", "ki_autonomie_stufe");
+  const steuerung = fieldValueIn("#systemForm", "ki_steuerungsdesign_stufe");
+  const row = KI_REIFEGRAD_MATRIX[autonomie];
+  const result = row ? row[steuerung] : null;
+  el.textContent = result || "– bitte Autonomie-Stufe und Steuerungsdesign-Stufe wählen –";
 }
 function fieldValueIn(formSelector, key) {
   const el = document.querySelector(`${formSelector} [data-key="${key}"]`);

@@ -118,33 +118,26 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('system', 'vq_erforderlich',    'Vereinfachte Qualifizierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0021736', '["immer"]', 'GxP-Bewertung', 100),
 ('system', 'val_erforderlich',   'Validierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0049866 (Validierung computergestützter Systeme)', '["immer"]', 'GxP-Bewertung', 110),
 -- KI-Einstufung (Kap. "Einsatz von Künstlicher Intelligenz") - Nutzer-
--- Rückmeldung 04.09.: ki_reifegrad ist eigentlich kein direkt erfasstes
--- Feld, sondern ergibt sich aus zwei Vorfragen:
---   1. ki_vorhanden = nein -> sofort Ende, kein Reifegrad nötig (häufigster Fall)
---   2. ki_vorhanden = ja -> Autonomie-Stufe (0-5) + Steuerungsdesign-Stufe
---      (0-5) abfragen, daraus ergibt sich der Reifegrad (I-VI) per Matrix
---      (analog zu TESTTIEFE_MATRIX in webapp/app.js).
--- Die Matrix (welche Autonomie/Steuerungsdesign-Kombination zu welchem
--- Reifegrad führt) fehlt uns noch - ki_reifegrad bleibt bis dahin manuell
--- auswählbar statt automatisch berechnet (siehe TODO in webapp/app.js).
+-- Rückmeldung 04.09.: ki_vorhanden = nein -> sofort Ende (häufigster Fall,
+-- kein Reifegrad nötig). ki_vorhanden = ja -> Autonomie-Stufe (0-5) +
+-- Steuerungsdesign-Stufe (1-5, KEINE Stufe 0) abfragen.
 ('system', 'ki_vorhanden', 'Wird im System Künstliche Intelligenz eingesetzt?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-OPE-2497575 (Risk Profile and Control Framework, Abschnitt 5)', '["immer"]', 'GxP-Bewertung', 111),
 ('system', 'ki_autonomie_stufe', 'KI: Autonomie-Stufe', 'auswahl', '["0","1","2","3","4","5"]', 0, NULL, 'nur wenn ki_vorhanden = ja', '["immer"]', 'GxP-Bewertung', 112),
-('system', 'ki_steuerungsdesign_stufe', 'KI: Steuerungsdesign-Stufe', 'auswahl', '["0","1","2","3","4","5"]', 0, NULL, 'nur wenn ki_vorhanden = ja', '["immer"]', 'GxP-Bewertung', 113),
+('system', 'ki_steuerungsdesign_stufe', 'KI: Steuerungsdesign-Stufe', 'auswahl', '["1","2","3","4","5"]', 0, NULL, 'nur wenn ki_vorhanden = ja', '["immer"]', 'GxP-Bewertung', 113);
 
--- KI-Reifegrad (Kap. "Einsatz von Künstlicher Intelligenz"): I/II = ohne KI
--- (parallel zum Prozess bzw. konventionelle Anwendung ohne ML), III/IV = mit
--- KI (geschlossenes bzw. autonomes KI-gestütztes CS). V/VI sind laut Template
--- im GxP-Umfeld nicht zugelassen. War bisher nur in der Analyse dokumentiert
--- (KI1..KI6/KINA-Spalten), jetzt als eigenes Feld nachgezogen.
-('system', 'ki_reifegrad', 'KI-Reifegrad', 'auswahl',
- '[{"wert":"N/A","erklaerung":"Kein Einsatz von Künstlicher Intelligenz."},
-   {"wert":"I","erklaerung":"KI-gestütztes CS wird parallel zum Produktionsprozess eingesetzt, kein Einfluss auf einen GxP-relevanten Prozess."},
-   {"wert":"II","erklaerung":"KI-gestütztes CS ist eine konventionelle Anwendung ohne Einsatz von Machine Learning (ML)."},
-   {"wert":"III","erklaerung":"KI-gestütztes CS wird als geschlossenes System verwendet."},
-   {"wert":"IV","erklaerung":"KI-gestütztes CS ist autonom mit selbstauslösendem Neutraining, mit menschlichem Eingriff und Kontrolle der Updates."},
-   {"wert":"V","erklaerung":"Im GxP-Umfeld nicht zugelassen."},
-   {"wert":"VI","erklaerung":"Im GxP-Umfeld nicht zugelassen."}]',
- 0, NULL, 'wenn ki_vorhanden=nein automatisch N/A; sonst ergibt sich aus ki_autonomie_stufe + ki_steuerungsdesign_stufe (Matrix noch nicht hinterlegt, siehe TODO webapp/app.js) - bis dahin manuell', '["immer"]', 'GxP-Bewertung', 120);
+-- 'ki_reifegrad' ist KEIN Eingabefeld (wie 'testtiefe' oben): sie ergibt
+-- sich aus ki_vorhanden + ki_autonomie_stufe + ki_steuerungsdesign_stufe,
+-- Ableitungstabelle vom Nutzer bestätigt (Stand 04.09.):
+--   ki_vorhanden=nein -> N/A (kein Reifegrad nötig)
+--   Autonomie \ Steuerungsdesign | 1 | 2   | 3   | 4  | 5
+--   0                            | I | II  | II  | II | II
+--   1                            | I | III | III | III| III
+--   2                            | I | IV  | IV  | V  | V
+--   3                            | I | IV  | IV  | V  | V   (wie Stufe 2)
+--   4                            | I | VI  | VI  | VI | VI
+--   5                            | I | VI  | VI  | VI | VI
+-- Wird bei der Dokument-Erzeugung automatisch berechnet (KI_REIFEGRAD_MATRIX
+-- in webapp/app.js), nicht manuell erfasst.
 
 -- ---------------------------------------------------------------------------
 -- System: Status/Nachverfolgung
