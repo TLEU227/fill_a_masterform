@@ -213,6 +213,14 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- nein -> ganzes PPQ-Kapitel im CS-VB entfällt.
 ('projekt', 'ppq_durchgefuehrt', 'PPQ tatsächlich durchgeführt? (Kap. 4.10 CS-VB)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 50);
 
+-- Kap. 3 CS-VB "Vorgehensweise bei der Validierung": EINZIGER "wie geplant /
+-- angepasst"-Textbaustein im ganzen Dokument (Nutzer-Rückmeldung 04.09.:
+-- nur vorhandene Textbausteine nutzen, keine pro Phase DQ/IQ/OQ/PQ/PPQ -
+-- die gibt es im Template naemlich nicht, nur diesen EINEN, uebergreifenden).
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
+('projekt', 'vorgehensweise_wie_geplant', 'Validierung wie im CS-VP geplant durchgeführt? (Kap. 3 CS-VB)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 60),
+('projekt', 'vorgehensweise_anpassung_beschreibung', 'Beschreibung der Anpassung der Validierungsstrategie', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn vorgehensweise_wie_geplant = nein', '["CS-VB"]', 'Validierungsergebnisse', 65);
+
 -- ---------------------------------------------------------------------------
 -- CS-VB Kap. 4.12 "Änderungen während der Validierung" / Tabelle 6
 -- ("Änderungen / Change Requests"). Nutzer-Rückmeldung 04.09.: heißen

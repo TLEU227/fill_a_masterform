@@ -53,6 +53,7 @@ bleibt weiterhin unangetastet.
 | Kap. 4.2/4.7/4.8/4.9 (DQ/IQ/OQ/PQ) - "offene Anforderungen"-Absatz | PDB `{phase}_offene_anforderungen` | ✅ binäre Vereinfachung, siehe Lücken |
 | Kap. 4.10 PPQ - ganzes Kapitel bei ppq_durchgefuehrt=nein | PDB `ppq_durchgefuehrt` | ✅ |
 | Kap. 4.12 / Tabelle 6 "Änderungen/Unexpected Events" | PDB `unexpected_event` (neue Liste) | ✅ inkl. "keine Änderungen"-Alternative |
+| Kap. 3 "Vorgehensweise bei der Validierung" - wie geplant/angepasst | PDB `vorgehensweise_wie_geplant`/`_anpassung_beschreibung` | ✅ **einziger** solcher Textbaustein im Dokument, siehe Hinweis unten |
 
 ## Gefundene, noch offene Lücken (nicht gefüllt) und bewusste Vereinfachungen
 
@@ -78,6 +79,20 @@ Projekt-DB (`vorgaenger_dok_id`, `systembewertung_dok_id`, `vmp_dok_id`,
 `urs_dok_id`, `fs_dok_id`, `lieferantenaudit_dok_id`, `ra_dok_id`,
 `testplan_dok_id`, `vp_dok_id`) haben jetzt `QU-OPE-XXXXXXX` als
 `format_hinweis` in `seed_field_definitions_projekt.sql`.
+
+## "Wie geplant / anders durchgeführt" - nur EIN Textbaustein, nicht pro Phase
+
+Nutzer-Anfrage: ob es pro Phase (DQ/IQ/OQ/PQ/PPQ) eine "wurde anders als
+geplant durchgeführt"-Option geben kann. Nutzer-Vorgabe dabei: **nur
+vorhandene Textbausteine nutzen, keine neuen Sätze erfinden.** Ergebnis der
+erneuten Prüfung: DQ/IQ/OQ/PQ/PPQ haben dafür **keinen eigenen** Textblock
+im Template - nur Kap. 3 "Vorgehensweise bei der Validierung" hat ein
+einziges, übergreifendes "wie geplant"/"angepasst"-Alternativenpaar (mit
+"Kap. 2.0 Titel"-Platzhalter + Freitextbeschreibung + "V2.0 (CC Nummer)"-
+Zeile). Genau dieses wird jetzt befüllt - **kein** separates Feld pro
+Phase, weil es dafür keine Textgrundlage im Dokument gibt. Der "Kap. 2.0
+Titel"-Platzhalter (mutmaßlich ein einzufügender Kapiteltitel für die
+Änderungsbeschreibung) bleibt unangetastet - kein PDB-Feld dafür vorgesehen.
 
 ## Neue PDB-Felder (Stand 04.09.)
 
