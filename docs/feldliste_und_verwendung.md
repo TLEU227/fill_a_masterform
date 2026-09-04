@@ -92,37 +92,37 @@ gegenüber der Projekt-DB).
 Eigene Objektart statt Freitext-Name je Rolle (dieselbe Person kommt in
 mehreren Systemen/Dokumenten vor).
 
-**Stand 20.08.: In der Web-Oberfläche aktuell ausgeblendet.** Nutzer-
-Rückmeldung: die Personen/Rollen-Felder werden fürs CS-VP-Template derzeit
-nicht gebraucht. Die `field_definitions` bleiben unverändert in der DB
-(für später), werden aber im System-Formular nicht mehr angezeigt
-(`HIDDEN_GROUPS` in `webapp/app.js`) – die Spalte "Verwendung im Template"
-unten beschreibt weiterhin, wo sie **im Fill-Mechanismus** (Proof-of-Concept-
-Skript) verwendet werden, unabhängig von der Web-Oberfläche.
+**Stand 20.08.: In der Web-Oberfläche ausgeblendet. Stand 04.09.: auch aus
+dem Fill-Mechanismus wieder entfernt.** Nutzer-Rückmeldung 04.09.: Tabelle 1
+Dokumentenfreigabe soll KEINE Personen-Namen mehr enthalten ("die Tabelle
+kann so bleiben wie sie ist") - die ursprünglich in den CS-VP-Demos (v7-v10)
+umgesetzte Ergänzung wurde damit zurückgenommen, gilt für CS-VP und CS-VB
+gleichermaßen. Die `field_definitions` bleiben unverändert in der DB (für
+eine mögliche spätere Verwendung), werden aber weder im Formular angezeigt
+noch im Fill-Mechanismus verwendet.
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `name` | Name | ✅ CS-VP **Tabelle 1: Dokumentenfreigabe** (echte Caption im Dokument, 2. Tabelle): wird zusammen mit `funktion` in die Spalte "Funktion" der jeweiligen Rollen-Zeile **ergänzt** (angehängt an den bestehenden generischen Rollentext, z.B. "Technical System Owner (TSO) — Max Mustermann, Senior CSV Engineer") |
-| `funktion` | Funktion (vorher "Stelle/Funktion") | ✅ s.o. – Spaltenname "Funktion" in Tabelle 1 entspricht jetzt bewusst dem DB-Feldnamen |
-| `abteilung` | Abteilung | ⬜ Nicht Teil der Tabelle-1-Ergänzung (bewusst ausgeschlossen) – sonst kein bekanntes Template-Vorkommen |
+| `name` | Name | ❌ **Zurückgenommen 04.09.** - keine Personen-Ergänzung in Tabelle 1 mehr, Feld bleibt nur in der DB |
+| `funktion` | Funktion (vorher "Stelle/Funktion") | ❌ s.o. |
+| `abteilung` | Abteilung | ⬜ War nie Teil der Tabelle-1-Ergänzung – sonst kein bekanntes Template-Vorkommen |
 
 ### 1.2 Objektart `system` – Personen/Rollen
 
 Jedes Feld verweist auf einen `person`-Datensatz (Auswahl/Neuanlage), kein
-Freitext-Name. **In der Web-Oberfläche aktuell ausgeblendet** (s.o.).
-Tabelle 1: Dokumentenfreigabe hat 6 feste Datenzeilen (Rolle | Funktion |
-Beschreibung) – `rolle_sme` und `rolle_si_pl` teilen sich dieselbe Zeile
-("Prüfer | Projektleiter/SME"), alle anderen haben eine eigene Zeile.
+Freitext-Name. **In der Web-Oberfläche ausgeblendet, seit 04.09. auch nicht
+mehr im Fill-Mechanismus verwendet** (s.o.) - alle `rolle_*`-Felder bleiben
+nur noch als DB-Definition erhalten, ohne aktuelle Verwendung.
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `rolle_ersteller` | Ersteller | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Autor" |
-| `rolle_sme` | SME | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_si_pl`) |
-| `rolle_si_pl` | SI/PL | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Projektleiter/SME" (gemeinsam mit `rolle_sme`) |
-| `rolle_tso` | TSO | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Technical System Owner (TSO)" |
-| `rolle_bso` | BSO | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Prüfer / Business System Owner (BSO)" |
-| `rolle_bqr` | BQR | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Freigeber / Business Quality Representative (BQR)" |
-| `rolle_csq` | CSQ | ✅ CS-VP Tabelle 1: Dokumentenfreigabe, Zeile "Freigeber / Computerized System Quality Expert (CSQ)" |
+| `rolle_ersteller` | Ersteller | ❌ Zurückgenommen 04.09. (war: CS-VP Tabelle 1, Zeile "Autor") |
+| `rolle_sme` | SME | ❌ Zurückgenommen 04.09. |
+| `rolle_si_pl` | SI/PL | ❌ Zurückgenommen 04.09. |
+| `rolle_tso` | TSO | ❌ Zurückgenommen 04.09. |
+| `rolle_bso` | BSO | ❌ Zurückgenommen 04.09. |
+| `rolle_bqr` | BQR | ❌ Zurückgenommen 04.09. |
+| `rolle_csq` | CSQ | ❌ Zurückgenommen 04.09. |
 
 ### 1.3 Objektart `system` – Stammdaten
 
@@ -282,21 +282,48 @@ Frage, siehe `KONZEPT.md` Abschnitt 2.1).
 |---|---|---|
 | `beschreibung` | Verantwortlichkeit (Auswahl + Freitext-Fluchtoption) | ✅ Kap. 2.2 Aufzählung "Die Fa. … ist verantwortlich für: …". **4 der 5 Standardoptionen** stehen bereits als Absatz im Template (werden je nach Auswahl beibehalten/gestrichen); "die Schulung des Sanofi-Personals am System" ist zwar eine DB-Standardoption, aber **keine** vorgeschriebene Template-Zeile – wird bei Auswahl wie eine echte Freitext-Ergänzung als neuer Absatz eingefügt. Frei ergänzte Werte (`freitext_erlaubt=1`) laufen über denselben "neuer Absatz"-Weg. |
 
+### 2.7 Validierungsergebnisse (nur CS-VB, Kap. 4.2/4.7-4.10/4.12)
+
+| Feld | Label | Verwendung im Template |
+|---|---|---|
+| `dq_offene_anforderungen` | DQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.2 - steuert, welcher der beiden Alternativ-Absätze stehen bleibt |
+| `iq_offene_anforderungen` | IQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.7 - binäre Vereinfachung, dritte Template-Variante ("unkritisch, per CC nachverfolgt") wird immer gestrichen |
+| `oq_offene_anforderungen` | OQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.8 |
+| `pq_offene_anforderungen` | PQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.9 |
+| `ppq_offene_anforderungen` | PPQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.10, nur relevant wenn `ppq_durchgefuehrt=ja` |
+| `ppq_durchgefuehrt` | PPQ tatsächlich durchgeführt? | ✅ Kap. 4.10 - bei `nein` entfällt das ganze Kapitel |
+
+### 2.8 Objektart `unexpected_event` (Liste, Kap. 4.12 CS-VB, Tabelle 6)
+
+| Feld | Label | Verwendung im Template |
+|---|---|---|
+| `dokumenten_nr` | Dokumenten-Nr. (QU-OPE) | ✅ Tabelle 6 "Änderungen/Unexpected Events", Spalte "Dokumenten-Nr." |
+| `titel` | Titel | ✅ Tabelle 6, Spalte "Titel" |
+| `version` | Version | ✅ Tabelle 6, Spalte "Version" |
+
+Wenn die Liste leer ist, bleibt stattdessen der "keine Änderungen"-Absatz
+stehen (Template-Alternative). Der "Formblatt"-Mechanismus (weitere
+Template-Alternative) wird nicht modelliert.
+
 ---
 
 ## Kurz zusammengefasst: wo es noch am dünnsten ist
 
-- **Personen/Rollen** (Ersteller/SME/SI-PL/TSO/BSO/BQR/CSQ): für **CS-VP**
-  jetzt bekannt (Tabelle 1, Spalte "Funktion" wird um Name+Funktion der
-  zugewiesenen Person ergänzt) und geprüft. Für CS-VB/VQ/xQTP noch offen,
-  ob/wo die gleiche Rollen-/Freigabetabelle existiert.
+- **Personen/Rollen** (Ersteller/SME/SI-PL/TSO/BSO/BQR/CSQ): **Zurückgenommen
+  04.09.** - werden nicht mehr in Tabelle 1 (Dokumentenfreigabe) ergänzt,
+  weder bei CS-VP noch bei CS-VB. Felder bleiben nur noch als DB-Definition
+  erhalten.
 - **Systembewertung selbst**: Merge-Feldnamen für die meisten
   Checkbox-Gruppen sind bekannt, aber es existiert noch **kein**
   Fill-Code (MERGEFIELD-Unterstützung ist bisher nur analysiert, nicht
   gebaut).
-- **CS-VB, VQ, xQTP**: nur strukturell analysiert (Content
+- **CS-VB**: erster Fill-Durchlauf gegen die reale Vorlage existiert (siehe
+  `docs/fvb_alle_fuellbaren_stellen.md`) - Kopf/Referenzdok./Checkbox-
+  Wiederverwendung/DQ-PPQ-Ergebnisse abgedeckt, Ergebnis-Prosa (Zusammen-
+  fassung, Systemfreigabe) weiterhin bewusst nicht automatisiert.
+- **VQ, xQTP**: nur strukturell analysiert (Content
   Controls/Checkboxen/Tabellenspalten bekannt), noch kein
-  Proof-of-Concept wie bei CS-VP.
+  Proof-of-Concept wie bei CS-VP/CS-VB.
 - **Anforderung/Risiko/Prüfschritt** (URS-/RA-/IQ-OQ-PQ-Tabellenzeilen):
   Tabellenspalten bekannt, aber das Klonen/Entfernen von Tabellenzeilen je
   nach Datenmenge (Task #4) ist noch nicht umgesetzt – ohne das lässt sich

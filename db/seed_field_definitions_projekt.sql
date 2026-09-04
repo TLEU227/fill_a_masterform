@@ -191,3 +191,40 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('lieferant_verantwortlichkeit', 'beschreibung', 'Verantwortlichkeit', 'auswahl',
  '["die Erstellung der Spezifikationen","die technische Umsetzung der Anforderungen","die ordnungsgemäße Installation des Systems","die Durchführung der Validierung","die Schulung des Sanofi-Personals am System"]',
  1, NULL, NULL, 1, '["CS-VP"]', NULL, 10);
+
+-- ---------------------------------------------------------------------------
+-- CS-VB Kap. 4.2/4.7/4.8/4.9/4.10 (DQ/IQ/OQ/PQ/PPQ): steuert je Phase, ob der
+-- "offene Anforderungen aufgetreten"- oder der "keine aufgetreten"-Absatz
+-- stehen bleibt (Nutzer-Rückmeldung 04.09.: das lässt sich als Abfragefeld
+-- modellieren statt als nicht befüllbare Ergebnis-Prosa).
+-- VEREINFACHUNG (bewusst, siehe docs/fvb_alle_fuellbaren_stellen.md): bei IQ
+-- gibt es im Template eigentlich 3 Varianten (keine / aufgetreten+behoben
+-- bis PQ / aufgetreten+unkritisch+per CC nachverfolgt) - hier nur binär
+-- (keine / aufgetreten) abgebildet, die "unkritisch"-Variante bleibt Text.
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
+('projekt', 'dq_offene_anforderungen', 'DQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 10),
+('projekt', 'iq_offene_anforderungen',  'IQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 20),
+('projekt', 'oq_offene_anforderungen',  'OQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 30),
+('projekt', 'pq_offene_anforderungen',  'PQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 40),
+('projekt', 'ppq_offene_anforderungen', 'PPQ: offene Anforderungen aufgetreten?', 'ja_nein', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Validierungsergebnisse', 51),
+
+-- Ausführungs-Tatsache (nicht zu verwechseln mit phase_ppq_geplant, das die
+-- PLANUNG im CS-VP steuert): wurde PPQ am Ende tatsächlich durchgeführt?
+-- nein -> ganzes PPQ-Kapitel im CS-VB entfällt.
+('projekt', 'ppq_durchgefuehrt', 'PPQ tatsächlich durchgeführt? (Kap. 4.10 CS-VB)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 50);
+
+-- ---------------------------------------------------------------------------
+-- CS-VB Kap. 4.12 "Änderungen während der Validierung" / Tabelle 6
+-- ("Änderungen / Change Requests"). Nutzer-Rückmeldung 04.09.: heißen
+-- mittlerweile "Unexpected Event", werden mit QU-OPE-Nummer in QualiPSO
+-- angelegt - eine Zeile pro Änderung, bis zu 5 (kein hartes Limit im Schema,
+-- nur als Richtwert genannt). Liste statt Einzelfeld, analog zu
+-- versionshistorie_eintrag/lieferant_verantwortlichkeit.
+-- ---------------------------------------------------------------------------
+INSERT INTO entity_types (key, label) VALUES
+    ('unexpected_event', 'Änderung während der Validierung (Unexpected Event)');
+
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
+('unexpected_event', 'dokumenten_nr', 'Dokumenten-Nr. (QU-OPE)', 'text', NULL, 1, 'QU-OPE-XXXXXX', NULL, '["CS-VB"]', NULL, 10),
+('unexpected_event', 'titel',         'Titel', 'text', NULL, 1, NULL, NULL, '["CS-VB"]', NULL, 20),
+('unexpected_event', 'version',       'Version', 'text', NULL, 0, 'x.x', NULL, '["CS-VB"]', NULL, 30);

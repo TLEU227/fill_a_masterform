@@ -34,7 +34,7 @@ let currentProjektId = null;
 let projektBaseline = {};
 let projektCache = [];
 let projektDirty = false;
-let projektListState = { versionshistorie_eintrag: [], lieferant_verantwortlichkeit: [] };
+let projektListState = { versionshistorie_eintrag: [], lieferant_verantwortlichkeit: [], unexpected_event: [] };
 
 const GROUP_ORDER = {
   system: ["Personen", "Stammdaten", "GxP-Bewertung", "Status"],
@@ -42,9 +42,10 @@ const GROUP_ORDER = {
   anforderung: ["Anforderung"],
   risiko: ["Risiko"],
   pruefschritt: ["Prüfschritt"],
-  projekt: ["Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente", "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument"],
+  projekt: ["Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente", "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument", "Validierungsergebnisse"],
   versionshistorie_eintrag: [null],
   lieferant_verantwortlichkeit: [null],
+  unexpected_event: [null],
 };
 // Gruppen, die es zwar als field_definitions in der DB gibt (fuer spaeter),
 // die aber aktuell NICHT im Formular angezeigt werden sollen - Nutzer-
@@ -59,6 +60,7 @@ const ENTITY_LABEL = {
   pruefschritt: "Prüfschritt (IQ/OQ/PQ/PPQ)",
   versionshistorie_eintrag: "Versionshistorie-Eintrag",
   lieferant_verantwortlichkeit: "Verantwortlichkeit des Lieferanten",
+  unexpected_event: "Änderung während der Validierung (Unexpected Event)",
 };
 // Welche Zusatz-Objektarten pro Dokumenttyp gebraucht werden, und ob sie
 // "pflicht" (ohne das ist das Dokument nicht sinnvoll vorausfuellbar) oder
@@ -514,7 +516,7 @@ function renderProjektForm() {
 // Divs), deshalb reicht "closest('form')" allein nicht.
 const LIST_ENTITY_CONTEXT = {
   anforderung: "system", risiko: "system", pruefschritt: "system",
-  versionshistorie_eintrag: "projekt", lieferant_verantwortlichkeit: "projekt",
+  versionshistorie_eintrag: "projekt", lieferant_verantwortlichkeit: "projekt", unexpected_event: "projekt",
 };
 function contextFor(el) {
   const prefix = (el.dataset.key || "").split(".")[0];
@@ -842,6 +844,7 @@ function loadProjektListsForBranch(projektId) {
   projektListState = {
     versionshistorie_eintrag: getRelatedRecords(projektDb, "versionshistorie_eintrag", projektId),
     lieferant_verantwortlichkeit: getRelatedRecords(projektDb, "lieferant_verantwortlichkeit", projektId),
+    unexpected_event: getRelatedRecords(projektDb, "unexpected_event", projektId),
   };
   renderProjektBranch();
 }
@@ -958,10 +961,10 @@ function renderProjektBranch() {
   const area = document.getElementById("projektBranchArea");
   const rerender = () => renderProjektBranch();
   area.innerHTML = "";
-  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit"].forEach((ent) => {
+  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit", "unexpected_event"].forEach((ent) => {
     area.appendChild(renderBranchSection(projektListState, ent, false, "CS-VP", rerender));
   });
-  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit"].forEach((ent) => bindListRowInputs(area, ent, projektListState, rerender));
+  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit", "unexpected_event"].forEach((ent) => bindListRowInputs(area, ent, projektListState, rerender));
 }
 
 // ---------------------------------------------------------------- Dirty/Save/Load-UI
