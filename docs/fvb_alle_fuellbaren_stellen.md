@@ -58,6 +58,16 @@ bleibt weiterhin unangetastet.
 | Tabelle "Unerwartete Ereignisse/Anomalien" (2 separate Tabellen, andere Struktur als Tabelle 6) | Eigene Spalten (Behebung zu Meilensteinen, Ja/Nein "erfolgreich abgeschlossen") - noch nicht mit `unexpected_event` verknüpft, möglicherweise dieselben Datensätze wie Tabelle 6 (Terminologie "Unexpected Event" laut Nutzer deckungsgleich) - als Folgeschritt vorgemerkt. |
 | Anhänge-Tabelle, Zusammenfassung, Systemfreigabe (AFU-CS) | Ergebnis-Text, weiterhin bewusst nicht automatisiert. |
 
+## Dok-ID-Format vereinheitlicht (Stand 04.09.)
+
+Nutzer-Rückmeldung: bei Sanofi sind Dokument-Nummern grundsätzlich im
+**QU-OPE-XXXXXXX**-Format (nicht die zuvor in den Demo-Daten verwendete
+"FRA-PLAN-G-XXXXX"-Fantasienummer). Alle `*_dok_id`-Felder in der
+Projekt-DB (`vorgaenger_dok_id`, `systembewertung_dok_id`, `vmp_dok_id`,
+`urs_dok_id`, `fs_dok_id`, `lieferantenaudit_dok_id`, `ra_dok_id`,
+`testplan_dok_id`, `vp_dok_id`) haben jetzt `QU-OPE-XXXXXXX` als
+`format_hinweis` in `seed_field_definitions_projekt.sql`.
+
 ## Neue PDB-Felder (Stand 04.09.)
 
 `vp_dok_id`/`_version`, `dq_offene_anforderungen`, `iq_offene_anforderungen`,

@@ -41,7 +41,7 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('projekt', 'mlcs_id',               'MLCS-ID (Verknüpfung System-DB)', 'text', NULL, 1, NULL, NULL, '["immer"]', 'Verknüpfung', 10),
 
 ('projekt', 'ist_folgeprojekt',      'Folgeprojekt?',            'ja_nein', NULL, 1, NULL, NULL, '["CS-VP","CS-VB"]', 'Vorgängerprojekt', 10),
-('projekt', 'vorgaenger_dok_id',     'Vorgänger-Dokument: Dok-ID', 'text', NULL, 0, NULL, 'nur wenn ist_folgeprojekt = ja', '["CS-VP","CS-VB"]', 'Vorgängerprojekt', 20),
+('projekt', 'vorgaenger_dok_id',     'Vorgänger-Dokument: Dok-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn ist_folgeprojekt = ja', '["CS-VP","CS-VB"]', 'Vorgängerprojekt', 20),
 ('projekt', 'vorgaenger_version',    'Vorgänger-Dokument: Version', 'text', NULL, 0, 'x.x', 'nur wenn ist_folgeprojekt = ja', '["CS-VP","CS-VB"]', 'Vorgängerprojekt', 30),
 ('projekt', 'folgeversion',          'Folgeversion (FV) dieses Dokuments', 'text', NULL, 1, 'x.x - Vorschlag: 1.0 bei Erstprojekt, sonst Vorgänger-Version + 1, bei Bedarf überschreibbar', NULL, '["CS-VP","CS-VB"]', 'Vorgängerprojekt', 40),
 ('projekt', 'change_control_nummer', 'Change-Control-Nummer dieses Projekts', 'text', NULL, 0, 'z.B. CC-2024-001234', NULL, '["CS-VP","CS-VB"]', 'Vorgängerprojekt', 50),
@@ -53,33 +53,33 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- Kap. 1.4 / Tabelle "Mitgeltende Unterlagen" CS-VP: die zu DIESEM Projekt
 -- gehörende Systembewertung (nicht notwendigerweise die im Excel-Import
 -- gefundene - ein System kann mehrfach neu bewertet worden sein).
-('projekt', 'systembewertung_dok_id', 'Systembewertung: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, 'gemäß QU-MT-0001344', '["CS-VP","CS-VB"]', 'Referenzdokumente', 10),
+('projekt', 'systembewertung_dok_id', 'Systembewertung: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'gemäß QU-MT-0001344', '["CS-VP","CS-VB"]', 'Referenzdokumente', 10),
 ('projekt', 'systembewertung_version', 'Systembewertung: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 20),
 
 -- Kap. 1.6 Tabelle "Mitgeltende Unterlagen": VMP-Dok-ID, nur relevant wenn
 -- vmp_erforderlich = ja.
-('projekt', 'vmp_dok_id',            'VMP: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, 'nur wenn vmp_erforderlich = ja', '["CS-VP"]', 'Referenzdokumente', 30),
+('projekt', 'vmp_dok_id',            'VMP: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn vmp_erforderlich = ja', '["CS-VP"]', 'Referenzdokumente', 30),
 ('projekt', 'vmp_version',           'VMP: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', 'nur wenn vmp_erforderlich = ja', '["CS-VP"]', 'Referenzdokumente', 35),
 
 -- Tabelle "Mitgeltende Unterlagen": URS-Dok-ID/-Version dieses Projekts
 -- (die vorhandene Zeile in der Tabelle wird damit befüllt statt unangetastet
 -- zu bleiben).
-('projekt', 'urs_dok_id',            'URS: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 40),
+('projekt', 'urs_dok_id',            'URS: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', NULL, '["CS-VP"]', 'Referenzdokumente', 40),
 ('projekt', 'urs_version',           'URS: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 45),
 
 -- Tabelle "Mitgeltende Unterlagen": Funktionsspezifikation (FS) - dafür gibt
 -- es noch keine Zeile im Template, wird bei Bedarf als neue Zeile ergänzt.
-('projekt', 'fs_dok_id',             'Funktionsspezifikation: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 50),
+('projekt', 'fs_dok_id',             'Funktionsspezifikation: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 50),
 ('projekt', 'fs_version',            'Funktionsspezifikation: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 55),
 
 -- Tabelle "Mitgeltende Unterlagen": Bericht Lieferantenauditierung - dafür
 -- gibt es bereits eine (bisher unbefuellte) Zeile im Template.
-('projekt', 'lieferantenaudit_dok_id',  'Bericht Lieferantenauditierung: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Referenzdokumente', 60),
+('projekt', 'lieferantenaudit_dok_id',  'Bericht Lieferantenauditierung: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', NULL, '["CS-VP"]', 'Referenzdokumente', 60),
 ('projekt', 'lieferantenaudit_version', 'Bericht Lieferantenauditierung: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP"]', 'Referenzdokumente', 65),
 
 -- Anhang 1 ("Risikobewertung") der Tabelle "Anhänge" - Dok-ID ersetzt das
 -- "xxx" in der Beschreibungszelle, Version die (leere) Version-Spalte.
-('projekt', 'ra_dok_id',             'Risikobewertung/RA: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 70),
+('projekt', 'ra_dok_id',             'Risikobewertung/RA: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 70),
 ('projekt', 'ra_version',            'Risikobewertung/RA: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 75),
 
 -- Anhang 2 ("Prüfplan/-Protokoll Dokumentation") der Tabelle "Anhänge" -
@@ -87,7 +87,7 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- x.x" als Platzhalter in der Beschreibungszelle selbst steht (nicht in der
 -- separaten Version-Spalte - das ist die Template-eigene Inkonsistenz, wir
 -- folgen ihr, statt sie zu "reparieren").
-('projekt', 'testplan_dok_id',       'Prüfplan/Testplan: Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 80),
+('projekt', 'testplan_dok_id',       'Prüfplan/Testplan: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 80),
 ('projekt', 'testplan_version',      'Prüfplan/Testplan: Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 85),
 
 -- Projektname/-bezeichnung: taucht als Freitext-Ersetzung in Fließtext-
@@ -98,7 +98,7 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- (5-X-Marker, immer als eigener Run) - dessen Dok-ID war bisher nirgends
 -- erfasst, weil sie erst nach Freigabe des CS-VP feststeht und CS-VP selbst
 -- sie nicht braucht. Neu fuer CS-VB.
-('projekt', 'vp_dok_id',              'Validierungsplan (CS-VP): Dok-ID (dieses Projekt)', 'text', NULL, 0, NULL, 'erst nach Freigabe des CS-VP bekannt', '["CS-VB"]', 'Referenzdokumente', 90),
+('projekt', 'vp_dok_id',              'Validierungsplan (CS-VP): Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'erst nach Freigabe des CS-VP bekannt', '["CS-VB"]', 'Referenzdokumente', 90),
 ('projekt', 'vp_version',             'Validierungsplan (CS-VP): Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VB"]', 'Referenzdokumente', 95),
 
 -- ---------------------------------------------------------------------------
