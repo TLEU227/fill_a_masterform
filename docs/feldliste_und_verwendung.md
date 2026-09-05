@@ -155,8 +155,8 @@ nur noch als DB-Definition erhalten, ohne aktuelle Verwendung.
 | *(berechnet, kein Eingabefeld)* `testtiefe` | Testtiefe (Gering/Mittel/Hoch) | ✅ Wird aus `gxp_kritikalitaet` + `gamp_kategorie` abgeleitet (Ableitungstabelle Kap. 8 Systembewertung, QU-MT-0001344). CS-VP Kap. 1.5 Testtiefe-Legende: die nicht zutreffenden Zeilen werden gestrichen, die passende bleibt. 🟡 Systembewertung: Checkbox-Gruppe `TTIEFEHOCH/MITTEL/NIEDRIG` |
 | `geraetekategorie` | Gerätekategorie (ISPE/GAMP, A/B1/B2/B3/C1/C2/N/A) | 🟡 Systembewertung: Checkbox-Gruppe `GKATA/GKATB/GKATC/GKATNA` + Freitext-Anmerkung für die Subkategorie (Merge-Feldname bekannt, kein Fill-Code). Kein bekanntes Vorkommen in CS-VP. |
 | `business_critical` | Business critical? | 🟡 Systembewertung: Checkbox-Gruppe `BCkritisch/BCunkritisch` |
-| `vq_erforderlich` | Vereinfachte Qualifizierung erforderlich? | 🟡 Systembewertung: Checkbox-Gruppe `VQ/NVQ` (steuert laut SOP QU-SOP-0021736, ob überhaupt ein VQ-Dokument nötig ist) |
-| `val_erforderlich` | Validierung erforderlich? | 🟡 Systembewertung: Checkbox-Gruppe `QUAL/VAL` (unabhängige Flags – ein System kann beides gleichzeitig brauchen) |
+| `vq_erforderlich` | Vereinfachte Qualifizierung (VQ) statt vollständiger Validierung ausreichend? | 🟡 Systembewertung: Checkbox-Gruppe `VQ/NVQ`. **Update 05.09.** (Nutzer-Feedback: Formulierung war unklar): Label + Hinweistext präzisiert, wann VQ typischerweise ausreicht (geringe Kritikalität/Komplexität) - bleibt bewusst ein eigenständiges Ja/Nein-Feld, keine Zusammenlegung mit `val_erforderlich` (steuert laut SOP QU-SOP-0021736, ob überhaupt ein VQ-Dokument nötig ist) |
+| `val_erforderlich` | Vollständige Validierung (CS-VP/CS-VB) erforderlich? | 🟡 Systembewertung: Checkbox-Gruppe `QUAL/VAL` (unabhängige Flags – ein System kann beides gleichzeitig brauchen). **Update 05.09.**: Label + Hinweistext präzisiert (direkter Einfluss auf Produktqualität/Patientensicherheit/Datenintegrität) |
 | `ki_reifegrad` | KI-Reifegrad (N/A, I–VI) | ✅ CS-VP Kap. 3.2 UND CS-VB Kap. 4.1 "Einsatz von Künstlicher Intelligenz": steuert den kompletten OHNE/MIT-Block. Bei CS-VB (Stand 04.09.) beide Richtungen umgesetzt: N/A/I/II → "MIT KI"-Block (inkl. grauem Label + "oder"-Trenner) entfernt; III/IV/V/VI → "ohne KI"-Block entfernt. 🟡 Systembewertung: Checkbox-Gruppe `KI1-6/NA`. **Seit 04.09. KEIN Eingabefeld mehr** (wie `testtiefe`) - wird automatisch aus `ki_vorhanden`+`ki_autonomie_stufe`+`ki_steuerungsdesign_stufe` berechnet (`KI_REIFEGRAD_MATRIX` in `webapp/app.js`), nicht mehr manuell gewählt. |
 | `ki_vorhanden` / `ki_autonomie_stufe` / `ki_steuerungsdesign_stufe` | Wird KI eingesetzt? / Autonomie-Stufe (0–5) / Steuerungsdesign-Stufe (1–5) | ✅ **Neu 04.09.** Ersetzen die direkte Auswahl von `ki_reifegrad` (s.o.) - `ki_vorhanden=nein` beendet die Abfrage sofort (häufigster Fall, kein Reifegrad nötig), sonst ergibt sich der Reifegrad aus der Kombination der beiden Stufen (Matrix vom Nutzer bestätigt). |
 
@@ -164,8 +164,8 @@ nur noch als DB-Definition erhalten, ohne aktuelle Verwendung.
 
 | Feld | Label | Verwendung im Template |
 |---|---|---|
-| `ist_aktuelle_version` | Ist aktuelle Version? | – Internes Status-Flag (welche von mehreren Systembewertungs-Versionen zum selben System aktuell gilt), kein direkter Template-Platzhalter bekannt |
-| `herkunft` | Herkunft | – Internes Feld (z.B. "aus Excel-Import"), kein Template-Bezug bekannt |
+| `ist_aktuelle_version` | Ist aktuelle Version? | – Internes Status-Flag: welcher von mehreren Datensätzen zum selben System (gleiche MLCS-ID) aktuell gültig ist, alle anderen sind historisch. Kein direkter Template-Platzhalter. **Update 05.09.** (Nutzer-Feedback: unklar, was einzugeben ist): erklärender Hinweistext ergänzt. |
+| `herkunft` | Herkunft des Systems | – Internes Feld: wie das System entstanden ist. Kein Template-Bezug. **Update 05.09.** (Nutzer-Feedback: "welche Herkunft von was?"): Label präzisiert + von Freitext auf `auswahl` umgestellt (Neuanlage / Retrofit-Migration von einem Vorgängersystem / Übernahme aus anderem Standort/Betrieb / Sonstiges, `freitext_erlaubt=1`). |
 
 ### 1.6 Objektart `anforderung` (URS-Punkt) – nur für VQ
 

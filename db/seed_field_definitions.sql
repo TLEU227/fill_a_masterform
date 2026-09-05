@@ -115,8 +115,8 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- Wird bei der Dokument-Erzeugung automatisch berechnet, nicht manuell erfasst.
 ('system', 'geraetekategorie',  'Gerätekategorie (ISPE/GAMP)', 'auswahl', '["A","B1","B2","B3","C1","C2","N/A"]', 0, NULL, 'gemäß QU-SOP-0021736 (Qualifizierung von Gebäuden, Einrichtungen und Ausrüstung), Mehrfachauswahl laut Referenzdokument möglich', '["immer"]', 'GxP-Bewertung', 80),
 ('system', 'business_critical',  'Business critical?',    'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'GxP-Bewertung', 90),
-('system', 'vq_erforderlich',    'Vereinfachte Qualifizierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0021736', '["immer"]', 'GxP-Bewertung', 100),
-('system', 'val_erforderlich',   'Validierung erforderlich?', 'ja_nein', NULL, 0, NULL, 'gemäß QU-SOP-0049866 (Validierung computergestützter Systeme)', '["immer"]', 'GxP-Bewertung', 110),
+('system', 'vq_erforderlich',    'Vereinfachte Qualifizierung (VQ) statt vollständiger Validierung ausreichend?', 'ja_nein', NULL, 0, NULL, 'Bei geringer GxP-Kritikalität/Komplexität (i.d.R. Minor/N/A) kann eine Vereinfachte Qualifizierung statt einer vollständigen CS-Validierung ausreichen, gemäß QU-SOP-0021736.', '["immer"]', 'GxP-Bewertung', 100),
+('system', 'val_erforderlich',   'Vollständige Validierung (CS-VP/CS-VB) erforderlich?', 'ja_nein', NULL, 0, NULL, 'Bei direktem Einfluss auf Produktqualität, Patientensicherheit oder Datenintegrität (i.d.R. Critical/Major) ist eine vollständige Validierung nötig, gemäß QU-SOP-0049866 (Validierung computergestützter Systeme).', '["immer"]', 'GxP-Bewertung', 110),
 -- KI-Einstufung (Kap. "Einsatz von Künstlicher Intelligenz") - Nutzer-
 -- Rückmeldung 04.09.: ki_vorhanden = nein -> sofort Ende (häufigster Fall,
 -- kein Reifegrad nötig). ki_vorhanden = ja -> Autonomie-Stufe (0-5) +
@@ -141,10 +141,15 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 
 -- ---------------------------------------------------------------------------
 -- System: Status/Nachverfolgung
+-- Update 05.09. (Nutzer-Feedback: "welche Herkunft von was?" - unklar, was
+-- einzugeben ist): beide Felder mit erklaerendem Hinweistext versehen;
+-- 'herkunft' zusaetzlich zu 'auswahl' mit typischen Standardwerten gemacht
+-- (freitext_erlaubt=1 als Fluchtoption), statt eines unbeschrifteten
+-- Freitextfelds.
 -- ---------------------------------------------------------------------------
-INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
-('system', 'ist_aktuelle_version', 'Ist aktuelle Version?', 'ja_nein', NULL, 0, NULL, NULL, '["immer"]', 'Status', 10),
-('system', 'herkunft', 'Herkunft', 'text', NULL, 0, NULL, NULL, '["immer"]', 'Status', 20);
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, freitext_erlaubt, benoetigt_fuer, gruppe, sortierung) VALUES
+('system', 'ist_aktuelle_version', 'Ist aktuelle Version?', 'ja_nein', NULL, 0, NULL, 'Ja, wenn dieser Datensatz den aktuell gültigen Zustand des Systems beschreibt. Gibt es zum selben System (gleiche MLCS-ID) mehrere Datensätze über die Zeit, ist nur einer davon aktuell - die anderen sind historisch/überholt.', 0, '["immer"]', 'Status', 10),
+('system', 'herkunft', 'Herkunft des Systems', 'auswahl', '["Neuanlage","Retrofit/Migration von einem Vorgängersystem","Übernahme aus einem anderen Standort/Betrieb","Sonstiges"]', 0, NULL, 'Wie das System entstanden ist.', 1, '["immer"]', 'Status', 20);
 -- Change-Control-Nummer ist NICHT hier, sondern in der Projekt-DB
 -- (seed_field_definitions_projekt.sql, Objektart 'projekt') - sie gehört zu
 -- einem konkreten Projekt/einer konkreten Validierung, nicht dauerhaft zum

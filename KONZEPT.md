@@ -210,6 +210,37 @@ Zwei Platzhalter-Arten, die wir brauchen werden:
    Tabellenzeile statt einmaligem Platzhalter).* Wird technisch nötig
    für URS-Tabellen, RA-Tabellen und die Tracematrix.
 
+### 3a. Web-Formular: bedingte Sichtbarkeit + Filterung nach Dokumentart (Stand 05.09.)
+
+Zwei Korrekturen nach Nutzer-Testlauf der Weboberfläche:
+
+- **"nur wenn X = Y" wird jetzt tatsächlich ausgewertet, nicht nur als
+  Hinweistext angezeigt.** Betroffen sind >60 Felder in SDB+PDB mit genau
+  diesem `sop_hinweis`-Muster (z.B. KI-Autonomie-/Steuerungsdesign-Stufe nur
+  bei `ki_vorhanden=ja`, alle Kap.-4.8/4.9/4.10-Dok-ID-Felder nur wenn der
+  jeweilige Abschlussbericht erstellt wurde, Tabelle-6.2-Begründungen nur
+  wenn nicht erforderlich, ...). Generischer Mechanismus in `webapp/app.js`
+  (`parseFieldCondition`/`applyFieldConditions`): parst das Muster aus
+  `sop_hinweis`, blendet das betroffene Feld per CSS-Klasse `cond-hidden`
+  aus, solange die Bedingung nicht erfüllt ist. Wird bei jeder Feldänderung,
+  beim Laden eines Datensatzes und beim initialen Formularaufbau neu
+  ausgewertet.
+- **Projekt-Formular zeigt jetzt nur noch die Felder der oben gewählten
+  Dokumentart (CS-VP oder CS-VB), nicht mehr alle PDB-Felder gemeinsam.**
+  Vorher wurden ALLE Projekt-Felder unabhängig von `benoetigt_fuer`
+  angezeigt, und der Gruppenkopf zeigte fest "CS-VP" an - auch bei
+  gewähltem CS-VB (Nutzer-Feedback: "wieso steht da CS-VP, ich dachte CS-VB
+  gewählt zu haben"). `groupsFor("projekt", docType)` filtert jetzt nach
+  `benoetigt_fuer` (immer ODER passender docType), der Gruppenkopf
+  (`groupBadge()`) zeigt die tatsächlich zutreffende(n) Dokumentart(en).
+  Wechselt man die Dokumentart nachträglich, während das Projekt-Formular
+  schon offen war, wird es mit der neuen Filterung neu aufgebaut
+  (`provisionForDocType()`). Dieselbe Filterung gilt jetzt auch für die drei
+  Zusatzlisten (Versionshistorie/Verantwortlichkeit des Lieferanten/
+  Unexpected Event) - vorher wurden z.B. auch bei CS-VP schon die (nur für
+  CS-VB relevanten) Unexpected Events angezeigt (`entityNeededFor()` in
+  `renderProjektBranch()`).
+
 ## 4. Prozesse
 
 ### a) Datenerfassung – 3 Szenarien im Browser-Formular

@@ -189,8 +189,19 @@ function loadFieldDefinitions(conn) {
 function defFor(entity, fieldKey) {
   return (fieldDefsByEntity[entity] || []).find((d) => d.key === fieldKey);
 }
-function groupsFor(entityType) {
-  const defs = fieldDefsByEntity[entityType] || [];
+// docType (optional): fuer entityType='projekt' auf CS-VP/CS-VB eingeschraenkt -
+// nur Felder mit benoetigt_fuer=["immer"] ODER passendem docType werden
+// gezeigt (Nutzer-Feedback 05.09.: bisher wurden IMMER alle Projekt-Felder
+// aller Dokumentarten gemeinsam angezeigt, unabhaengig von der oben
+// gewaehlten Dokumentart - das war nicht beabsichtigt). Ohne docType (leerer
+// String, z.B. beim direkten Laden einer Projekt-DB-Datei ohne den
+// Dokumentart-Auswahlbildschirm) bleibt es beim bisherigen Verhalten (alle
+// Felder), da wir dann nicht wissen, wofuer gerade befuellt wird.
+function groupsFor(entityType, docType) {
+  let defs = fieldDefsByEntity[entityType] || [];
+  if (entityType === "projekt" && docType) {
+    defs = defs.filter((d) => (d.benoetigt_fuer || ["immer"]).some((t) => t === "immer" || t === docType));
+  }
   const byGroup = {};
   defs.forEach((d) => { (byGroup[d.gruppe] ||= []).push(d); });
   const hidden = new Set(HIDDEN_GROUPS[entityType] || []);
@@ -199,6 +210,15 @@ function groupsFor(entityType) {
   order.forEach((g) => { if (byGroup[g] && !hidden.has(g)) groups.push({ name: g, fields: byGroup[g] }); });
   Object.keys(byGroup).forEach((g) => { if (!order.includes(g) && !hidden.has(g)) groups.push({ name: g, fields: byGroup[g] }); });
   return groups;
+}
+// Zeigt wahrheitsgemaess, fuer welche Dokumentart(en) eine Feldgruppe
+// tatsaechlich benoetigt wird - ersetzt das bisher fest verdrahtete "CS-VP"
+// im Gruppenkopf (Nutzer-Feedback 05.09.: "wieso steht da CS-VP, ich dachte
+// CS-VB gewählt zu haben").
+function groupBadge(fields) {
+  const types = new Set();
+  fields.forEach((f) => (f.benoetigt_fuer || ["immer"]).forEach((t) => { if (t !== "immer") types.add(t); }));
+  return types.size ? Array.from(types).join("/") : "immer";
 }
 
 function getAllRecordsWithValues(conn, entityType) {
@@ -419,6 +439,25 @@ function saveProjektAll() {
   }
 }
 
+// ---------------------------------------------------------------- Bedingte Sichtbarkeit ("nur wenn X = Y")
+// Nutzer-Feedback 05.09.: "nur wenn ki_vorhanden = ja" war bisher nur ein
+// Hinweistext, das Feld blieb trotzdem immer sichtbar. Jetzt wird dieser
+// Hinweis (sop_hinweis-Konvention, siehe db/schema.sql) auch tatsaechlich
+// ausgewertet - betrifft nicht nur die KI-Stufen, sondern generisch alle
+// gut 60 Felder mit demselben Muster (IQ/OQ/PQ/PPQ-Abschlussbericht,
+// Tabelle 6.2 Begruendungen/Dok-IDs, Kap. 1.4/2.1/2.2-Beschreibungen, ...).
+function parseFieldCondition(def) {
+  if (!def.sop_hinweis) return null;
+  const m = def.sop_hinweis.match(/^nur wenn\s+([a-zA-Z0-9_]+)\s*=\s*(\S+)/i);
+  return m ? { key: m[1], value: m[2] } : null;
+}
+function applyFieldConditions(formSelector) {
+  document.querySelectorAll(`${formSelector} [data-cond-key]`).forEach((wrap) => {
+    const actual = fieldValueIn(formSelector, wrap.dataset.condKey);
+    wrap.classList.toggle("cond-hidden", actual !== wrap.dataset.condValue);
+  });
+}
+
 // ---------------------------------------------------------------- Rendering: Felder
 function fieldInputHtml(def, uniqueKey) {
   const reqMark = def.pflichtfeld ? '<span class="req">*</span>' : "";
@@ -460,9 +499,11 @@ function fieldInputHtml(def, uniqueKey) {
     hintHtml = `<div class="fieldhint">${escapeHtml([def.format_hinweis, def.sop_hinweis].filter(Boolean).join(" · "))}</div>`;
   }
   const fullClass = def.datentyp === "mehrzeiliger_text" ? " full" : "";
+  const cond = parseFieldCondition(def);
+  const condAttrs = cond ? ` data-cond-key="${escapeHtml(cond.key)}" data-cond-value="${escapeHtml(cond.value)}"` : "";
   // Kein data-key auf dem Wrapper-Div (nur auf dem eigentlichen Eingabeelement) -
   // sonst matchen [data-key="..."]-Selektoren zwei Elemente (Div + Input/Select).
-  return `<div class="field${fullClass}" data-entity="${def.entity_type}" data-fieldkey="${def.key}"><label>${escapeHtml(def.label)}${reqMark}</label>${inputHtml}${hintHtml}</div>`;
+  return `<div class="field${fullClass}" data-entity="${def.entity_type}" data-fieldkey="${def.key}"${condAttrs}><label>${escapeHtml(def.label)}${reqMark}</label>${inputHtml}${hintHtml}</div>`;
 }
 
 function renderForm() {
@@ -512,15 +553,16 @@ function renderForm() {
   });
   recomputeTesttiefe();
   recomputeKiReifegrad();
+  applyFieldConditions("#systemForm");
 }
 
 function renderProjektForm() {
   const form = document.getElementById("projektForm");
   form.innerHTML = "";
-  groupsFor("projekt").forEach((group) => {
+  groupsFor("projekt", currentDocTypeChosen).forEach((group) => {
     const card = document.createElement("div");
     card.className = "card";
-    card.innerHTML = `<h2>${escapeHtml(group.name)}<span class="tag">CS-VP</span></h2>`;
+    card.innerHTML = `<h2>${escapeHtml(group.name)}<span class="tag">${escapeHtml(groupBadge(group.fields))}</span></h2>`;
     const fieldsDiv = document.createElement("div");
     fieldsDiv.className = "fields";
     group.fields.forEach((def) => { fieldsDiv.innerHTML += fieldInputHtml(def, def.key); });
@@ -531,6 +573,7 @@ function renderProjektForm() {
     el.addEventListener("input", () => onFieldUpdate(el));
     el.addEventListener("change", () => onFieldUpdate(el));
   });
+  applyFieldConditions("#projektForm");
 }
 
 // Ermittelt, zu welchem Formular/welcher Liste ein Eingabeelement gehoert -
@@ -588,6 +631,7 @@ function onFieldUpdate(el) {
   markDirty();
   if (ctx === "system" && (key === "gxp_kritikalitaet" || key === "gamp_kategorie")) recomputeTesttiefe();
   if (ctx === "system" && (key === "ki_vorhanden" || key === "ki_autonomie_stufe" || key === "ki_steuerungsdesign_stufe")) recomputeKiReifegrad();
+  applyFieldConditions(ctx === "projekt" ? "#projektForm" : "#systemForm");
 }
 
 function recomputeTesttiefe() {
@@ -656,18 +700,23 @@ function clearFormFieldsIn(formSelector, baselineSetter) {
   document.querySelectorAll(`${formSelector} input[type=radio]`).forEach((el) => (el.checked = false));
   document.querySelectorAll(`${formSelector} .field`).forEach((w) => w.classList.remove("changed"));
   document.querySelectorAll(`${formSelector} .person-new`).forEach((el) => (el.style.display = "none"));
+  applyFieldConditions(formSelector);
 }
 
 function fillFormWithValues(values) {
   fillFormValuesInto("#systemForm", values, (v) => (baseline = v));
   recomputeTesttiefe();
+  recomputeKiReifegrad(); // s.o.: bei ki_vorhanden=nein/leer wird sonst keine der beiden auslösenden Selects getroffen
+  applyFieldConditions("#systemForm");
 }
 function clearFormFields() {
   clearFormFieldsIn("#systemForm", (v) => (baseline = v));
   recomputeTesttiefe();
+  recomputeKiReifegrad();
 }
 function fillProjektFormWithValues(values) {
   fillFormValuesInto("#projektForm", values, (v) => (projektBaseline = v));
+  applyFieldConditions("#projektForm");
 }
 function clearProjektFormFields() {
   clearFormFieldsIn("#projektForm", (v) => (projektBaseline = v));
@@ -999,14 +1048,25 @@ function renderBranch(docType) {
 // Projekt-DB-Aequivalent zu renderBranch(): immer beide Listen zeigen (nicht
 // dokumenttyp-abhaengig - die Projekt-DB ist inhaltlich ohnehin auf CS-VP
 // ausgelegt, siehe seed_field_definitions_projekt.sql).
+// Wie bei groupsFor("projekt", docType): eine Liste (versionshistorie_eintrag/
+// lieferant_verantwortlichkeit/unexpected_event) wird nur gezeigt, wenn
+// mindestens eines ihrer Felder "immer" oder die gewaehlte Dokumentart
+// benoetigt. Ohne gewaehlte Dokumentart (docType="") ungefiltert, wie bisher.
+function entityNeededFor(entityType, docType) {
+  if (!docType) return true;
+  const defs = fieldDefsByEntity[entityType] || [];
+  return defs.some((d) => (d.benoetigt_fuer || ["immer"]).some((t) => t === "immer" || t === docType));
+}
 function renderProjektBranch() {
   const area = document.getElementById("projektBranchArea");
   const rerender = () => renderProjektBranch();
   area.innerHTML = "";
-  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit", "unexpected_event"].forEach((ent) => {
-    area.appendChild(renderBranchSection(projektListState, ent, false, "CS-VP", rerender));
+  const entities = ["versionshistorie_eintrag", "lieferant_verantwortlichkeit", "unexpected_event"]
+    .filter((ent) => entityNeededFor(ent, currentDocTypeChosen));
+  entities.forEach((ent) => {
+    area.appendChild(renderBranchSection(projektListState, ent, false, currentDocTypeChosen || "CS-VP/CS-VB", rerender));
   });
-  ["versionshistorie_eintrag", "lieferant_verantwortlichkeit", "unexpected_event"].forEach((ent) => bindListRowInputs(area, ent, projektListState, rerender));
+  entities.forEach((ent) => bindListRowInputs(area, ent, projektListState, rerender));
 }
 
 // ---------------------------------------------------------------- Dirty/Save/Load-UI
@@ -1180,6 +1240,7 @@ function showAppScreen(which, label) {
 // stattdessen eine eigene Datei laden will, kann das ueber die Direkt-
 // Laden-Links auf dem Startbildschirm weiterhin tun.
 function provisionForDocType(docType) {
+  const vorherigeDocType = currentDocTypeChosen;
   currentDocTypeChosen = docType;
   const needed = DOC_DB_REQUIREMENTS[docType] || ["system"];
   if (needed.includes("system")) {
@@ -1188,7 +1249,20 @@ function provisionForDocType(docType) {
   }
   if (needed.includes("projekt")) {
     if (!projektDb) { createNewProjektDb(); projektDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
-    if (!projektUiReady) initProjektUi();
+    if (!projektUiReady) {
+      initProjektUi();
+    } else if (docType !== vorherigeDocType) {
+      // Dokumentart nachtraeglich gewechselt, waehrend die Projekt-UI schon
+      // offen war (z.B. CS-VP -> CS-VB) - Formular mit der neuen Feld-
+      // Filterung neu aufbauen und den aktuell gewaehlten Datensatz (falls
+      // vorhanden) erneut einsetzen (Nutzer-Feedback 05.09.).
+      renderProjektForm();
+      if (currentProjektId != null) {
+        const rec = projektCache.find((r) => String(r.id) === String(currentProjektId));
+        if (rec) fillProjektFormWithValues(rec.values);
+      }
+      renderProjektBranch(); // Zusatzlisten (Versionshistorie/Lieferant/Unexpected Event) genauso neu filtern
+    }
   }
   document.getElementById("startScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
