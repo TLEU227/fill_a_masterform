@@ -43,6 +43,10 @@ const GROUP_ORDER = {
   risiko: ["Risiko"],
   pruefschritt: ["Prüfschritt"],
   projekt: [
+    // "Dokument" (Dok-ID+Version DIESES Dokuments, s. db/seed_field_definitions_projekt.sql)
+    // steht bewusst ganz vorn - Nutzer-Anfrage 06.09.: "ein Pflichtfeld muss
+    // als erstes eine Dok-ID des Dokumentes und Version sein".
+    "Dokument",
     "Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente",
     "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument",
     // Validierungsergebnisse (nur CS-VB) - seit 05.09. nach Kapitel untergruppiert statt
@@ -957,7 +961,7 @@ function resetToScenario(newScenario) {
 
 function setProjektScenario(newScenario) {
   projektScenario = newScenario;
-  document.querySelectorAll("#projektTabContent .scenario-btn").forEach((b) => b.classList.toggle("active", b.dataset.scenario === newScenario));
+  document.querySelectorAll("#projektKontextBar .scenario-btn").forEach((b) => b.classList.toggle("active", b.dataset.scenario === newScenario));
   resetToProjektScenario(newScenario);
 }
 function resetToProjektScenario(newScenario) {
@@ -1500,6 +1504,9 @@ function setActiveTab(tab) {
   activeTab = tab;
   Object.entries(TAB_BUTTON_IDS).forEach(([t, id]) => document.getElementById(id).classList.toggle("active", tab === t));
   Object.entries(TAB_CONTENT_IDS).forEach(([t, id]) => document.getElementById(id).classList.toggle("hidden", tab !== t));
+  // Projekt-Kontext-Leiste (System-/Projekt-Auswahl) gilt fuer alle drei
+  // Projekt-Reiter gemeinsam, siehe Kommentar in app_template.html.
+  document.getElementById("projektKontextBar").classList.toggle("hidden", !PROJEKT_TABS.has(tab));
   const current = PROJEKT_TABS.has(tab) ? projektDirty : systemDirty;
   document.querySelectorAll(".dirty-indicator").forEach((el) => {
     el.textContent = current ? "● Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen";
@@ -1736,7 +1743,7 @@ async function main() {
   });
   document.getElementById("docSelect").addEventListener("change", (e) => applyBranchDocType(e.target.value));
 
-  document.querySelectorAll("#projektTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setProjektScenario(btn.dataset.scenario)));
+  document.querySelectorAll("#projektKontextBar .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setProjektScenario(btn.dataset.scenario)));
   document.getElementById("projektSourceSearch").addEventListener("input", (e) => renderProjektSourceResults(e.target.value));
   document.getElementById("projektSourceSearch").addEventListener("focus", (e) => renderProjektSourceResults(e.target.value));
   document.getElementById("projektSourceResults").addEventListener("click", (e) => {

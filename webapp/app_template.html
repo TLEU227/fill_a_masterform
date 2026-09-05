@@ -218,6 +218,41 @@
       <input type="file" id="fileInputFallbackOther" accept=".sqlite,.db" class="hidden">
     </div>
 
+    <!-- Projekt-Kontext-Leiste: Auswahl von Projekt + (darüber verknüpftem)
+         System - bewusst AUSSERHALB der einzelnen Projekt/VP/VB-Tab-Inhalte,
+         weil System+Projekt fuer alle drei Reiter gleich gelten (Nutzer-
+         Anfrage 06.09.: "die ersten Eingabefelder [in den Dokumenten]
+         müssen die Auswahl des Systems und die Auswahl des Projektes
+         sein" - System, Projekt und das jeweilige Dokument bleiben dabei
+         unabhaengige Datensaetze, nur hier zusammengefuehrt). Sichtbar
+         sobald einer der drei Reiter Projekt/VP/VB aktiv ist. -->
+    <div id="projektKontextBar" class="hidden">
+      <div class="scenario-picker">
+        <button class="scenario-btn active" data-scenario="neu"><b>1 · Neues Projekt</b><span>Projekt zu einem System neu anlegen</span></button>
+        <button class="scenario-btn" data-scenario="bearbeiten"><b>2 · Bestehendes Projekt bearbeiten</b><span>Vorhandene Werte anzeigen, ändern was nötig ist</span></button>
+      </div>
+
+      <div class="source-picker" id="projektSourcePicker">
+        <label>Zu bearbeitendes Projekt:</label>
+        <div class="combo">
+          <input type="text" id="projektSourceSearch" placeholder="Projekt suchen: Projektbezeichnung, MLCS-ID, … " autocomplete="off">
+          <div class="combo-results" id="projektSourceResults"></div>
+        </div>
+        <div class="combo-selected" id="projektSourceSelected"></div>
+        <div class="hint">Der BESTEHENDE Projekt-Datensatz wird geladen und beim Speichern aktualisiert (kein neuer Datensatz).</div>
+      </div>
+
+      <div class="source-picker visible" id="systemHelperPicker">
+        <label>Verknüpftes System (Auswahl setzt die MLCS-ID unten):</label>
+        <div class="combo">
+          <input type="text" id="systemHelperSearch" placeholder="System suchen: MLCS-ID, Gerätename, Hersteller/Lieferant, Software, Gebäude, … " autocomplete="off">
+          <div class="combo-results" id="systemHelperResults"></div>
+        </div>
+        <div class="combo-selected" id="systemHelperSelected"></div>
+        <div class="hint">Setzt nur das MLCS-ID-Feld im Formular unten - die Verknüpfung zur System-Datenbank ist ein reiner Feldwert, keine feste Verknüpfung.</div>
+      </div>
+    </div>
+
     <div id="systemTabContent">
       <div class="scenario-picker">
         <button class="scenario-btn active" data-scenario="leer"><b>1 · Neuanlage (leer)</b><span>System ist unbekannt, alles neu eingeben</span></button>
@@ -253,31 +288,7 @@
     </div>
 
     <div id="projektTabContent" class="hidden">
-      <div class="scenario-picker">
-        <button class="scenario-btn active" data-scenario="neu"><b>1 · Neues Projekt</b><span>Projekt zu einem System neu anlegen</span></button>
-        <button class="scenario-btn" data-scenario="bearbeiten"><b>2 · Bestehendes Projekt bearbeiten</b><span>Vorhandene Werte anzeigen, ändern was nötig ist</span></button>
-      </div>
-
-      <div class="source-picker" id="projektSourcePicker">
-        <label>Zu bearbeitendes Projekt:</label>
-        <div class="combo">
-          <input type="text" id="projektSourceSearch" placeholder="Projekt suchen: Projektbezeichnung, MLCS-ID, … " autocomplete="off">
-          <div class="combo-results" id="projektSourceResults"></div>
-        </div>
-        <div class="combo-selected" id="projektSourceSelected"></div>
-        <div class="hint">Der BESTEHENDE Projekt-Datensatz wird geladen und beim Speichern aktualisiert (kein neuer Datensatz).</div>
-      </div>
-
-      <div class="source-picker visible" id="systemHelperPicker">
-        <label>System suchen (Hilfsmittel, um die MLCS-ID unten korrekt zu befüllen):</label>
-        <div class="combo">
-          <input type="text" id="systemHelperSearch" placeholder="System suchen: MLCS-ID, Gerätename, Hersteller/Lieferant, Software, Gebäude, … " autocomplete="off">
-          <div class="combo-results" id="systemHelperResults"></div>
-        </div>
-        <div class="combo-selected" id="systemHelperSelected"></div>
-        <div class="hint">Setzt nur das MLCS-ID-Feld im Formular unten - die Verknüpfung zur System-Datenbank ist ein reiner Feldwert, keine feste Verknüpfung.</div>
-      </div>
-
+      <div class="hint">Dokumentübergreifende Basisdaten zu Projekt + System - Auswahl/Anlage erfolgt oben in der Leiste (gilt für Projekt/VP/VB gemeinsam).</div>
       <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
 
       <form id="projektForm"></form>

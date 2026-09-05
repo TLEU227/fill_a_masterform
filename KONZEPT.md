@@ -356,6 +356,41 @@ der neuen Parallel-Reiter-Architektur (3b) nicht mehr stimmig.
   müsste die komplette Python-Fülllogik nach JS portiert werden (deutlich
   größerer Umbau).
 
+### 3e. Projekt-Kontext-Leiste + eigene Dokument-Identität (Stand 06.09.)
+
+Nutzer-Rückmeldung: "im VB müssen wir ein System und ein Projekt
+zusammenführen. System, Projekt und [das jeweilige Dokument] müssen
+unabhängig sein" + "die ersten Eingabefelder [in den Dokumenten] müssen
+die Auswahl des Systems und die Auswahl des Projektes sein. Ein
+Pflichtfeld muss als erstes eine Dok-ID des Dokumentes und Version sein."
+
+- **Projekt-Kontext-Leiste** (`#projektKontextBar` in `app_template.html`):
+  die Szenario-Auswahl (Neues/Bestehendes Projekt) + die beiden
+  Such-Hilfsmittel (Projekt suchen, System suchen) waren bisher nur im
+  Projekt-Tab sichtbar. Jetzt eine eigene Leiste OBERHALB der drei
+  Tab-Inhalte Projekt/VP/VB, sichtbar sobald einer der drei aktiv ist -
+  System- und Projekt-Auswahl gelten für alle drei gemeinsam und stehen
+  jetzt in JEDEM der drei Tabs ganz oben, nicht nur im Projekt-Tab. Rein
+  strukturelle Verschiebung (dieselben Elemente/IDs, dieselbe Logik) -
+  System, Projekt und Dokument bleiben dabei unabhängige Datensätze
+  (3 getrennte Konzepte), werden hier nur zur Anzeige/Eingabe
+  zusammengeführt.
+- **Neue Gruppe "Dokument"** (`GROUP_ORDER.projekt`, ganz vorne): enthält
+  die Dok-ID + Version des jeweils gerade bearbeiteten Dokuments selbst.
+  Im VP-Tab ist das `vp_dok_id`/`vp_version` (Pflichtfeld, war vorher in
+  "Referenzdokumente" weiter hinten). Im VB-Tab NEU: `vb_dok_id`/
+  `vb_version` (Pflichtfeld, eigene Dok-ID DIESES CS-VB) direkt gefolgt
+  von `vp_dok_id`/`vp_version` (geteiltes Feld, hier als Referenz auf den
+  zugehörigen CS-VP) - "erst die eigene Dokument-Identität, dann der
+  Verweis auf den CS-VP".
+- **Projekt-Tab bleibt bewusst schmal** - das ist kein Fehler: von 166
+  Projekt-Feldern sind nur 1 (`mlcs_id`) `benoetigt_fuer=["immer"]" und
+  landen im Projekt-Tab selbst, 26 sind CS-VP-spezifisch (VP-Tab), 126
+  CS-VB-spezifisch (VB-Tab), 15 werden von beiden geteilt (erscheinen in
+  beiden Tabs, live synchronisiert). Nichts wurde gestrichen - die Felder
+  sind absichtlich auf die Tabs verteilt, in denen sie tatsächlich
+  gebraucht werden (Architektur aus Abschnitt 3b).
+
 ## 4. Prozesse
 
 ### a) Datenerfassung – 3 Szenarien im Browser-Formular

@@ -94,6 +94,16 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- Passagen auf (z.B. Kap. 3.4.1 "...bezogen auf das Projektbezeichnung...").
 ('projekt', 'projektbezeichnung', 'Projektbezeichnung', 'text', NULL, 0, NULL, NULL, '["CS-VP"]', 'Projekt', 5),
 
+-- Update 06.09. (Nutzer-Feedback: "ein Pflichtfeld muss als erstes eine
+-- Dok-ID des Dokumentes und Version sein"): eigene Gruppe 'Dokument' fuer
+-- die Identitaet des jeweils gerade bearbeiteten Dokuments selbst, steht
+-- laut GROUP_ORDER (app.js) als erste Gruppe im VP- bzw. VB-Tab - noch vor
+-- Projekt-Stammdaten. vp_dok_id/vp_version sind dabei geteilt (CS-VP+CS-VB,
+-- s.u.), vb_dok_id/vb_version nur CS-VB (der CS-VP hat keine "Referenz auf
+-- sich selbst" noetig, seine eigene Dok-ID IST vp_dok_id).
+('projekt', 'vb_dok_id',  'Dieser CS-Validierungsbericht: Dok-ID', 'text', NULL, 1, 'QU-OPE-XXXXXXX', NULL, '["CS-VB"]', 'Dokument', 1),
+('projekt', 'vb_version', 'Dieser CS-Validierungsbericht: Version', 'text', NULL, 1, 'x.x', NULL, '["CS-VB"]', 'Dokument', 5),
+
 -- CS-VB verweist an > 10 Stellen im Fließtext auf "Validierungsplan XXXXX"
 -- (5-X-Marker, immer als eigener Run) - dessen Dok-ID war bisher nirgends
 -- erfasst, weil sie erst nach Freigabe des CS-VP feststeht und CS-VP selbst
@@ -104,8 +114,12 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- selben Sinn wie systembewertung_dok_id ein "Muss" fuer die laufende
 -- Referenzdokumentation ist); im VB-Tab erscheint sie automatisch wieder
 -- (geteiltes Feld), weil der CS-VB staendig auf den CS-VP verweist.
-('projekt', 'vp_dok_id',              'Validierungsplan (CS-VP): Dok-ID (dieses Projekt)', 'text', NULL, 1, 'QU-OPE-XXXXXXX', 'im VP-Tab erfassen, sobald nach Erstellung/Freigabe bekannt - wird im VB-Tab als Referenz auf den Validierungsplan wiederverwendet', '["CS-VP","CS-VB"]', 'Referenzdokumente', 90),
-('projekt', 'vp_version',             'Validierungsplan (CS-VP): Version (dieses Projekt)', 'text', NULL, 1, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 95),
+-- Update 06.09.: Gruppe von 'Referenzdokumente' -> 'Dokument' (s.o.), damit
+-- sie im VP-Tab ganz vorne steht; im VB-Tab landet sie dadurch direkt nach
+-- vb_dok_id/vb_version - "erst die eigene Dokument-Identität, dann der
+-- Verweis auf den zugehörigen CS-VP".
+('projekt', 'vp_dok_id',              'Validierungsplan (CS-VP): Dok-ID (dieses Projekt)', 'text', NULL, 1, 'QU-OPE-XXXXXXX', 'im VP-Tab erfassen, sobald nach Erstellung/Freigabe bekannt - wird im VB-Tab als Referenz auf den Validierungsplan wiederverwendet', '["CS-VP","CS-VB"]', 'Dokument', 10),
+('projekt', 'vp_version',             'Validierungsplan (CS-VP): Version (dieses Projekt)', 'text', NULL, 1, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Dokument', 15),
 
 -- ---------------------------------------------------------------------------
 -- Vorgehensweise bei der Validierung (Kap. 3 CS-VP) - Weichen für ganze

@@ -67,7 +67,7 @@ async function main() {
   vdb.close();
 
   // --- Szenario 3: bestehendes System bearbeiten (die Kopie, MLCS 6666) ---
-  await page.click('.scenario-btn[data-scenario="bearbeiten"]');
+  await page.click('#systemTabContent .scenario-btn[data-scenario="bearbeiten"]');
   await page.fill("#sourceSearch", "6666");
   await page.waitForSelector(".combo-item");
   await page.click(".combo-item");
