@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="utf-8"><title>DocxFillVB Testseite</title></head>
+<body>
+<script src="vendor/jszip/jszip.js"></script>
+<script src="docx_toolkit.js"></script>
+<script src="docx_fill_vb.js"></script>
+<script>
+  window.__runFill = async function (templateBase64, sys, proj) {
+    const binary = atob(templateBase64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    const result = await window.DocxFillVB.fill(bytes.buffer, sys, proj);
+    // Uint8Array -> Base64 fuer den Rueckweg nach Node.
+    let b64 = "";
+    const CHUNK = 0x8000;
+    for (let i = 0; i < result.length; i += CHUNK) {
+      b64 += String.fromCharCode.apply(null, result.subarray(i, i + CHUNK));
+    }
+    return {
+      base64: btoa(b64),
+      changesCount: result.docxFillDebug ? result.docxFillDebug.changes.length : null,
+      skippedCount: result.docxFillDebug ? result.docxFillDebug.skipped.length : null,
+      numbering: result.docxFillDebug ? result.docxFillDebug.numbering : [],
+      changes: result.docxFillDebug ? result.docxFillDebug.changes : [],
+      skipped: result.docxFillDebug ? result.docxFillDebug.skipped : [],
+    };
+  };
+</script>
+</body>
+</html>
