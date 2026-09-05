@@ -1231,8 +1231,11 @@ function updateHeaderAndTabs() {
   // Nur nerven, wenn die fehlende DB fuer die gewaehlte Dokumentart auch
   // wirklich gebraucht wird - sonst wuerde z.B. bei "Systembewertung"
   // (braucht nur die System-DB) staendig ein Projekt-DB-Hinweis erscheinen.
+  // Platzhalter-Reiter (AB-DQ/SCR/AB-IQOQPQ/STV/AFU) brauchen noch gar keine
+  // DB, deshalb hier immer "nicht fehlend".
   const neededForDocType = new Set(DOC_DB_REQUIREMENTS[currentDocTypeChosen] || ["system"]);
-  const missing = activeTab === "system" ? (!projektDb && neededForDocType.has("projekt")) : (!db && neededForDocType.has("system"));
+  const missing = PLACEHOLDER_TABS.includes(activeTab) ? false
+    : activeTab === "system" ? (!projektDb && neededForDocType.has("projekt")) : (!db && neededForDocType.has("system"));
   if (missing) {
     const missingLabel = activeTab === "system" ? "Projekt-Datenbank" : "System-Datenbank";
     document.getElementById("loadOtherDbText").textContent = `${missingLabel} ist noch nicht geladen - für diesen Tab wird sie gebraucht, um Daten einzugeben.`;
@@ -1249,15 +1252,26 @@ function updateHeaderAndTabs() {
 
   const activeHandle = PROJEKT_TABS.has(activeTab) ? projektFileHandle : fileHandle;
   const activeDb = PROJEKT_TABS.has(activeTab) ? projektDb : db;
-  document.getElementById("btnLinkFile").classList.toggle("hidden", !!activeHandle || !hasFSAccess || !activeDb);
+  document.getElementById("btnLinkFile").classList.toggle("hidden", PLACEHOLDER_TABS.includes(activeTab) || !!activeHandle || !hasFSAccess || !activeDb);
 }
 
 // "projekt"/"vp"/"vb" sind drei parallele Ansichten auf dieselbe Projekt-DB
 // (s.o.) - ueberall dort, wo bisher nur zwischen "system" und "projekt"
 // unterschieden wurde, jetzt zwischen "system" und PROJEKT_TABS.
 const PROJEKT_TABS = new Set(["projekt", "vp", "vb"]);
-const TAB_BUTTON_IDS = { system: "tabBtnSystem", projekt: "tabBtnProjekt", vp: "tabBtnVP", vb: "tabBtnVB" };
-const TAB_CONTENT_IDS = { system: "systemTabContent", projekt: "projektTabContent", vp: "vpTabContent", vb: "vbTabContent" };
+// abdq/scr/abiop/stv/afu: reservierte Reiter fuer weitere bekannte Templates
+// (Nutzer-Anfrage 05.09.: "Reiter vorsehen, gefuellt werden sie aber noch
+// nicht") - reiner Platzhalterinhalt in app_template.html, keine Felder/
+// DB-Anbindung, deshalb auch keine Aufnahme in PROJEKT_TABS.
+const TAB_BUTTON_IDS = {
+  system: "tabBtnSystem", projekt: "tabBtnProjekt", vp: "tabBtnVP", vb: "tabBtnVB",
+  abdq: "tabBtnABDQ", scr: "tabBtnSCR", abiop: "tabBtnABIOP", stv: "tabBtnSTV", afu: "tabBtnAFU",
+};
+const TAB_CONTENT_IDS = {
+  system: "systemTabContent", projekt: "projektTabContent", vp: "vpTabContent", vb: "vbTabContent",
+  abdq: "abdqTabContent", scr: "scrTabContent", abiop: "abiopTabContent", stv: "stvTabContent", afu: "afuTabContent",
+};
+const PLACEHOLDER_TABS = ["abdq", "scr", "abiop", "stv", "afu"];
 function setActiveTab(tab) {
   if (PROJEKT_TABS.has(tab) && !projektDb) { updateHeaderAndTabs(); return; }
   if (tab === "system" && !db) { updateHeaderAndTabs(); return; }
@@ -1504,6 +1518,7 @@ async function main() {
   document.getElementById("tabBtnProjekt").addEventListener("click", () => setActiveTab("projekt"));
   document.getElementById("tabBtnVP").addEventListener("click", () => setActiveTab("vp"));
   document.getElementById("tabBtnVB").addEventListener("click", () => setActiveTab("vb"));
+  PLACEHOLDER_TABS.forEach((t) => document.getElementById(TAB_BUTTON_IDS[t]).addEventListener("click", () => setActiveTab(t)));
 
   document.querySelectorAll("#systemTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));
   document.getElementById("sourceSearch").addEventListener("input", (e) => renderSourceResults(e.target.value));

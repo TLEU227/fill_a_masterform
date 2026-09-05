@@ -418,7 +418,24 @@ Ab jetzt verwendete Kürzel für die Bausteine, zur schnelleren Verständigung:
 | **FVP** | Fill CS-Validierungsplan | 🟡 am weitesten, mehrere Demo-Durchläufe gegen die reale V9.0-Vorlage geprüft |
 | **FVB** | Fill CS-Validierungsbericht | 🟡 zweiter Fill-Durchlauf (04.09.): zusätzlich DQ/IQ/OQ/PQ/PPQ-Ergebnisse, KI-Kapitel, Tabelle 6 Änderungen/Unexpected Events, Legendebox-/Grautext-Konvention - Details/Lücken siehe `docs/fvb_alle_fuellbaren_stellen.md` |
 | **FVQ** | Fill Vereinfachte Qualifizierung | ⬜ offen, Tabellenstruktur bekannt |
-| **FxQTP** | Fill xQ-Testplan | ⬜ offen, kaum analysiert - gleiches Muster wie FVQ (Prüfschritt-Tabellen) |
+| **FxQTP** | Fill xQ-Testplan (= "MDT-TC-TP Testplan", `QU-MT-0002666`) | ⬜ offen, kaum analysiert - gleiches Muster wie FVQ (Prüfschritt-Tabellen) |
+| **FABDQ** | Fill Abschlussbericht DQ (`MDT-TC-AB`, `QU-MT-0002634`) | ⬜ **Neu 05.09.**: Reiter "AB-DQ" in WE reserviert (leer, keine Felder/Fill-Logik), noch nicht analysiert |
+| **FSCR** | Fill Source Code Review (`MDT-CS-SCR`, `QU-MT-0000755`) | ⬜ **Neu 05.09.**: Reiter "SCR" in WE reserviert (leer), noch nicht analysiert, laut Nutzer bisher nie verwendet |
+| **FABIOP** | Fill Abschlussbericht IQ/OQ/PQ (`TC-AB`, `QU-MT-0004969` - ein Template für alle drei Phasen) | ⬜ **Neu 05.09.**: Reiter "AB-IQ/OQ/PQ" in WE reserviert (leer), noch nicht analysiert |
+| **FSTV** | Fill Standard-Testvorschrift (`TC-STV`, `QU-MT-0006772`) | ⬜ **Neu 05.09.**: Reiter "STV" in WE reserviert (leer), noch nicht analysiert |
+| **FAFU** | Fill Authorization for Use (`MDT-CS-AFU`, `QU-MT-0000655`) | ⬜ **Neu 05.09.**: Reiter "AFU" in WE reserviert (leer), noch nicht analysiert |
+
+Nutzer-Anfrage 05.09.: "wir haben übrigens folgende Templates zur
+Verfügung... du kannst hierfür schon mal Reiter vorsehen, gefüllt werden
+sie aber noch nicht." Die Web-App (WE) hat jetzt für alle fünf oben
+genannten, bisher unbearbeiteten Templates einen eigenen Reiter (rein
+optisch als Platzhalter markiert, gestrichelter Rahmen) mit Template-
+Name + Dok-Nr., aber ohne Felder, ohne Datenbank-Anbindung und ohne
+Fill-Logik - das folgt erst nach einer Analyse jedes einzelnen Templates.
+**Bewusst nicht als Reiter angelegt:** die URS (liegt als Excel vor, ganz
+andere Baustelle als die Word-Templates) sowie zwei weitere, vom Nutzer
+genannte, aber laut eigener Aussage "noch nie verwendete" Dokumente (in
+der Nutzer-Nummerierung die Positionen 8/9, ausgelassen).
 
 **Bewusst NICHT mehr Teil dieses Projekts:** Fill Systembewertung
 (MERGEFIELD-basiert) - wird in einem anderen Projekt (SysBew_Extraktor)

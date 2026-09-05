@@ -59,6 +59,8 @@
     cursor: pointer; font-size: 13.5px; font-weight: 600; color: var(--muted); border-bottom: none; }
   .tab-btn.active { color: var(--accent); background: white; border-color: var(--accent); }
   .tab-btn:disabled { cursor: not-allowed; opacity: .55; }
+  .tab-btn.placeholder-tab { border-style: dashed; font-weight: 400; font-size: 12.5px; padding: 8px 12px; }
+  .tab-btn.placeholder-tab.active { border-style: solid; }
   .load-other-db { background: var(--hint-bg); border: 1px solid var(--hint-border); border-radius: 8px;
     padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #7a5c00; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
   .load-other-db button { flex-shrink: 0; }
@@ -213,6 +215,11 @@
       <button type="button" class="tab-btn" id="tabBtnProjekt" data-tab="projekt">Projekt</button>
       <button type="button" class="tab-btn" id="tabBtnVP" data-tab="vp">VP</button>
       <button type="button" class="tab-btn" id="tabBtnVB" data-tab="vb">VB</button>
+      <button type="button" class="tab-btn placeholder-tab" id="tabBtnABDQ" data-tab="abdq" title="Abschlussbericht DQ (QU-MT-0002634)">AB-DQ</button>
+      <button type="button" class="tab-btn placeholder-tab" id="tabBtnSCR" data-tab="scr" title="Source Code Review (QU-MT-0000755)">SCR</button>
+      <button type="button" class="tab-btn placeholder-tab" id="tabBtnABIOP" data-tab="abiop" title="Abschlussbericht IQ/OQ/PQ (QU-MT-0004969)">AB-IQ/OQ/PQ</button>
+      <button type="button" class="tab-btn placeholder-tab" id="tabBtnSTV" data-tab="stv" title="Standard-Testvorschrift (QU-MT-0006772)">STV</button>
+      <button type="button" class="tab-btn placeholder-tab" id="tabBtnAFU" data-tab="afu" title="Authorization for Use (QU-MT-0000655)">AFU</button>
     </div>
 
     <div class="load-other-db hidden" id="loadOtherDbBanner">
@@ -305,6 +312,51 @@
       <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
       <form id="vbForm"></form>
       <div id="vbBranchArea"></div>
+    </div>
+
+    <!-- Reiter fuer weitere bekannte Templates (Stand 05.09.) - bewusst noch
+         ohne Felder/Fill-Logik ("Reiter vorsehen, gefuellt werden sie aber
+         noch nicht"). Platz ist reserviert, damit spaeter ergaenzte Felder
+         gleich am richtigen Ort landen. -->
+    <div id="abdqTabContent" class="hidden placeholder-tab-content">
+      <div class="card"><h2>Abschlussbericht DQ<span class="tag">noch nicht befüllt</span></h2>
+        <div style="padding:14px 16px">
+          <p>Template: <b>MDT-TC-AB</b> · Dok-Nr. <b>QU-MT-0002634</b></p>
+          <p class="hint" style="max-height:none;opacity:1;overflow:visible;">Dieser Reiter ist als Platzhalter vorgesehen. Es gibt hier noch keine Felder und keine Automatik zum Ausfüllen des Word-Dokuments - das kommt in einem späteren Schritt.</p>
+        </div>
+      </div>
+    </div>
+    <div id="scrTabContent" class="hidden placeholder-tab-content">
+      <div class="card"><h2>Source Code Review<span class="tag">noch nicht befüllt</span></h2>
+        <div style="padding:14px 16px">
+          <p>Template: <b>MDT-CS-SCR</b> · Dok-Nr. <b>QU-MT-0000755</b></p>
+          <p class="hint" style="max-height:none;opacity:1;overflow:visible;">Dieser Reiter ist als Platzhalter vorgesehen. Es gibt hier noch keine Felder und keine Automatik zum Ausfüllen des Word-Dokuments - das kommt in einem späteren Schritt.</p>
+        </div>
+      </div>
+    </div>
+    <div id="abiopTabContent" class="hidden placeholder-tab-content">
+      <div class="card"><h2>Abschlussbericht IQ/OQ/PQ<span class="tag">noch nicht befüllt</span></h2>
+        <div style="padding:14px 16px">
+          <p>Template: <b>TC-AB</b> · Dok-Nr. <b>QU-MT-0004969</b> · ein Template für alle drei Phasen (IQ, OQ oder PQ)</p>
+          <p class="hint" style="max-height:none;opacity:1;overflow:visible;">Dieser Reiter ist als Platzhalter vorgesehen. Es gibt hier noch keine Felder und keine Automatik zum Ausfüllen des Word-Dokuments - das kommt in einem späteren Schritt.</p>
+        </div>
+      </div>
+    </div>
+    <div id="stvTabContent" class="hidden placeholder-tab-content">
+      <div class="card"><h2>Standard-Testvorschrift<span class="tag">noch nicht befüllt</span></h2>
+        <div style="padding:14px 16px">
+          <p>Template: <b>TC-STV</b> · Dok-Nr. <b>QU-MT-0006772</b></p>
+          <p class="hint" style="max-height:none;opacity:1;overflow:visible;">Dieser Reiter ist als Platzhalter vorgesehen. Es gibt hier noch keine Felder und keine Automatik zum Ausfüllen des Word-Dokuments - das kommt in einem späteren Schritt.</p>
+        </div>
+      </div>
+    </div>
+    <div id="afuTabContent" class="hidden placeholder-tab-content">
+      <div class="card"><h2>Authorization for Use<span class="tag">noch nicht befüllt</span></h2>
+        <div style="padding:14px 16px">
+          <p>Template: <b>MDT-CS-AFU</b> · Dok-Nr. <b>QU-MT-0000655</b></p>
+          <p class="hint" style="max-height:none;opacity:1;overflow:visible;">Dieser Reiter ist als Platzhalter vorgesehen. Es gibt hier noch keine Felder und keine Automatik zum Ausfüllen des Word-Dokuments - das kommt in einem späteren Schritt.</p>
+        </div>
+      </div>
     </div>
 
     <div class="status-note" id="statusNote"></div>
@@ -1750,8 +1802,11 @@ function updateHeaderAndTabs() {
   // Nur nerven, wenn die fehlende DB fuer die gewaehlte Dokumentart auch
   // wirklich gebraucht wird - sonst wuerde z.B. bei "Systembewertung"
   // (braucht nur die System-DB) staendig ein Projekt-DB-Hinweis erscheinen.
+  // Platzhalter-Reiter (AB-DQ/SCR/AB-IQOQPQ/STV/AFU) brauchen noch gar keine
+  // DB, deshalb hier immer "nicht fehlend".
   const neededForDocType = new Set(DOC_DB_REQUIREMENTS[currentDocTypeChosen] || ["system"]);
-  const missing = activeTab === "system" ? (!projektDb && neededForDocType.has("projekt")) : (!db && neededForDocType.has("system"));
+  const missing = PLACEHOLDER_TABS.includes(activeTab) ? false
+    : activeTab === "system" ? (!projektDb && neededForDocType.has("projekt")) : (!db && neededForDocType.has("system"));
   if (missing) {
     const missingLabel = activeTab === "system" ? "Projekt-Datenbank" : "System-Datenbank";
     document.getElementById("loadOtherDbText").textContent = `${missingLabel} ist noch nicht geladen - für diesen Tab wird sie gebraucht, um Daten einzugeben.`;
@@ -1768,15 +1823,26 @@ function updateHeaderAndTabs() {
 
   const activeHandle = PROJEKT_TABS.has(activeTab) ? projektFileHandle : fileHandle;
   const activeDb = PROJEKT_TABS.has(activeTab) ? projektDb : db;
-  document.getElementById("btnLinkFile").classList.toggle("hidden", !!activeHandle || !hasFSAccess || !activeDb);
+  document.getElementById("btnLinkFile").classList.toggle("hidden", PLACEHOLDER_TABS.includes(activeTab) || !!activeHandle || !hasFSAccess || !activeDb);
 }
 
 // "projekt"/"vp"/"vb" sind drei parallele Ansichten auf dieselbe Projekt-DB
 // (s.o.) - ueberall dort, wo bisher nur zwischen "system" und "projekt"
 // unterschieden wurde, jetzt zwischen "system" und PROJEKT_TABS.
 const PROJEKT_TABS = new Set(["projekt", "vp", "vb"]);
-const TAB_BUTTON_IDS = { system: "tabBtnSystem", projekt: "tabBtnProjekt", vp: "tabBtnVP", vb: "tabBtnVB" };
-const TAB_CONTENT_IDS = { system: "systemTabContent", projekt: "projektTabContent", vp: "vpTabContent", vb: "vbTabContent" };
+// abdq/scr/abiop/stv/afu: reservierte Reiter fuer weitere bekannte Templates
+// (Nutzer-Anfrage 05.09.: "Reiter vorsehen, gefuellt werden sie aber noch
+// nicht") - reiner Platzhalterinhalt in app_template.html, keine Felder/
+// DB-Anbindung, deshalb auch keine Aufnahme in PROJEKT_TABS.
+const TAB_BUTTON_IDS = {
+  system: "tabBtnSystem", projekt: "tabBtnProjekt", vp: "tabBtnVP", vb: "tabBtnVB",
+  abdq: "tabBtnABDQ", scr: "tabBtnSCR", abiop: "tabBtnABIOP", stv: "tabBtnSTV", afu: "tabBtnAFU",
+};
+const TAB_CONTENT_IDS = {
+  system: "systemTabContent", projekt: "projektTabContent", vp: "vpTabContent", vb: "vbTabContent",
+  abdq: "abdqTabContent", scr: "scrTabContent", abiop: "abiopTabContent", stv: "stvTabContent", afu: "afuTabContent",
+};
+const PLACEHOLDER_TABS = ["abdq", "scr", "abiop", "stv", "afu"];
 function setActiveTab(tab) {
   if (PROJEKT_TABS.has(tab) && !projektDb) { updateHeaderAndTabs(); return; }
   if (tab === "system" && !db) { updateHeaderAndTabs(); return; }
@@ -2023,6 +2089,7 @@ async function main() {
   document.getElementById("tabBtnProjekt").addEventListener("click", () => setActiveTab("projekt"));
   document.getElementById("tabBtnVP").addEventListener("click", () => setActiveTab("vp"));
   document.getElementById("tabBtnVB").addEventListener("click", () => setActiveTab("vb"));
+  PLACEHOLDER_TABS.forEach((t) => document.getElementById(TAB_BUTTON_IDS[t]).addEventListener("click", () => setActiveTab(t)));
 
   document.querySelectorAll("#systemTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));
   document.getElementById("sourceSearch").addEventListener("input", (e) => renderSourceResults(e.target.value));
