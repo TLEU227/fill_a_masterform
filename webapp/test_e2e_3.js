@@ -45,11 +45,13 @@ async function main() {
   await sysDownload.saveAs(path.join(DOWNLOAD_DIR, "masterform_system_fuer_projekt_e2e.sqlite"));
   assert(true, "System gespeichert (für Hilfsmittel-Suche im Projekt-Tab)");
 
-  // --- Zum Projekt-Tab wechseln (die Projekt-DB/UI existiert schon) ---
+  // --- Zum Projekt-Tab wechseln (die Projekt-DB/UI existiert schon) - dort
+  // liegen seit 05.09. nur noch die dokumentuebergreifenden Basisdaten
+  // (MLCS-ID); alles CS-VP-Spezifische liegt jetzt im parallelen VP-Tab ---
   await page.click("#tabBtnProjekt");
   assert(await page.locator("#tabBtnProjekt").evaluate((el) => el.classList.contains("active")), "Projekt-Tab ist nach Klick aktiv");
   const nProjektFields = await page.evaluate(() => document.querySelectorAll("#projektForm [data-key]").length);
-  assert(nProjektFields > 15, `Projekt-Formular hat ${nProjektFields} Eingabefelder gerendert`);
+  assert(nProjektFields >= 1, `Projekt-Formular (nur Basisdaten) hat ${nProjektFields} Eingabefelder gerendert`);
 
   // --- System-Hilfsmittel-Suche: MLCS-ID aus dem System uebernehmen ---
   await page.fill("#systemHelperSearch", "Projekt-Testsystem");
@@ -58,15 +60,28 @@ async function main() {
   const mlcsValue = await page.inputValue('#projektForm [data-key="mlcs_id"]');
   assert(mlcsValue === "7777", `MLCS-ID aus System-Suche übernommen: '${mlcsValue}'`);
 
-  // --- Projekt-Basisfelder befuellen ---
-  await page.fill('#projektForm [data-key="projektbezeichnung"]', "E2E Testprojekt");
-  await page.check('#projektForm input[name="ist_folgeprojekt"][value="nein"]');
-  await page.fill('#projektForm [data-key="folgeversion"]', "1.0");
+  // --- Zum VP-Tab wechseln: CS-VP-spezifische Felder ---
+  await page.click("#tabBtnVP");
+  assert(await page.locator("#tabBtnVP").evaluate((el) => el.classList.contains("active")), "VP-Tab ist nach Klick aktiv");
+  const nVpFields = await page.evaluate(() => document.querySelectorAll("#vpForm [data-key]").length);
+  assert(nVpFields > 15, `VP-Formular hat ${nVpFields} Eingabefelder gerendert`);
 
-  // --- Zusatzliste: Verantwortlichkeit des Lieferanten (freitext_erlaubt) ---
-  const addBtns = await page.$$("#projektTabContent .add-row-btn");
-  assert(addBtns.length === 2, `2 Hinzufügen-Buttons im Projekt-Tab (Versionshistorie/Lieferanten-Verantwortlichkeit), gefunden: ${addBtns.length}`);
-  await addBtns[1].click(); // lieferant_verantwortlichkeit hinzufuegen
+  // --- Projekt-Basisfelder befuellen (projektbezeichnung ist CS-VP-spezifisch,
+  // ist_folgeprojekt/folgeversion sind geteilt CS-VP+CS-VB) ---
+  await page.fill('#vpForm [data-key="projektbezeichnung"]', "E2E Testprojekt");
+  await page.check('#vpForm input[name="ist_folgeprojekt"][value="nein"]');
+  await page.fill('#vpForm [data-key="folgeversion"]', "1.0");
+
+  // --- Geteiltes Feld (ist_folgeprojekt) sollte jetzt auch im VB-Tab stehen ---
+  await page.click("#tabBtnVB");
+  const vbFolgeprojektWert = await page.evaluate(() => document.querySelector('#vbForm input[name="ist_folgeprojekt"]:checked')?.value);
+  assert(vbFolgeprojektWert === "nein", `Geteiltes Feld ist_folgeprojekt erscheint auch im VB-Tab (Wert: ${vbFolgeprojektWert})`);
+  await page.click("#tabBtnVP"); // zurueck zum VP-Tab fuer den Rest des Tests
+
+  // --- Zusatzliste: Verantwortlichkeit des Lieferanten (freitext_erlaubt, nur im VP-Tab) ---
+  const addBtns = await page.$$("#vpTabContent .add-row-btn");
+  assert(addBtns.length === 1, `1 Hinzufügen-Button im VP-Tab (Lieferanten-Verantwortlichkeit), gefunden: ${addBtns.length}`);
+  await addBtns[0].click(); // lieferant_verantwortlichkeit hinzufuegen
   await page.waitForSelector('[data-key^="lieferant_verantwortlichkeit.0."]');
   await page.selectOption('[data-key="lieferant_verantwortlichkeit.0.beschreibung"]', "die Durchführung der Validierung");
 

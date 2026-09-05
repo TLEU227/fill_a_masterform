@@ -98,8 +98,14 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- (5-X-Marker, immer als eigener Run) - dessen Dok-ID war bisher nirgends
 -- erfasst, weil sie erst nach Freigabe des CS-VP feststeht und CS-VP selbst
 -- sie nicht braucht. Neu fuer CS-VB.
-('projekt', 'vp_dok_id',              'Validierungsplan (CS-VP): Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'erst nach Freigabe des CS-VP bekannt', '["CS-VB"]', 'Referenzdokumente', 90),
-('projekt', 'vp_version',             'Validierungsplan (CS-VP): Version (dieses Projekt)', 'text', NULL, 0, 'x.x', NULL, '["CS-VB"]', 'Referenzdokumente', 95),
+-- Update 05.09. (Nutzer-Feedback): vp_dok_id/vp_version jetzt geteilt
+-- (CS-VP+CS-VB) statt nur CS-VB - im VP-Tab wird die eigene Dok-ID erfasst,
+-- sobald sie nach Erstellung/Freigabe bekannt ist (Pflichtfeld dort, im
+-- selben Sinn wie systembewertung_dok_id ein "Muss" fuer die laufende
+-- Referenzdokumentation ist); im VB-Tab erscheint sie automatisch wieder
+-- (geteiltes Feld), weil der CS-VB staendig auf den CS-VP verweist.
+('projekt', 'vp_dok_id',              'Validierungsplan (CS-VP): Dok-ID (dieses Projekt)', 'text', NULL, 1, 'QU-OPE-XXXXXXX', 'im VP-Tab erfassen, sobald nach Erstellung/Freigabe bekannt - wird im VB-Tab als Referenz auf den Validierungsplan wiederverwendet', '["CS-VP","CS-VB"]', 'Referenzdokumente', 90),
+('projekt', 'vp_version',             'Validierungsplan (CS-VP): Version (dieses Projekt)', 'text', NULL, 1, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Referenzdokumente', 95),
 
 -- ---------------------------------------------------------------------------
 -- Vorgehensweise bei der Validierung (Kap. 3 CS-VP) - Weichen für ganze

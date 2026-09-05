@@ -208,6 +208,14 @@ dauerhaft zum System) – Verknüpfung zur System-DB über den Feldwert
 Datenbanken gebraucht. Die Kapitelangaben unten beziehen sich auf CS-VP
 V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp ist.
 
+**Update 05.09.**: Im Webformular liegen diese Felder seitdem nicht mehr
+in einem einzigen "Projekt"-Tab, sondern in drei parallelen Tabs -
+"Projekt" (nur `benoetigt_fuer=["immer"]`, z.B. MLCS-ID), "VP" (`"CS-VP"`)
+und "VB" (`"CS-VB"`). Felder, die beide Dokumente brauchen
+(`["CS-VP","CS-VB"]`), erscheinen in BEIDEN Tabs VP und VB und werden beim
+Eintragen live in den jeweils anderen Tab gespiegelt (kein Speichern
+nötig, um es dort schon zu sehen). Details siehe `KONZEPT.md` Abschnitt 3b.
+
 ### 2.1 Verknüpfung + Vorgängerprojekt/Folgeversion
 
 | Feld | Label | Verwendung im Template |
@@ -230,7 +238,7 @@ V9.0 (`QU-MT-0000722`), da das der bisher am genauesten geprüfte Dokumenttyp is
 | `lieferantenaudit_dok_id` / `_version` | Bericht Lieferantenauditierung: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 6 Mitgeltende Unterlagen (Zeile "\<Bericht Lieferantenauditierung\>", bis dahin unbefüllt) |
 | `ra_dok_id` / `_version` | Risikobewertung/RA: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 11 Anhänge (Anhang 1, "xxx Risikobewertung" → Dok-ID; Version-Spalte) |
 | `testplan_dok_id` / `_version` | Prüfplan/Testplan: Dok-ID/Version (dieses Projekt) | ✅ **Neu 23.08.** Tabelle 11 Anhänge (Anhang 2, "Prüfplan/-Protokoll Dokumentation; Version x.x" → Version wird im Platzhalter *innerhalb* der Beschreibungszelle ersetzt, Template-Eigenheit; Dok-ID wird in die sonst leere Version-Spalte ergänzt, da dort kein eigener Platz vorgesehen ist). Auch CS-VB: Tabelle "Dokumentation Initial-Validierung" (Zeile "IQ/OQ-Testplan"). |
-| `vp_dok_id` / `_version` | Validierungsplan (CS-VP): Dok-ID/Version (dieses Projekt) | ✅ **Neu 04.09.** Nur CS-VB: ersetzt den 5-X-Marker "XXXXX" nach "Validierungsplan" an >10 Stellen im Fließtext (generischer Scan über das ganze Dokument, kein Text-Matching pro Absatz nötig) sowie in der Tabelle "Dokumentation Initial-Validierung" (Zeile "CS Validierungsplan (CS-VP)") |
+| `vp_dok_id` / `_version` | Validierungsplan (CS-VP): Dok-ID/Version (dieses Projekt) | ✅ **Update 05.09.**: jetzt Pflichtfeld, im Web-Tab "VP" erfassen sobald bekannt (vorher nur CS-VB-Feld, seit 05.09. geteilt CS-VP+CS-VB, s. `KONZEPT.md` Abschnitt 3b). Ersetzt den 5-X-Marker "XXXXX" nach "Validierungsplan" an >10 Stellen im Fließtext (generischer Scan, kein Text-Matching pro Absatz nötig) sowie in der Tabelle "Dokumentation Initial-Validierung" (Zeile "CS Validierungsplan (CS-VP)") |
 | `projektbezeichnung` | Projektbezeichnung | ✅ Kap. 3.5 ("bezogen auf das Projektbezeichnung" → echter Projektname) |
 
 ### 2.3 Vorgehensweise + Testkonzept (Kap. 3 CS-VP)

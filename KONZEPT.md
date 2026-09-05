@@ -225,21 +225,64 @@ Zwei Korrekturen nach Nutzer-Testlauf der Weboberfläche:
   aus, solange die Bedingung nicht erfüllt ist. Wird bei jeder Feldänderung,
   beim Laden eines Datensatzes und beim initialen Formularaufbau neu
   ausgewertet.
-- **Projekt-Formular zeigt jetzt nur noch die Felder der oben gewählten
-  Dokumentart (CS-VP oder CS-VB), nicht mehr alle PDB-Felder gemeinsam.**
-  Vorher wurden ALLE Projekt-Felder unabhängig von `benoetigt_fuer`
-  angezeigt, und der Gruppenkopf zeigte fest "CS-VP" an - auch bei
-  gewähltem CS-VB (Nutzer-Feedback: "wieso steht da CS-VP, ich dachte CS-VB
-  gewählt zu haben"). `groupsFor("projekt", docType)` filtert jetzt nach
-  `benoetigt_fuer` (immer ODER passender docType), der Gruppenkopf
-  (`groupBadge()`) zeigt die tatsächlich zutreffende(n) Dokumentart(en).
-  Wechselt man die Dokumentart nachträglich, während das Projekt-Formular
-  schon offen war, wird es mit der neuen Filterung neu aufgebaut
-  (`provisionForDocType()`). Dieselbe Filterung gilt jetzt auch für die drei
-  Zusatzlisten (Versionshistorie/Verantwortlichkeit des Lieferanten/
-  Unexpected Event) - vorher wurden z.B. auch bei CS-VP schon die (nur für
-  CS-VB relevanten) Unexpected Events angezeigt (`entityNeededFor()` in
-  `renderProjektBranch()`).
+- **Projekt-Formular zeigte anfangs (Zwischenstand desselben Tages) nur
+  die Felder der oben gewählten Dokumentart (CS-VP oder CS-VB) statt aller
+  PDB-Felder gemeinsam.** Dieser Zwischenstand ist inzwischen durch die
+  grundsätzlichere Lösung in Abschnitt 3b ersetzt (parallele Tabs statt
+  einer von der Dokumentart abhängigen Filterung).
+
+### 3b. Web-Formular: Projekt-DB in parallelen Tabs "Projekt"/"VP"/"VB" (Stand 05.09., Abend)
+
+Nutzer-Anfrage, nachdem 3a schon einen ersten Fix gebracht hatte: "lass uns
+alles, was dokumentenspezifisch ist, in extra Reiter parallel zu System und
+Projekt anordnen". Ersetzt die docType-abhängige Filterung aus 3a durch
+eine grundsätzlichere, stabilere Lösung:
+
+- **Drei parallele Tabs statt einem "Projekt"-Tab:** "Projekt" (nur Felder
+  mit `benoetigt_fuer=["immer"]`, z.B. MLCS-ID - dokumentübergreifende
+  Basisdaten), "VP" (Felder, deren `benoetigt_fuer` `"CS-VP"` enthält) und
+  "VB" (analog `"CS-VB"`). Alle drei sind **immer gleichzeitig** verfügbar,
+  sobald die Projekt-DB geladen ist (unabhängig davon, welche Dokumentart
+  eingangs gewählt wurde) - kein Umschalten/Neuaufbau mehr nötig.
+  `groupsFor("projekt", mode)` mit `mode ∈ {"immer","CS-VP","CS-VB"}`,
+  gebaut über drei parallele `<form>`-Elemente (`#projektForm`/`#vpForm`/
+  `#vbForm`, `buildProjektFormInto()`).
+- **Geteilte Felder (`benoetigt_fuer=["CS-VP","CS-VB"]`, z.B.
+  `vorgaenger_dok_id`, `systembewertung_dok_id`, `vp_dok_id`) erscheinen
+  bewusst in BEIDEN Tabs (VP UND VB), nicht nur in "Projekt".** Das war
+  explizit gefordert: "wenn ich sie im VP eingebe, sollte sie im VB Reiter
+  bereits angezeigt werden". Da es sich um dieselbe zugrundeliegende
+  `field_values`-Zeile handelt, würde das nach dem Speichern+Neuladen
+  ohnehin stimmen - `syncSharedProjektField()` spiegelt den Wert aber schon
+  **live**, ohne Neuladen, in alle anderen Vorkommen desselben Feld-
+  schlüssels (sonst müsste man erst speichern, um es im anderen Tab zu
+  sehen). Bekannte Einschränkung: gilt nur für einzelne Felder, nicht für
+  die Zusatzlisten (s.u.) - und aktuell kein geteiltes `auswahl`-Feld mit
+  Freitext-Fluchtoption vorhanden (dafür müsste zusätzlich der
+  `__freitext`-Wert gespiegelt werden).
+- **`vp_dok_id`/`vp_version`: von reinem CS-VB-Feld auf geteilt (CS-VP+
+  CS-VB) umgestellt, jetzt Pflichtfeld.** Vorher nur im (fälschlich als
+  "CS-VP" markierten, s. 3a) Projekt-Formular sichtbar, obwohl inhaltlich
+  ausschließlich für CS-VB gedacht ("Validierungsplan XXXXX" wird dort >10x
+  zitiert) - Nutzer-Feedback dazu: im VP-Tab selbst sollte stattdessen die
+  eigene Dok-ID des CS-VP erfasst werden (Pflichtangabe, sobald nach
+  Erstellung/Freigabe bekannt), die dann automatisch als Referenz im VB-Tab
+  wiederverwendet wird ("weil man ständig auf ihn verweisen muss").
+- **Die drei Zusatzlisten (Versionshistorie/Verantwortlichkeit des
+  Lieferanten/Unexpected Event) werden NICHT dupliziert, sondern bekommen
+  je einen festen Tab** (`PROJEKT_LIST_AREA_MODE`): Versionshistorie im Tab
+  "Projekt" (betrifft das Projekt als Ganzes), Lieferanten-Verantwortlichkeit
+  nur im Tab "VP", Unexpected Event nur im Tab "VB". Grund: Live-Spiegeln
+  wie bei einzelnen Feldern wäre für Listen (Zeilen hinzufügen/entfernen,
+  Cursor-Position beim Tippen) deutlich aufwändiger - die Werte landen
+  ohnehin in derselben `field_values`-Tabelle, nur eben ohne doppelte
+  Live-Ansicht.
+- Scoping-Vorsicht im Code: da geteilte Felder jetzt zweimal im DOM stehen
+  (einmal je Tab), mussten mehrere bisher globale `document.querySelector`-
+  Aufrufe (Options-Hinweistext, Freitext-Fluchtoption) auf das jeweils
+  nächste `<form>` (`el.closest("form")`) eingeschränkt werden - sonst
+  hätte z.B. das Aktualisieren des Hinweistexts nur die erste der beiden
+  Fundstellen getroffen.
 
 ## 4. Prozesse
 

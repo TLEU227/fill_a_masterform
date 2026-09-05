@@ -211,6 +211,8 @@
     <div class="tab-bar">
       <button type="button" class="tab-btn active" id="tabBtnSystem" data-tab="system">System</button>
       <button type="button" class="tab-btn" id="tabBtnProjekt" data-tab="projekt">Projekt</button>
+      <button type="button" class="tab-btn" id="tabBtnVP" data-tab="vp">VP</button>
+      <button type="button" class="tab-btn" id="tabBtnVB" data-tab="vb">VB</button>
     </div>
 
     <div class="load-other-db hidden" id="loadOtherDbBanner">
@@ -289,6 +291,20 @@
       <form id="projektForm"></form>
 
       <div id="projektBranchArea"></div>
+    </div>
+
+    <div id="vpTabContent" class="hidden">
+      <div class="hint">Bezieht sich auf dasselbe Projekt wie der Tab "Projekt" (Neuanlage/Auswahl dort) - hier nur die Felder, die speziell für den CS-Validierungsplan (CS-VP) gebraucht werden. Felder, die auch der CS-VB braucht, siehst du gleich dort ebenfalls.</div>
+      <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
+      <form id="vpForm"></form>
+      <div id="vpBranchArea"></div>
+    </div>
+
+    <div id="vbTabContent" class="hidden">
+      <div class="hint">Bezieht sich auf dasselbe Projekt wie der Tab "Projekt" (Neuanlage/Auswahl dort) - hier nur die Felder, die speziell für den CS-Validierungsbericht (CS-VB) gebraucht werden. Felder, die auch der CS-VP braucht, siehst du gleich dort ebenfalls.</div>
+      <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>
+      <form id="vbForm"></form>
+      <div id="vbBranchArea"></div>
     </div>
 
     <div class="status-note" id="statusNote"></div>

@@ -189,18 +189,23 @@ function loadFieldDefinitions(conn) {
 function defFor(entity, fieldKey) {
   return (fieldDefsByEntity[entity] || []).find((d) => d.key === fieldKey);
 }
-// docType (optional): fuer entityType='projekt' auf CS-VP/CS-VB eingeschraenkt -
-// nur Felder mit benoetigt_fuer=["immer"] ODER passendem docType werden
-// gezeigt (Nutzer-Feedback 05.09.: bisher wurden IMMER alle Projekt-Felder
-// aller Dokumentarten gemeinsam angezeigt, unabhaengig von der oben
-// gewaehlten Dokumentart - das war nicht beabsichtigt). Ohne docType (leerer
-// String, z.B. beim direkten Laden einer Projekt-DB-Datei ohne den
-// Dokumentart-Auswahlbildschirm) bleibt es beim bisherigen Verhalten (alle
-// Felder), da wir dann nicht wissen, wofuer gerade befuellt wird.
-function groupsFor(entityType, docType) {
+// mode (nur fuer entityType='projekt' relevant): Nutzer-Anfrage 05.09. -
+// "alles dokumentenspezifische in extra Reiter parallel zu System und
+// Projekt anordnen". Statt EINES Projekt-Formulars, gefiltert nach der
+// oben gewaehlten Dokumentart, gibt es jetzt DREI parallele Formulare
+// (#projektForm/#vpForm/#vbForm), die IMMER gleichzeitig verfuegbar sind:
+//   mode='immer'  -> nur Felder mit benoetigt_fuer=["immer"] (Tab "Projekt",
+//                    z.B. MLCS-ID) - dokumentuebergreifende Basisdaten.
+//   mode='CS-VP'  -> nur Felder, deren benoetigt_fuer 'CS-VP' enthaelt
+//                    (Tab "VP") - das schliesst auch die Felder ein, die
+//                    SOWOHL fuer CS-VP als auch CS-VB benoetigt werden
+//                    (z.B. vorgaenger_dok_id) - die erscheinen dann bewusst
+//                    in BEIDEN Tabs (VP UND VB), siehe syncSharedProjektField().
+//   mode='CS-VB'  -> analog fuer den Tab "VB".
+function groupsFor(entityType, mode) {
   let defs = fieldDefsByEntity[entityType] || [];
-  if (entityType === "projekt" && docType) {
-    defs = defs.filter((d) => (d.benoetigt_fuer || ["immer"]).some((t) => t === "immer" || t === docType));
+  if (entityType === "projekt" && mode) {
+    defs = defs.filter((d) => (d.benoetigt_fuer || ["immer"]).includes(mode));
   }
   const byGroup = {};
   defs.forEach((d) => { (byGroup[d.gruppe] ||= []).push(d); });
@@ -302,15 +307,24 @@ function deleteRecord(conn, id) {
   conn.run(`DELETE FROM records WHERE id = ${id}`); // Cascade loescht field_values/relations mit
 }
 
+// formSelector: ein einzelner Selector-String, ODER ein Array davon (fuer die
+// Projekt-Seite, die jetzt aus drei parallelen Formularen besteht - ein
+// geteiltes Feld wie vorgaenger_dok_id steht dann in ZWEI der drei
+// Formulare, liefert aber (dank syncSharedProjektField) ueberall denselben
+// Wert, deshalb ist es unschaedlich, wenn hier beide Vorkommen durchlaufen
+// werden und das zweite den Wert des ersten einfach ueberschreibt).
 function collectFormValuesFrom(formSelector) {
+  const selectors = Array.isArray(formSelector) ? formSelector : [formSelector];
+  const combined = selectors.map((s) => `${s} [data-key]`).join(", ");
   const values = {};
-  document.querySelectorAll(`${formSelector} [data-key]`).forEach((el) => {
+  document.querySelectorAll(combined).forEach((el) => {
     const key = el.dataset.key;
     if (key.endsWith("__freitext")) return; // separat behandelt
     if (el.type === "radio") {
       if (el.checked) values[key] = el.value;
     } else if (el.tagName === "SELECT" && el.value === "__other__") {
-      const freitext = document.querySelector(`[data-key="${key}__freitext"]`);
+      const scope = el.closest("form") || document;
+      const freitext = scope.querySelector(`[data-key="${key}__freitext"]`);
       values[key] = freitext ? freitext.value : "";
     } else if (el.dataset.type === "person") {
       if (el.value !== "__new__") values[key] = el.value;
@@ -322,7 +336,7 @@ function collectFormValuesFrom(formSelector) {
   return values;
 }
 function collectFormValues() { return collectFormValuesFrom("#systemForm"); }
-function collectProjektFormValues() { return collectFormValuesFrom("#projektForm"); }
+function collectProjektFormValues() { return collectFormValuesFrom(PROJEKT_FORM_SELECTORS); }
 
 function saveAll() {
   db.run("BEGIN");
@@ -387,7 +401,7 @@ function saveProjektAll() {
     // 0. Neue Personen (falls ein projekt-Feld je vom Typ person_referenz
     // wird - aktuell nicht der Fall, aber fuer Konsistenz mit saveAll()
     // vorgesehen). Personen leben in der System-DB, nicht der Projekt-DB.
-    document.querySelectorAll('#projektForm select[data-type="person"]').forEach((el) => {
+    document.querySelectorAll(PROJEKT_FORM_SELECTORS.map((s) => `${s} select[data-type="person"]`).join(", ")).forEach((el) => {
       if (el.value === "__new__" && db) {
         const wrap = document.querySelector(`[data-personnew-for="${el.dataset.key}"]`);
         const name = wrap.querySelector('[data-newperson-field="name"]').value;
@@ -556,10 +570,14 @@ function renderForm() {
   applyFieldConditions("#systemForm");
 }
 
-function renderProjektForm() {
-  const form = document.getElementById("projektForm");
+// Die drei parallelen Projekt-Formulare (Basisdaten/VP/VB) teilen sich
+// denselben Aufbau, nur mit unterschiedlichem mode-Filter (s.o.).
+const PROJEKT_FORM_IDS = { immer: "projektForm", "CS-VP": "vpForm", "CS-VB": "vbForm" };
+const PROJEKT_FORM_SELECTORS = Object.values(PROJEKT_FORM_IDS).map((id) => `#${id}`);
+function buildProjektFormInto(mode) {
+  const form = document.getElementById(PROJEKT_FORM_IDS[mode]);
   form.innerHTML = "";
-  groupsFor("projekt", currentDocTypeChosen).forEach((group) => {
+  groupsFor("projekt", mode).forEach((group) => {
     const card = document.createElement("div");
     card.className = "card";
     card.innerHTML = `<h2>${escapeHtml(group.name)}<span class="tag">${escapeHtml(groupBadge(group.fields))}</span></h2>`;
@@ -573,7 +591,12 @@ function renderProjektForm() {
     el.addEventListener("input", () => onFieldUpdate(el));
     el.addEventListener("change", () => onFieldUpdate(el));
   });
-  applyFieldConditions("#projektForm");
+  applyFieldConditions(`#${PROJEKT_FORM_IDS[mode]}`);
+}
+function renderProjektForm() {
+  buildProjektFormInto("immer");
+  buildProjektFormInto("CS-VP");
+  buildProjektFormInto("CS-VB");
 }
 
 // Ermittelt, zu welchem Formular/welcher Liste ein Eingabeelement gehoert -
@@ -584,11 +607,12 @@ const LIST_ENTITY_CONTEXT = {
   anforderung: "system", risiko: "system", pruefschritt: "system",
   versionshistorie_eintrag: "projekt", lieferant_verantwortlichkeit: "projekt", unexpected_event: "projekt",
 };
+const PROJEKT_FORM_ID_SET = new Set(Object.values(PROJEKT_FORM_IDS));
 function contextFor(el) {
   const prefix = (el.dataset.key || "").split(".")[0];
   if (LIST_ENTITY_CONTEXT[prefix]) return LIST_ENTITY_CONTEXT[prefix];
   const form = el.closest("form");
-  return form && form.id === "projektForm" ? "projekt" : "system";
+  return form && PROJEKT_FORM_ID_SET.has(form.id) ? "projekt" : "system";
 }
 function baselineFor(ctx) { return ctx === "projekt" ? projektBaseline : baseline; }
 
@@ -611,7 +635,11 @@ function onFieldUpdate(el) {
   if (el.tagName === "SELECT" && el.dataset.entity && el.dataset.fieldkey) {
     const def = defFor(el.dataset.entity, el.dataset.fieldkey);
     if (def) {
-      const hintArea = document.querySelector(`[data-optionhint-for="${key}"]`);
+      // Auf das naechste <form> beschraenkt (nicht global document.querySelector) -
+      // ein Feld, das sowohl im VP- als auch im VB-Formular vorkommt (geteiltes
+      // Feld), hat sonst zwei DOM-Elemente mit demselben data-key/data-optionhint-for.
+      const scope = el.closest("form") || document;
+      const hintArea = scope.querySelector(`[data-optionhint-for="${key}"]`);
       if (hintArea) {
         let text = "";
         if (def.optionen) {
@@ -622,7 +650,7 @@ function onFieldUpdate(el) {
         hintArea.textContent = text;
       }
       if (def.freitext_erlaubt) {
-        const freitextInput = document.querySelector(`[data-key="${key}__freitext"]`);
+        const freitextInput = scope.querySelector(`[data-key="${key}__freitext"]`);
         if (freitextInput) freitextInput.style.display = el.value === "__other__" ? "block" : "none";
       }
     }
@@ -631,7 +659,33 @@ function onFieldUpdate(el) {
   markDirty();
   if (ctx === "system" && (key === "gxp_kritikalitaet" || key === "gamp_kategorie")) recomputeTesttiefe();
   if (ctx === "system" && (key === "ki_vorhanden" || key === "ki_autonomie_stufe" || key === "ki_steuerungsdesign_stufe")) recomputeKiReifegrad();
-  applyFieldConditions(ctx === "projekt" ? "#projektForm" : "#systemForm");
+  if (ctx === "projekt") {
+    syncSharedProjektField(el, key);
+  } else {
+    applyFieldConditions("#systemForm");
+  }
+}
+
+// Ein Feld, das sowohl fuer CS-VP als auch CS-VB benoetigt wird (z.B.
+// vorgaenger_dok_id, systembewertung_dok_id, NEU seit 05.09. auch
+// vp_dok_id), erscheint jetzt in BEIDEN Formularen (#vpForm UND #vbForm) -
+// Nutzer-Anfrage: "wenn ich sie im VP eingebe, sollte sie im VB Reiter
+// bereits angezeigt werden". Deshalb bei jeder Aenderung den Wert in alle
+// anderen Vorkommen desselben Feldschluessels spiegeln (nur Text/Ja-Nein-
+// Felder betroffen - aktuell kein geteiltes Auswahl-Feld mit Freitext-
+// Fluchtoption, dafuer waere zusaetzlich der "__freitext"-Wert zu spiegeln).
+function syncSharedProjektField(sourceEl, key) {
+  if (sourceEl.type === "radio" && !sourceEl.checked) return; // die jetzt angehakte Gegenseite loest ihren eigenen Sync selbst aus
+  const value = sourceEl.value;
+  PROJEKT_FORM_SELECTORS.forEach((sel) => {
+    document.querySelectorAll(`${sel} [data-key="${key}"]`).forEach((el) => {
+      if (el === sourceEl) return;
+      if (el.type === "radio") el.checked = el.value === value;
+      else el.value = value;
+      markChanged(el, "projekt");
+    });
+  });
+  PROJEKT_FORM_SELECTORS.forEach((sel) => applyFieldConditions(sel));
 }
 
 function recomputeTesttiefe() {
@@ -681,26 +735,37 @@ function markChanged(el, ctx) {
   else wrap.classList.remove("changed");
 }
 
-function fillFormValuesInto(formSelector, values, baselineSetter) {
+// formSelectorOrArr: einzelner Selector-String ODER Array davon (Projekt-
+// Seite: drei parallele Formulare statt einem, s.o.).
+function fillFormValuesInto(formSelectorOrArr, values, baselineSetter) {
+  const selectors = Array.isArray(formSelectorOrArr) ? formSelectorOrArr : [formSelectorOrArr];
   baselineSetter({ ...values });
   Object.entries(values).forEach(([key, val]) => {
-    document.querySelectorAll(`${formSelector} [data-key="${key}"]`).forEach((el) => {
-      if (el.type === "radio") el.checked = el.value === val;
-      else el.value = val || "";
+    selectors.forEach((formSelector) => {
+      document.querySelectorAll(`${formSelector} [data-key="${key}"]`).forEach((el) => {
+        if (el.type === "radio") el.checked = el.value === val;
+        else el.value = val || "";
+      });
+      document.querySelectorAll(`${formSelector} [data-key="${key}"][data-type="person"]`).forEach((el) => onFieldUpdate(el));
+      document.querySelectorAll(`${formSelector} select[data-key="${key}"]`).forEach((el) => onFieldUpdate(el));
     });
-    document.querySelectorAll(`${formSelector} [data-key="${key}"][data-type="person"]`).forEach((el) => onFieldUpdate(el));
-    document.querySelectorAll(`${formSelector} select[data-key="${key}"]`).forEach((el) => onFieldUpdate(el));
   });
-  document.querySelectorAll(`${formSelector} .field`).forEach((w) => w.classList.remove("changed"));
+  selectors.forEach((formSelector) => {
+    document.querySelectorAll(`${formSelector} .field`).forEach((w) => w.classList.remove("changed"));
+    applyFieldConditions(formSelector);
+  });
 }
-function clearFormFieldsIn(formSelector, baselineSetter) {
+function clearFormFieldsIn(formSelectorOrArr, baselineSetter) {
+  const selectors = Array.isArray(formSelectorOrArr) ? formSelectorOrArr : [formSelectorOrArr];
   baselineSetter({});
-  document.querySelectorAll(`${formSelector} input[type=text], ${formSelector} textarea, ${formSelector} input[type=date]`).forEach((el) => (el.value = ""));
-  document.querySelectorAll(`${formSelector} select`).forEach((el) => { el.value = ""; onFieldUpdate(el); });
-  document.querySelectorAll(`${formSelector} input[type=radio]`).forEach((el) => (el.checked = false));
-  document.querySelectorAll(`${formSelector} .field`).forEach((w) => w.classList.remove("changed"));
-  document.querySelectorAll(`${formSelector} .person-new`).forEach((el) => (el.style.display = "none"));
-  applyFieldConditions(formSelector);
+  selectors.forEach((formSelector) => {
+    document.querySelectorAll(`${formSelector} input[type=text], ${formSelector} textarea, ${formSelector} input[type=date]`).forEach((el) => (el.value = ""));
+    document.querySelectorAll(`${formSelector} select`).forEach((el) => { el.value = ""; onFieldUpdate(el); });
+    document.querySelectorAll(`${formSelector} input[type=radio]`).forEach((el) => (el.checked = false));
+    document.querySelectorAll(`${formSelector} .field`).forEach((w) => w.classList.remove("changed"));
+    document.querySelectorAll(`${formSelector} .person-new`).forEach((el) => (el.style.display = "none"));
+    applyFieldConditions(formSelector);
+  });
 }
 
 function fillFormWithValues(values) {
@@ -715,11 +780,10 @@ function clearFormFields() {
   recomputeKiReifegrad();
 }
 function fillProjektFormWithValues(values) {
-  fillFormValuesInto("#projektForm", values, (v) => (projektBaseline = v));
-  applyFieldConditions("#projektForm");
+  fillFormValuesInto(PROJEKT_FORM_SELECTORS, values, (v) => (projektBaseline = v));
 }
 function clearProjektFormFields() {
-  clearFormFieldsIn("#projektForm", (v) => (projektBaseline = v));
+  clearFormFieldsIn(PROJEKT_FORM_SELECTORS, (v) => (projektBaseline = v));
 }
 
 // ------------------------------------------------------ Suche (Kopie/Bearbeiten)
@@ -1052,28 +1116,38 @@ function renderBranch(docType) {
 // lieferant_verantwortlichkeit/unexpected_event) wird nur gezeigt, wenn
 // mindestens eines ihrer Felder "immer" oder die gewaehlte Dokumentart
 // benoetigt. Ohne gewaehlte Dokumentart (docType="") ungefiltert, wie bisher.
-function entityNeededFor(entityType, docType) {
-  if (!docType) return true;
-  const defs = fieldDefsByEntity[entityType] || [];
-  return defs.some((d) => (d.benoetigt_fuer || ["immer"]).some((t) => t === "immer" || t === docType));
-}
-function renderProjektBranch() {
-  const area = document.getElementById("projektBranchArea");
+// Anders als bei einzelnen Feldern wird eine ganze Liste (Versionshistorie/
+// Lieferanten-Verantwortlichkeit/Unexpected Event) NICHT in mehreren Tabs
+// dupliziert (das wuerde ihren eigenen Sync-Mechanismus brauchen, live
+// waehrend des Tippens - siehe syncSharedProjektField() fuer einzelne
+// Felder). Stattdessen bekommt jede Liste EINEN festen Tab: die
+// Versionshistorie betrifft das Projekt als Ganzes (Tab "Projekt"), die
+// beiden anderen sind ohnehin nur fuer je eine Dokumentart relevant.
+const PROJEKT_LIST_AREA_MODE = {
+  versionshistorie_eintrag: "immer",
+  lieferant_verantwortlichkeit: "CS-VP",
+  unexpected_event: "CS-VB",
+};
+const PROJEKT_BRANCH_AREA_IDS = { immer: "projektBranchArea", "CS-VP": "vpBranchArea", "CS-VB": "vbBranchArea" };
+function buildProjektBranchInto(mode) {
+  const area = document.getElementById(PROJEKT_BRANCH_AREA_IDS[mode]);
   const rerender = () => renderProjektBranch();
   area.innerHTML = "";
-  const entities = ["versionshistorie_eintrag", "lieferant_verantwortlichkeit", "unexpected_event"]
-    .filter((ent) => entityNeededFor(ent, currentDocTypeChosen));
-  entities.forEach((ent) => {
-    area.appendChild(renderBranchSection(projektListState, ent, false, currentDocTypeChosen || "CS-VP/CS-VB", rerender));
-  });
+  const entities = Object.keys(PROJEKT_LIST_AREA_MODE).filter((ent) => PROJEKT_LIST_AREA_MODE[ent] === mode);
+  entities.forEach((ent) => area.appendChild(renderBranchSection(projektListState, ent, false, mode, rerender)));
   entities.forEach((ent) => bindListRowInputs(area, ent, projektListState, rerender));
+}
+function renderProjektBranch() {
+  buildProjektBranchInto("immer");
+  buildProjektBranchInto("CS-VP");
+  buildProjektBranchInto("CS-VB");
 }
 
 // ---------------------------------------------------------------- Dirty/Save/Load-UI
 function markDirty() { setDirty(true); }
 function setDirty(value) {
-  if (activeTab === "projekt") projektDirty = value; else systemDirty = value;
-  const current = activeTab === "projekt" ? projektDirty : systemDirty;
+  if (PROJEKT_TABS.has(activeTab)) projektDirty = value; else systemDirty = value;
+  const current = PROJEKT_TABS.has(activeTab) ? projektDirty : systemDirty;
   document.querySelectorAll(".dirty-indicator").forEach((el) => {
     el.textContent = current ? "● Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen";
     el.classList.toggle("dirty", current);
@@ -1107,7 +1181,7 @@ async function writeDbToDisk() { return writeBytesToDisk(exportDbBytes(), fileHa
 async function writeProjektDbToDisk() { return writeBytesToDisk(exportProjektDbBytes(), projektFileHandle, "masterform_projekt.sqlite"); }
 
 async function onSaveClick() {
-  if (activeTab === "projekt") {
+  if (PROJEKT_TABS.has(activeTab)) {
     const ok = saveProjektAll();
     if (!ok) {
       document.getElementById("statusNote").textContent = "Fehler beim Speichern (Projekt-DB) – siehe Konsole.";
@@ -1132,9 +1206,9 @@ async function onSaveClick() {
   }
 }
 function onCancelClick() {
-  const dirty = activeTab === "projekt" ? projektDirty : systemDirty;
+  const dirty = PROJEKT_TABS.has(activeTab) ? projektDirty : systemDirty;
   if (dirty && !confirm("Ungespeicherte Änderungen verwerfen?")) return;
-  if (activeTab === "projekt") resetToProjektScenario(projektScenario);
+  if (PROJEKT_TABS.has(activeTab)) resetToProjektScenario(projektScenario);
   else resetToScenario(scenario);
   setDirty(false);
   document.getElementById("statusNote").textContent = "Abgebrochen, Formular zurückgesetzt.";
@@ -1149,6 +1223,8 @@ function updateHeaderAndTabs() {
     `System: ${systemDbLabel || "nicht geladen"} · Projekt: ${projektDbLabel || "nicht geladen"}`;
   document.getElementById("tabBtnSystem").disabled = !db;
   document.getElementById("tabBtnProjekt").disabled = !projektDb;
+  document.getElementById("tabBtnVP").disabled = !projektDb;
+  document.getElementById("tabBtnVB").disabled = !projektDb;
   document.getElementById("fsWarningBanner").style.display = hasFSAccess ? "none" : "block";
 
   const banner = document.getElementById("loadOtherDbBanner");
@@ -1171,20 +1247,24 @@ function updateHeaderAndTabs() {
     banner.classList.add("hidden");
   }
 
-  const activeHandle = activeTab === "projekt" ? projektFileHandle : fileHandle;
-  const activeDb = activeTab === "projekt" ? projektDb : db;
+  const activeHandle = PROJEKT_TABS.has(activeTab) ? projektFileHandle : fileHandle;
+  const activeDb = PROJEKT_TABS.has(activeTab) ? projektDb : db;
   document.getElementById("btnLinkFile").classList.toggle("hidden", !!activeHandle || !hasFSAccess || !activeDb);
 }
 
+// "projekt"/"vp"/"vb" sind drei parallele Ansichten auf dieselbe Projekt-DB
+// (s.o.) - ueberall dort, wo bisher nur zwischen "system" und "projekt"
+// unterschieden wurde, jetzt zwischen "system" und PROJEKT_TABS.
+const PROJEKT_TABS = new Set(["projekt", "vp", "vb"]);
+const TAB_BUTTON_IDS = { system: "tabBtnSystem", projekt: "tabBtnProjekt", vp: "tabBtnVP", vb: "tabBtnVB" };
+const TAB_CONTENT_IDS = { system: "systemTabContent", projekt: "projektTabContent", vp: "vpTabContent", vb: "vbTabContent" };
 function setActiveTab(tab) {
-  if (tab === "projekt" && !projektDb) { updateHeaderAndTabs(); return; }
+  if (PROJEKT_TABS.has(tab) && !projektDb) { updateHeaderAndTabs(); return; }
   if (tab === "system" && !db) { updateHeaderAndTabs(); return; }
   activeTab = tab;
-  document.getElementById("tabBtnSystem").classList.toggle("active", tab === "system");
-  document.getElementById("tabBtnProjekt").classList.toggle("active", tab === "projekt");
-  document.getElementById("systemTabContent").classList.toggle("hidden", tab !== "system");
-  document.getElementById("projektTabContent").classList.toggle("hidden", tab !== "projekt");
-  const current = tab === "projekt" ? projektDirty : systemDirty;
+  Object.entries(TAB_BUTTON_IDS).forEach(([t, id]) => document.getElementById(id).classList.toggle("active", tab === t));
+  Object.entries(TAB_CONTENT_IDS).forEach(([t, id]) => document.getElementById(id).classList.toggle("hidden", tab !== t));
+  const current = PROJEKT_TABS.has(tab) ? projektDirty : systemDirty;
   document.querySelectorAll(".dirty-indicator").forEach((el) => {
     el.textContent = current ? "● Ungespeicherte Änderungen" : "Keine ungespeicherten Änderungen";
     el.classList.toggle("dirty", current);
@@ -1240,7 +1320,6 @@ function showAppScreen(which, label) {
 // stattdessen eine eigene Datei laden will, kann das ueber die Direkt-
 // Laden-Links auf dem Startbildschirm weiterhin tun.
 function provisionForDocType(docType) {
-  const vorherigeDocType = currentDocTypeChosen;
   currentDocTypeChosen = docType;
   const needed = DOC_DB_REQUIREMENTS[docType] || ["system"];
   if (needed.includes("system")) {
@@ -1249,20 +1328,10 @@ function provisionForDocType(docType) {
   }
   if (needed.includes("projekt")) {
     if (!projektDb) { createNewProjektDb(); projektDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
-    if (!projektUiReady) {
-      initProjektUi();
-    } else if (docType !== vorherigeDocType) {
-      // Dokumentart nachtraeglich gewechselt, waehrend die Projekt-UI schon
-      // offen war (z.B. CS-VP -> CS-VB) - Formular mit der neuen Feld-
-      // Filterung neu aufbauen und den aktuell gewaehlten Datensatz (falls
-      // vorhanden) erneut einsetzen (Nutzer-Feedback 05.09.).
-      renderProjektForm();
-      if (currentProjektId != null) {
-        const rec = projektCache.find((r) => String(r.id) === String(currentProjektId));
-        if (rec) fillProjektFormWithValues(rec.values);
-      }
-      renderProjektBranch(); // Zusatzlisten (Versionshistorie/Lieferant/Unexpected Event) genauso neu filtern
-    }
+    // Projekt/VP/VB-Tabs sind seit 05.09. statisch (nicht mehr abhaengig von
+    // der hier gewaehlten Dokumentart) - einmal aufgebaut, muessen sie beim
+    // Wechsel der Dokumentart nicht neu gerendert werden.
+    if (!projektUiReady) initProjektUi();
   }
   document.getElementById("startScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
@@ -1358,7 +1427,7 @@ async function handleOpenProjektDb() {
 async function handleLinkFile() {
   if (!hasFSAccess) return;
   try {
-    if (activeTab === "projekt") {
+    if (PROJEKT_TABS.has(activeTab)) {
       projektFileHandle = await window.showSaveFilePicker({
         suggestedName: "masterform_projekt.sqlite",
         types: [{ description: "SQLite-Datenbank", accept: { "application/octet-stream": [".sqlite"] } }],
@@ -1433,6 +1502,8 @@ async function main() {
 
   document.getElementById("tabBtnSystem").addEventListener("click", () => setActiveTab("system"));
   document.getElementById("tabBtnProjekt").addEventListener("click", () => setActiveTab("projekt"));
+  document.getElementById("tabBtnVP").addEventListener("click", () => setActiveTab("vp"));
+  document.getElementById("tabBtnVB").addEventListener("click", () => setActiveTab("vb"));
 
   document.querySelectorAll("#systemTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));
   document.getElementById("sourceSearch").addEventListener("input", (e) => renderSourceResults(e.target.value));
