@@ -177,6 +177,17 @@ gegengeprüft - ggf. Anpassungsbedarf nach Feedback.
   Alternativ-Absätze, ganze nicht-durchgeführte Kapitel), wird direkt
   entfernt.** Gilt fuer alle Dokumenttypen (CS-VP/VB/VQ/xQTP), nicht nur
   fuer graue Texte im Speziellen.
+- **Blaue Schrift = Vorschlag, keine gesicherte Tatsache (Stand 05.09.).**
+  Übernimmt die eigene Farbkonvention der Vorlagen selbst (siehe
+  Legendebox: "Blaue Schrift = Bei Bedarf anzupassen. Vor Freigabe ist die
+  Schrift schwarz zu formatieren"). Wird verwendet, wenn wir einen von
+  mehreren vorformulierten Standardtexten einsetzen (z.B. eine von 1-2
+  Begründungsoptionen aus einem Auswahlfeld), statt eines aus der DB
+  übernommenen, gesicherten Einzelwerts (Dok-ID, Name, Datum - die bleiben
+  schwarz). Farbe: `RGBColor(0x54, 0x8D, 0xD4)` (`SUGGEST_COLOR`), zusätzlich
+  gelb hinterlegt wie jeder automatisch eingefügte Wert. Signalisiert der
+  menschlichen Prüfung: Vorschlag prüfen/anpassen und erst dann schwarz
+  formatieren.
 
 Platzhalter-Konvention (bereits so im bestehenden `masterform`-Code
 umgesetzt): `{{entity_typ.feld_key}}`, z.B.

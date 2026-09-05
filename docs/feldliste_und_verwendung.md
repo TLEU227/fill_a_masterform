@@ -358,6 +358,16 @@ optional Titel). Jede Zeile hat `wvd_{slug}_erforderlich` (ja/nein) +
 vorhandene Feld `ppq_durchgefuehrt` (2.7) wieder statt eines eigenen Feldes
 (hat kein eigenes `wvd_ppq_erforderlich`).
 
+**Update 05.09. (Nutzer-Anfrage):** `wvd_{slug}_begruendung` ist jetzt
+`auswahl` statt `mehrzeiliger_text`, mit 1-2 vorformulierten, fachlich
+plausibelsten Standardbegründungen je Dokument (`freitext_erlaubt=1` als
+Fluchtoption). Beim Einsetzen in den Fließtext wird der gewählte Text -
+anders als aus der DB übernommene gesicherte Fakten (Dok-ID: schwarz) -
+**blau** markiert (`SUGGEST_COLOR`, entspricht der Farbkonvention der
+Vorlage selbst, siehe `KONZEPT.md` Abschnitt 3): ein Vorschlag, keine
+gesicherte Aussage, muss vor Freigabe von einem Menschen bestätigt/
+angepasst und dann schwarz formatiert werden.
+
 | Slug | Prüfpunkt |
 |---|---|
 | `datenflussdiagramm` | Datenflussdiagramm |

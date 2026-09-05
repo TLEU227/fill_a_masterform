@@ -47,7 +47,7 @@ bleibt weiterhin unangetastet.
 | Tabelle 5 "Lieferantenbewertung" - Lieferant A (Name + QualiPSO-ID) | SDB `hersteller`/`lieferantennummer` | ✅ Lieferant B bleibt Lücke; ganze Tabelle entfällt bei `lieferantenbewertung_neu_durchgefuehrt=nein` |
 | "Validierungsplan XXXXX" im Fließtext | PDB `vp_dok_id` | ✅ |
 | Tabelle "Dokumentation Initial-Validierung" (Kap. 6.1) | PDB, s. u. | ✅ **Update 05.09.**: alle 17 Zeilen (vorher 5 von 17) - restliche 9 Ergebnis-Dokumenttypen jetzt mit `{typ}_erstellt`-Gate: nein → Zeile entfernt, ja → Dok-ID+Version befüllt. Nur die 5 zwingenden Grundlagendokumente (Systembewertung/CS-VP/FDS/RA/IQ-OQ-Testplan) ohne Gate. |
-| Tabelle "Weitere Validierungsdokumente" (Kap. 6.2, 18 Prüfpunkte) | PDB `wvd_{typ}_erforderlich`/`_dok_id`/`_titel`/`_begruendung` | ✅ **Update 05.09.**: alle 18 Zeilen (vorher nur PPQ-Checkbox) - Ja/Nein-Checkbox + letzte Spalte je nach Antwort mit Dok-ID(+Titel) oder Begründung. PPQ-Zeile nutzt `ppq_durchgefuehrt` wieder statt eigenem Feld. |
+| Tabelle "Weitere Validierungsdokumente" (Kap. 6.2, 18 Prüfpunkte) | PDB `wvd_{typ}_erforderlich`/`_dok_id`/`_titel`/`_begruendung` | ✅ **Update 05.09.**: alle 18 Zeilen (vorher nur PPQ-Checkbox) - Ja/Nein-Checkbox + letzte Spalte je nach Antwort mit Dok-ID(+Titel) oder Begründung. PPQ-Zeile nutzt `ppq_durchgefuehrt` wieder statt eigenem Feld. **Update 05.09. (2):** `_begruendung` ist jetzt ein Auswahlfeld mit 1-2 vorformulierten Standardbegründungen je Dokument (siehe unten) - im Dokument **blau** statt schwarz markiert (Vorschlag, keine gesicherte Tatsache). |
 | Änderungshistorie | PDB `versionshistorie_eintrag` | ✅ |
 | Kap. 4.1 KI-Einsatz - "ohne KI"/"MIT KI"-Block (beide Richtungen) | SDB `ki_vorhanden`/`ki_autonomie_stufe`/`ki_steuerungsdesign_stufe` (→ `ki_reifegrad` abgeleitet, wie in der Webapp) | ✅ beide Richtungen umgesetzt |
 | Kap. 4.2/4.8/4.9 (DQ/OQ/PQ) - "offene Anforderungen"-Absatz | PDB `{phase}_offene_anforderungen` | ✅ |
@@ -86,6 +86,36 @@ unangetastet:
 | Stelle | Grund |
 |---|---|
 | Kap. 2.1 Verantwortlichkeiten - Duplikat direkt nach der "V2.0 (CC Nummer)"-Zeile | Fast identischer Absatz-Block, der im Template unmittelbar nach der V2.0-Zeile noch einmal auftaucht (mutmaßlich ein Kopierfehler in der Vorlage selbst, keine echte dritte Alternative) - bewusst nicht angetastet, um nichts Falsches zu raten. |
+
+## Tabelle "Weitere Validierungsdokumente" - vorformulierte Standardbegründungen (Stand 05.09.)
+
+Nutzer-Anfrage: für jedes der 18 Prüfpunkte eine möglichst plausible,
+häufig zutreffende Begründung vorformulieren, warum das Dokument NICHT
+erforderlich war - bei zwei genauso plausiblen Fällen beide anbieten. Im
+Web ein Auswahlfeld (Dropdown, `freitext_erlaubt=1` als Fluchtoption für
+abweichende Fälle), im Dokument beim Einsetzen **blau** markiert (Vorschlag,
+siehe oben).
+
+| Prüfpunkt | Vorschlag/Vorschläge |
+|---|---|
+| Datenflussdiagramm | System besteht aus einer einzelnen Komponente ohne Datenaustausch |
+| Audit Trail Review Konzept | (a) kein Audit Trail vorhanden **oder** (b) gültiges Konzept aus Vorprojekt weiter gültig |
+| Berechtigungskonzept | keine individuellen Benutzerkonten/Zugriffsdifferenzierung |
+| Trainingsplan | keine neuen Funktionen/kein neues Personal |
+| Process Performance Qualification (PPQ) | PPQ nicht durchgeführt (automatisch aus `ppq_durchgefuehrt`) |
+| User Process Monitoring (UPM) | kein erhöhtes DI-Risiko laut Risikobewertung, Standard-Audit-Trail ausreichend |
+| Datenmigration (DM) | keine Übernahme von Bestandsdaten |
+| Festlegung Wartung und Monitoring | bestehende Festlegung aus Regelbetrieb bleibt gültig |
+| Prozedur zur Archivierung der Daten | bestehende Prozedur aus Regelbetrieb bleibt gültig |
+| Back-up & Restore Konzept | (a) bestehendes Konzept bleibt gültig **oder** (b) Datensicherung über zentrale IT-Infrastruktur |
+| Business Continuity Plan | (a) nicht geschäftskritisch **oder** (b) gültiger Plan bereits vorhanden |
+| Incident- und Störungsmanagement | bestehendes Management aus Regelbetrieb bleibt gültig |
+| Änderungs- und Konfigurationsmanagement | bestehendes Management aus Regelbetrieb bleibt gültig |
+| Logbuch | keine Logbuchpflicht (kein physisches Equipment) |
+| Lieferantenbewertung | gültige Bewertung aus Vorprojekt innerhalb der Gültigkeitsfrist |
+| Quality Agreement | gültiges Agreement deckt Systemumfang bereits ab |
+| Anweisungen zur Bedienung des CS | Bedienung unverändert, bestehende Anweisungen gültig |
+| Handbuch mit Anleitungen zur Bedienung | Bedienung unverändert, bestehendes Handbuch gültig |
 
 ## Gefundene, noch offene Lücken (nicht gefüllt) und bewusste Vereinfachungen
 
