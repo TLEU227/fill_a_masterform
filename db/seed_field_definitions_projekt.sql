@@ -208,24 +208,24 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- bis PQ / aufgetreten+unkritisch+per CC nachverfolgt) - hier nur binär
 -- (keine / aufgetreten) abgebildet, die "unkritisch"-Variante bleibt Text.
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
-('projekt', 'dq_offene_anforderungen', 'DQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 10),
-('projekt', 'iq_offene_anforderungen',  'IQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 20),
-('projekt', 'oq_offene_anforderungen',  'OQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 30),
-('projekt', 'pq_offene_anforderungen',  'PQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 40),
-('projekt', 'ppq_offene_anforderungen', 'PPQ: offene Anforderungen aufgetreten?', 'ja_nein', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Validierungsergebnisse', 51),
+('projekt', 'dq_offene_anforderungen', 'DQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: DQ', 10),
+('projekt', 'iq_offene_anforderungen',  'IQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: IQ', 20),
+('projekt', 'oq_offene_anforderungen',  'OQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: OQ', 30),
+('projekt', 'pq_offene_anforderungen',  'PQ: offene Anforderungen aufgetreten?',  'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: PQ', 40),
+('projekt', 'ppq_offene_anforderungen', 'PPQ: offene Anforderungen aufgetreten?', 'ja_nein', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Validierungsergebnisse: PPQ', 51),
 
 -- Ausführungs-Tatsache (nicht zu verwechseln mit phase_ppq_geplant, das die
 -- PLANUNG im CS-VP steuert): wurde PPQ am Ende tatsächlich durchgeführt?
 -- nein -> ganzes PPQ-Kapitel im CS-VB entfällt.
-('projekt', 'ppq_durchgefuehrt', 'PPQ tatsächlich durchgeführt? (Kap. 4.10 CS-VB)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 50);
+('projekt', 'ppq_durchgefuehrt', 'PPQ tatsächlich durchgeführt? (Kap. 4.10 CS-VB)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: PPQ', 50);
 
 -- Kap. 3 CS-VB "Vorgehensweise bei der Validierung": EINZIGER "wie geplant /
 -- angepasst"-Textbaustein im ganzen Dokument (Nutzer-Rückmeldung 04.09.:
 -- nur vorhandene Textbausteine nutzen, keine pro Phase DQ/IQ/OQ/PQ/PPQ -
 -- die gibt es im Template naemlich nicht, nur diesen EINEN, uebergreifenden).
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
-('projekt', 'vorgehensweise_wie_geplant', 'Validierung wie im CS-VP geplant durchgeführt? (Kap. 3 CS-VB)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 60),
-('projekt', 'vorgehensweise_anpassung_beschreibung', 'Beschreibung der Anpassung der Validierungsstrategie', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn vorgehensweise_wie_geplant = nein', '["CS-VB"]', 'Validierungsergebnisse', 65);
+('projekt', 'vorgehensweise_wie_geplant', 'Validierung wie im CS-VP geplant durchgeführt? (Kap. 3 CS-VB)', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: Vorgehensweise & Testprozess', 60),
+('projekt', 'vorgehensweise_anpassung_beschreibung', 'Beschreibung der Anpassung der Validierungsstrategie', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn vorgehensweise_wie_geplant = nein', '["CS-VB"]', 'Validierungsergebnisse: Vorgehensweise & Testprozess', 65);
 
 -- ---------------------------------------------------------------------------
 -- CS-VB Kap. 4.12 "Änderungen während der Validierung" / Tabelle 6
@@ -256,27 +256,27 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 -- ---------------------------------------------------------------------------
 INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
 -- Kap. 1.4 Systembeschreibung (hat "Oder:" im Template)
-('projekt', 'systembeschreibung_geaendert', 'Systembeschreibung/-struktur/-komponenten/Schnittstellen gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 70),
-('projekt', 'systembeschreibung_aenderung_beschreibung', 'Beschreibung der Änderung der Systemstruktur/des Datenflusses', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn systembeschreibung_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse', 71),
+('projekt', 'systembeschreibung_geaendert', 'Systembeschreibung/-struktur/-komponenten/Schnittstellen gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten', 70),
+('projekt', 'systembeschreibung_aenderung_beschreibung', 'Beschreibung der Änderung der Systemstruktur/des Datenflusses', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn systembeschreibung_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten', 71),
 -- Kap. 2.1 Verantwortlichkeiten (im Template OHNE "Oder", aber inhaltlich Alternative)
-('projekt', 'verantwortlichkeiten_geaendert', 'Verantwortlichkeiten (Kap. 2.1) gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 72),
-('projekt', 'verantwortlichkeiten_aenderung_beschreibung', 'Beschreibung der Änderung der Verantwortlichkeiten', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn verantwortlichkeiten_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse', 73),
+('projekt', 'verantwortlichkeiten_geaendert', 'Verantwortlichkeiten (Kap. 2.1) gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten', 72),
+('projekt', 'verantwortlichkeiten_aenderung_beschreibung', 'Beschreibung der Änderung der Verantwortlichkeiten', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn verantwortlichkeiten_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten', 73),
 -- Kap. 2.2 Verantwortlichkeiten des/der Lieferanten (im Template OHNE "Oder")
-('projekt', 'lieferanten_verantwortlichkeiten_geaendert', 'Verantwortlichkeiten des/der Lieferanten (Kap. 2.2) gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 74),
-('projekt', 'lieferanten_verantwortlichkeiten_aenderung_beschreibung', 'Beschreibung der Änderung der Lieferanten-Verantwortlichkeiten', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn lieferanten_verantwortlichkeiten_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse', 75),
+('projekt', 'lieferanten_verantwortlichkeiten_geaendert', 'Verantwortlichkeiten des/der Lieferanten (Kap. 2.2) gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten', 74),
+('projekt', 'lieferanten_verantwortlichkeiten_aenderung_beschreibung', 'Beschreibung der Änderung der Lieferanten-Verantwortlichkeiten', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn lieferanten_verantwortlichkeiten_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten', 75),
 -- Kap. 2.2.1 Lieferantenbewertung (hat "Oder:") - steuert ob Tabelle 5 ueberhaupt befuellt wird
-('projekt', 'lieferantenbewertung_neu_durchgefuehrt', 'Lieferantenbewertung im Rahmen DIESER Validierung neu durchgeführt (statt nur Verweis auf CS-VP)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 76),
+('projekt', 'lieferantenbewertung_neu_durchgefuehrt', 'Lieferantenbewertung im Rahmen DIESER Validierung neu durchgeführt (statt nur Verweis auf CS-VP)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten', 76),
 -- Kap. 3.x Testprozess (hat "Oder:")
-('projekt', 'testprozess_angepasst', 'Testprozess während der Validierung angepasst (statt Standardtestvorschriften)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 77),
-('projekt', 'testprozess_anpassung_beschreibung', 'Beschreibung der Anpassung des Testprozesses', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn testprozess_angepasst = ja', '["CS-VB"]', 'Validierungsergebnisse', 78),
+('projekt', 'testprozess_angepasst', 'Testprozess während der Validierung angepasst (statt Standardtestvorschriften)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: Vorgehensweise & Testprozess', 77),
+('projekt', 'testprozess_anpassung_beschreibung', 'Beschreibung der Anpassung des Testprozesses', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn testprozess_angepasst = ja', '["CS-VB"]', 'Validierungsergebnisse: Vorgehensweise & Testprozess', 78),
 -- Kap. 4.7 IQ: dritte Template-Variante (bisher immer gestrichen) jetzt echtes Unterfeld
-('projekt', 'iq_offene_anforderungen_unkritisch', 'IQ: offene Anforderungen als unkritisch bewertet (statt bis PQ behoben)?', 'ja_nein', NULL, 0, NULL, 'nur wenn iq_offene_anforderungen = ja', '["CS-VB"]', 'Validierungsergebnisse', 79),
-('projekt', 'iq_offene_anforderungen_beschreibung', 'Beschreibung der als unkritisch bewerteten offenen IQ-Anforderungen', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn iq_offene_anforderungen_unkritisch = ja', '["CS-VB"]', 'Validierungsergebnisse', 80),
+('projekt', 'iq_offene_anforderungen_unkritisch', 'IQ: offene Anforderungen als unkritisch bewertet (statt bis PQ behoben)?', 'ja_nein', NULL, 0, NULL, 'nur wenn iq_offene_anforderungen = ja', '["CS-VB"]', 'Validierungsergebnisse: IQ', 79),
+('projekt', 'iq_offene_anforderungen_beschreibung', 'Beschreibung der als unkritisch bewerteten offenen IQ-Anforderungen', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn iq_offene_anforderungen_unkritisch = ja', '["CS-VB"]', 'Validierungsergebnisse: IQ', 80),
 -- Kap. 4.8/4.9/4.10: direkte Tatsache statt Ableitung ueber phase_pq_geplant
 -- (ein Abschlussbericht kann unabhaengig davon erstellt werden oder nicht)
-('projekt', 'oq_abschlussbericht_erstellt', 'Eigener OQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 81),
-('projekt', 'pq_abschlussbericht_erstellt', 'Eigener PQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 82),
-('projekt', 'ppq_abschlussbericht_erstellt', 'Eigener PPQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Validierungsergebnisse', 83);
+('projekt', 'oq_abschlussbericht_erstellt', 'Eigener OQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: OQ', 81),
+('projekt', 'pq_abschlussbericht_erstellt', 'Eigener PQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse: PQ', 82),
+('projekt', 'ppq_abschlussbericht_erstellt', 'Eigener PPQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Validierungsergebnisse: PPQ', 83);
 
 -- ---------------------------------------------------------------------------
 -- CS-VB Tabelle 'Dokumentation Initial-Validierung' (Kap. 6.1): fuer die

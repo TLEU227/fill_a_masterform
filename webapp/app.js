@@ -42,7 +42,18 @@ const GROUP_ORDER = {
   anforderung: ["Anforderung"],
   risiko: ["Risiko"],
   pruefschritt: ["Prüfschritt"],
-  projekt: ["Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente", "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument", "Validierungsergebnisse", "Weitere Validierungsdokumente"],
+  projekt: [
+    "Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente",
+    "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument",
+    // Validierungsergebnisse (nur CS-VB) - seit 05.09. nach Kapitel untergruppiert statt
+    // einer einzigen, sehr langen Karte (Nutzer-Feedback: "die Validierungsergebnisse
+    // noch untergruppieren"), Reihenfolge = Dokumentreihenfolge (Kap. 1.4/2.1/2.2, 3, 4.2, 4.7-4.10).
+    "Validierungsergebnisse: Systembeschreibung & Verantwortlichkeiten",
+    "Validierungsergebnisse: Vorgehensweise & Testprozess",
+    "Validierungsergebnisse: DQ", "Validierungsergebnisse: IQ", "Validierungsergebnisse: OQ",
+    "Validierungsergebnisse: PQ", "Validierungsergebnisse: PPQ",
+    "Weitere Validierungsdokumente",
+  ],
   versionshistorie_eintrag: [null],
   lieferant_verantwortlichkeit: [null],
   unexpected_event: [null],
@@ -1167,6 +1178,46 @@ async function writeBytesToDisk(bytes, handle, suggestedName) {
 async function writeDbToDisk() { return writeBytesToDisk(exportDbBytes(), fileHandle, "masterform_system.sqlite"); }
 async function writeProjektDbToDisk() { return writeBytesToDisk(exportProjektDbBytes(), projektFileHandle, "masterform_projekt.sqlite"); }
 
+// ---------------------------------------------------------------- Dokument-Export (Nutzer-Anfrage 05.09.:
+// "Abschlussknopf, wo man den VB erstellen kann"). Noch KEIN fertiges .docx -
+// das eigentliche Ausfuellen laeuft aktuell ausserhalb des Browsers (Python-
+// Fill-Skript, siehe KONZEPT.md Abschnitt 5, Option A). Dieser Knopf liefert
+// aber schon die dafuer noetige, vollstaendige Datengrundlage in EINER Datei
+// (System- + Projektwerte + Zusatzlisten fuer das aktuell gewaehlte
+// Projekt) - erspart das manuelle Zusammensuchen aus zwei .sqlite-Dateien.
+function currentProjektExportPayload() {
+  const projektValues = collectProjektFormValues();
+  const mlcsId = projektValues.mlcs_id || "";
+  const systemRecord = systemCache.find((r) => String(r.values.mlcs_id || "") === String(mlcsId));
+  const listen = {};
+  Object.entries(projektListState).forEach(([entityType, rows]) => {
+    listen[entityType] = rows.filter((r) => !r.geloescht).map((r) => r.werte);
+  });
+  return {
+    exportiert_am: new Date().toISOString(),
+    mlcs_id: mlcsId,
+    system: systemRecord ? systemRecord.values : null,
+    projekt: projektValues,
+    listen,
+  };
+}
+function exportProjektData(docType) {
+  const payload = currentProjektExportPayload();
+  if (!payload.system) {
+    if (!confirm(`Kein System mit MLCS-ID "${payload.mlcs_id}" in der geladenen System-Datenbank gefunden - trotzdem ohne Systemdaten exportieren?`)) return;
+  }
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `masterform_export_${docType}_${payload.mlcs_id || "ohne-mlcs-id"}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+  document.getElementById("statusNote").textContent = `${docType}-Datenexport heruntergeladen (Grundlage für die Dokumenterstellung).`;
+}
+
 async function onSaveClick() {
   if (PROJEKT_TABS.has(activeTab)) {
     const ok = saveProjektAll();
@@ -1486,6 +1537,8 @@ async function main() {
   document.getElementById("tabBtnProjekt").addEventListener("click", () => setActiveTab("projekt"));
   document.getElementById("tabBtnVP").addEventListener("click", () => setActiveTab("vp"));
   document.getElementById("tabBtnVB").addEventListener("click", () => setActiveTab("vb"));
+  document.getElementById("btnExportVP").addEventListener("click", () => exportProjektData("VP"));
+  document.getElementById("btnExportVB").addEventListener("click", () => exportProjektData("VB"));
   PLACEHOLDER_TABS.forEach((t) => document.getElementById(TAB_BUTTON_IDS[t]).addEventListener("click", () => setActiveTab(t)));
 
   document.querySelectorAll("#systemTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));

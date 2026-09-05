@@ -329,6 +329,33 @@ der neuen Parallel-Reiter-Architektur (3b) nicht mehr stimmig.
   nur noch auf den Fall, dass jemand bewusst nur EINE Datei über die
   Direkt-Laden-Links geöffnet hat.
 
+### 3d. Drei weitere Feedback-Punkte (Stand 06.09.)
+
+- **"Validierungsergebnisse" untergruppiert.** War eine einzige, sehr lange
+  Karte mit >20 Feldern (DQ/IQ/OQ/PQ/PPQ + Kap. 1.4/2.1/2.2 + Kap. 3 in
+  einem Block). Jetzt sieben Karten in Dokumentreihenfolge: "Systembeschreibung
+  & Verantwortlichkeiten" (Kap. 1.4/2.1/2.2), "Vorgehensweise & Testprozess"
+  (Kap. 3), "DQ", "IQ", "OQ", "PQ", "PPQ" (je Kap. 4.2/4.7-4.10) - reine
+  `gruppe`-Spalten-Änderung in `seed_field_definitions_projekt.sql` +
+  `GROUP_ORDER.projekt` in `webapp/app.js`, keine Feld-Logik betroffen.
+- **Layout-Sprünge beim Ja/Nein-Klick behoben.** `.field.cond-hidden` war
+  `display:none` (entfernt das Element komplett aus dem Grid-Fluss - alle
+  nachfolgenden Felder rutschen nach, sowohl horizontal als auch vertikal).
+  Jetzt `visibility:hidden` - das Feld behält seine Grid-Zelle (Größe bleibt
+  reserviert), nur der Inhalt ist unsichtbar/nicht fokussierbar. Betrifft
+  automatisch alle >60 bedingt sichtbaren Felder (nicht nur Tabelle 6.2).
+- **Datenexport-Knopf in VP/VB ergänzt** (`btnExportVP`/`btnExportVB`,
+  `exportProjektData()`) - Nutzer: "es fehlt der Abschlussknopf, wo man den
+  VB erstellen kann". Liefert noch **kein** fertiges `.docx` (das Ausfüllen
+  läuft weiterhin über das separate Python-Skript, s. Abschnitt 5, Option
+  A) - aber eine einzige JSON-Datei mit allen dafür nötigen Daten in einem
+  Rutsch (verlinktes System per `mlcs_id`-Abgleich mit der System-DB +
+  alle Projekt-Felder aller drei Tabs + die drei Zusatzlisten), statt sie
+  händisch aus zwei `.sqlite`-Dateien zusammenzusuchen. Ob/wann auf Option B
+  (Ausfüllen direkt im Browser) umgestellt wird, ist weiterhin offen - dafür
+  müsste die komplette Python-Fülllogik nach JS portiert werden (deutlich
+  größerer Umbau).
+
 ## 4. Prozesse
 
 ### a) Datenerfassung – 3 Szenarien im Browser-Formular
