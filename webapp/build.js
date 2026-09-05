@@ -43,6 +43,17 @@ const seedSql = fs.readFileSync(path.join(DB_DIR, "seed_field_definitions.sql"),
 const projektSeedSql = fs.readFileSync(path.join(DB_DIR, "seed_field_definitions_projekt.sql"), "utf8");
 const sqljsLib = fs.readFileSync(path.join(ROOT, "vendor", "sqljs", "sql-wasm.js"), "utf8");
 const wasmB64 = fs.readFileSync(path.join(ROOT, "vendor", "sqljs", "sql-wasm.wasm")).toString("base64");
+// JSZip (fuer die In-Browser-Word-Dokumenterzeugung, siehe KONZEPT.md Abschnitt 5) -
+// eine oeffentliche Open-Source-Bibliothek, darf im Gegensatz zu den echten
+// .docx-Vorlagen ganz normal mit ins (oeffentliche) Repo/in die gebaute app.html.
+const jszipLib = fs.readFileSync(path.join(ROOT, "vendor", "jszip", "jszip.min.js"), "utf8");
+// docx_toolkit.js/docx_fill_vb.js: noch im Aufbau - falls (noch) nicht vorhanden,
+// baut app.html trotzdem, nur ohne In-Browser-Dokumenterzeugung.
+function readIfExists(p) {
+  return fs.existsSync(p) ? fs.readFileSync(p, "utf8") : "";
+}
+const docxToolkitJs = readIfExists(path.join(ROOT, "docx_toolkit.js"));
+const docxFillVbJs = readIfExists(path.join(ROOT, "docx_fill_vb.js"));
 const starterSystemDbB64 = args.system ? fs.readFileSync(args.system).toString("base64") : "";
 const starterProjektDbB64 = args.projekt ? fs.readFileSync(args.projekt).toString("base64") : "";
 
@@ -72,6 +83,9 @@ out = out.replace(
   `const STARTER_PROJEKT_DB_B64 = ${JSON.stringify(starterProjektDbB64)};`
 );
 out = out.replace("/*__SQLJS_LIB__*/", sqljsLib);
+out = out.replace("/*__JSZIP_LIB__*/", jszipLib);
+out = out.replace("/*__DOCX_TOOLKIT_JS__*/", docxToolkitJs);
+out = out.replace("/*__DOCX_FILL_VB_JS__*/", docxFillVbJs);
 out = out.replace('<script src="app.js"></script>', `<script>\n${appJs}\n</script>`);
 
 const outPath = path.resolve(ROOT, args.out); // resolve statt join: erlaubt auch absolute Ausgabepfade

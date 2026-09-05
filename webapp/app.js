@@ -1218,6 +1218,190 @@ function exportProjektData(docType) {
   document.getElementById("statusNote").textContent = `${docType}-Datenexport heruntergeladen (Grundlage für die Dokumenterstellung).`;
 }
 
+// ============================================================ In-Browser-Word-Dokumenterzeugung (KONZEPT.md Abschnitt 5, Option B)
+// Die echten .docx-Vorlagen sind proprietaer und liegen deshalb NICHT in
+// dieser App/im Repo, sondern in einem eigenen Ordner auf dem Rechner der
+// Nutzerin/des Nutzers. Der Browser fragt (per File System Access API)
+// einmalig nach diesem Ordner und merkt sich den Zugriff (IndexedDB) fuer
+// naechste Male - danach automatisch, ohne dass die Datei jedes Mal neu
+// "hochgeladen" werden muss. Welche Datei im Ordner die richtige ist, wird
+// NICHT ueber den Dateinamen entschieden (zu fehleranfaellig, siehe
+// Nutzer-Feedback), sondern ueber einen Inhalts-Check: die Datei muss die
+// Dok-Nr. der jeweiligen Vorlage tatsaechlich im Fließtext enthalten.
+const TEMPLATE_MARKERS = {
+  VB: { label: "CS-Validierungsbericht (CS-VB)", markerText: "QU-MT-0003543" },
+  VP: { label: "CS-Validierungsplan (CS-VP)", markerText: "QU-MT-0000722" },
+};
+const TEMPLATE_DIR_DB = "masterform_template_dir";
+const TEMPLATE_DIR_KEY = "vorlagenOrdner";
+
+function idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(TEMPLATE_DIR_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("handles");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function idbGetDirHandle() {
+  try {
+    const db = await idbOpen();
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction("handles", "readonly");
+      const req = tx.objectStore("handles").get(TEMPLATE_DIR_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => reject(req.error);
+    });
+  } catch {
+    return null;
+  }
+}
+async function idbSetDirHandle(handle) {
+  try {
+    const db = await idbOpen();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("handles", "readwrite");
+      tx.objectStore("handles").put(handle, TEMPLATE_DIR_KEY);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+  } catch {
+    /* IndexedDB nicht verfuegbar - Ordner muss dann jedes Mal neu gewaehlt werden */
+  }
+}
+
+// Merkt sich innerhalb der laufenden Session zusaetzlich schon gefundene/
+// geprüfte Vorlagen-Dateien, damit nicht bei jedem Klick der ganze Ordner
+// erneut nach Inhalt durchsucht werden muss.
+const templateFileCache = {};
+
+async function ensureTemplateDirHandle() {
+  if (typeof window.showDirectoryPicker !== "function") return null; // Fallback siehe pickTemplateFileManually()
+  let handle = await idbGetDirHandle();
+  if (handle) {
+    try {
+      const perm = await handle.queryPermission({ mode: "read" });
+      if (perm === "granted" || (await handle.requestPermission({ mode: "read" })) === "granted") {
+        return handle;
+      }
+    } catch {
+      /* Handle evtl. veraltet/Ordner geloescht - neu waehlen */
+    }
+  }
+  handle = await window.showDirectoryPicker({ id: "masterform-vorlagen", mode: "read" });
+  await idbSetDirHandle(handle);
+  return handle;
+}
+
+async function findTemplateInDir(dirHandle, markerText) {
+  for await (const [name, entryHandle] of dirHandle.entries()) {
+    if (entryHandle.kind !== "file" || !name.toLowerCase().endsWith(".docx")) continue;
+    try {
+      const file = await entryHandle.getFile();
+      const bytes = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(bytes);
+      const xml = await zip.file("word/document.xml").async("string");
+      if (xml.includes(markerText)) return bytes;
+    } catch {
+      /* keine lesbare .docx - ueberspringen */
+    }
+  }
+  return null;
+}
+
+// Fallback, falls die File System Access API nicht verfuegbar ist (z.B.
+// Firefox): normaler Datei-Auswahl-Dialog, jedes Mal neu, aber mit
+// demselben Inhalts-Check.
+function pickTemplateFileManually(markerText) {
+  return new Promise((resolve, reject) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".docx";
+    input.onchange = async () => {
+      const file = input.files[0];
+      if (!file) return reject(new Error("Keine Datei ausgewählt."));
+      const bytes = await file.arrayBuffer();
+      try {
+        const zip = await JSZip.loadAsync(bytes);
+        const xml = await zip.file("word/document.xml").async("string");
+        if (!xml.includes(markerText)) {
+          reject(new Error(`Diese Datei enthält die Dok-Nr. "${markerText}" nicht - falsche Vorlage ausgewählt?`));
+          return;
+        }
+      } catch {
+        reject(new Error("Datei konnte nicht als Word-Dokument gelesen werden."));
+        return;
+      }
+      resolve(bytes);
+    };
+    input.click();
+  });
+}
+
+async function loadTemplateBytes(docType) {
+  const { markerText } = TEMPLATE_MARKERS[docType];
+  if (templateFileCache[docType]) return templateFileCache[docType];
+  let bytes = null;
+  const dirHandle = await ensureTemplateDirHandle();
+  if (dirHandle) {
+    bytes = await findTemplateInDir(dirHandle, markerText);
+    if (!bytes) {
+      throw new Error(
+        `Im gewählten Vorlagen-Ordner wurde keine .docx-Datei mit der Dok-Nr. "${markerText}" gefunden. Bitte lege die echte Vorlage dort ab (siehe webapp/templates/README).`
+      );
+    }
+  } else {
+    bytes = await pickTemplateFileManually(markerText);
+  }
+  templateFileCache[docType] = bytes;
+  return bytes;
+}
+
+function projektExportPayloadToSysProj(payload) {
+  const proj = { ...payload.projekt };
+  proj.history = (payload.listen.versionshistorie_eintrag || []).map((r) => ({
+    version: r.version, cc_nummer: r.cc_nummer, beschreibung: r.beschreibung,
+  }));
+  proj.unexpected_events = (payload.listen.unexpected_event || []).map((r) => ({
+    dokumenten_nr: r.dokumenten_nr, titel: r.titel, version: r.version,
+  }));
+  return { sys: payload.system || {}, proj };
+}
+
+async function generateDocx(docType) {
+  const filler = docType === "VB" ? window.DocxFillVB : window.DocxFillVP;
+  if (!filler) {
+    alert(`Die In-Browser-Erzeugung für ${docType} ist noch nicht fertig - bitte erstmal den JSON-Export nutzen.`);
+    return;
+  }
+  const payload = currentProjektExportPayload();
+  if (!payload.system) {
+    if (!confirm(`Kein System mit MLCS-ID "${payload.mlcs_id}" in der geladenen System-Datenbank gefunden - trotzdem ohne Systemdaten erzeugen?`)) return;
+  }
+  const statusNote = document.getElementById("statusNote");
+  statusNote.textContent = `${docType}-Vorlage wird gesucht/geladen ...`;
+  try {
+    const templateBytes = await loadTemplateBytes(docType);
+    const { sys, proj } = projektExportPayloadToSysProj(payload);
+    statusNote.textContent = `${docType}-Dokument wird befüllt ...`;
+    const resultBytes = await filler.fill(templateBytes, sys, proj);
+    const blob = new Blob([resultBytes], { type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `CS-${docType}_${payload.mlcs_id || "ohne-mlcs-id"}.docx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    statusNote.textContent = `${docType}-Dokument erzeugt und heruntergeladen. Bitte vor Freigabe wie gewohnt prüfen (blau/gelb markierte Stellen).`;
+  } catch (err) {
+    console.error(err);
+    statusNote.textContent = `${docType}-Dokument konnte nicht erzeugt werden: ${err.message}`;
+    alert(`Fehler beim Erzeugen des ${docType}-Dokuments:\n${err.message}`);
+  }
+}
+
 async function onSaveClick() {
   if (PROJEKT_TABS.has(activeTab)) {
     const ok = saveProjektAll();
@@ -1539,6 +1723,8 @@ async function main() {
   document.getElementById("tabBtnVB").addEventListener("click", () => setActiveTab("vb"));
   document.getElementById("btnExportVP").addEventListener("click", () => exportProjektData("VP"));
   document.getElementById("btnExportVB").addEventListener("click", () => exportProjektData("VB"));
+  document.getElementById("btnGenerateVP").addEventListener("click", () => generateDocx("VP"));
+  document.getElementById("btnGenerateVB").addEventListener("click", () => generateDocx("VB"));
   PLACEHOLDER_TABS.forEach((t) => document.getElementById(TAB_BUTTON_IDS[t]).addEventListener("click", () => setActiveTab(t)));
 
   document.querySelectorAll("#systemTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));

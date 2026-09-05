@@ -232,3 +232,9 @@ webapp/app_mit_daten*.html
 # Generierte Beispieldateien (werden per Skript erzeugt, siehe examples/)
 examples/vorlage.docx
 *.docx.bak
+
+# Echte proprietaere Word-Vorlagen (.docx) - liegen lokal in einem eigenen
+# Ordner neben der Webapp, werden NICHT ins (oeffentliche) Repo committet.
+# Siehe KONZEPT.md Abschnitt 5: die App laedt sie zur Laufzeit per fetch()
+# (oder Datei-Auswahl-Fallback) aus diesem Ordner statt sie ins HTML einzubetten.
+webapp/templates/*.docx

@@ -419,25 +419,56 @@ dieselbe.
   (Änderungsmitteilung, neue Dokumentenversion, ...), bleibt beim
   Menschen.
 
-## 5. Offene technische Entscheidung: wo läuft das Ausfüllen der .docx?
+## 5. Wo läuft das Ausfüllen der .docx? (Entscheidung, Stand 06.09.)
 
-Zwei Optionen, beide mit derselben Platzhalter-Konvention:
+Ursprünglich zwei Optionen zur Diskussion: A (Python bleibt der
+"Fill-Motor", Web-App exportiert JSON, manueller Python-Lauf) oder B
+(alles im Browser, JS-Portierung derselben Logik). A wurde zuerst gebaut
+(Datenexport-Knöpfe in den VP/VB-Tabs) - der manuelle Zwischenschritt
+wurde aber schnell als störend empfunden ("das muss direkt aus dem HTML
+heraus gehen"). Seit 06.09. gilt **B**: die echte Word-Vorlage wird
+direkt im Browser befüllt, keine Python-Zwischenstation mehr nötig. Der
+JSON-Export bleibt als Debug-Hilfsmittel bestehen.
 
-- **A – Python bleibt der "Fill-Motor"** (das, was schon existiert):
-  Web-App exportiert die Werte für ein Dokument als JSON-Datei; du
-  führst lokal `python fill_template.py ... --data export.json` aus.
-  Vorteil: nutzt sofort das bereits getestete, robuste Modul. Nachteil:
-  ein manueller Zwischenschritt außerhalb des Browsers.
-- **B – Alles im Browser** (JS-Portierung der gleichen Logik, z.B. via
-  einer JS-Bibliothek, die `.docx` als ZIP/XML im Browser bearbeitet):
-  ein Klick von "Datensatz wählen" bis "Download der fertigen Datei".
-  Vorteil: wirklich nahtlos, kein Kontextwechsel. Nachteil: die
-  Listen-/Tabellen-Platzhalter (Abschnitt 3) müssten in JS neu gebaut
-  werden; mehr Erstaufwand.
+**Technischer Aufbau:**
+- `webapp/vendor/jszip/` - JSZip (öffentliche Open-Source-Bibliothek,
+  entpackt/baut das .docx als ZIP im Browser) - wird wie sql.js von
+  `build.js` mit in die gebaute `app.html` eingebettet (unbedenklich,
+  keine vertraulichen Daten).
+- `webapp/docx_toolkit.js` - generische OOXML-Helfer (JS-Portierung der
+  Python-Helfer aus den lokalen Demo-Skripten: `safe_remove_paragraph`,
+  `mark_as_deleted`, `entferne_oder_zwischen`, `replace_span_in_paragraph`/
+  `replace_marker`, `set_cell_value`/`append_to_cell`, Checkbox-Helfer,
+  `block_between`/`strip_grey`, `insert_paragraph_after`,
+  `versionshistorie_zeilen_generisch`) - per DOMParser/XMLSerializer statt
+  python-docx.
+- `webapp/docx_fill_vb.js` (CS-VB) / künftig `docx_fill_vp.js` (CS-VP) -
+  die fachliche Fülllogik je Dokumenttyp, 1:1 aus den lokalen Python-Demos
+  portiert. Beide Dateien werden von `build.js` ebenfalls mit inline
+  gebaut, sofern vorhanden (existieren sie nicht, baut `app.html`
+  trotzdem, nur ohne Dokumenterzeugung für diesen Typ).
 
-**Empfehlung:** mit A starten (schnell nutzbar, Motor existiert schon),
-und erst wenn das Datenmodell/die Templates stehen, auf B umstellen,
-falls der Zwischenschritt in der Praxis stört.
+**Vorlagen-Speicherung - eigener, NICHT eingebetteter Ordner:**
+Die echten .docx-Vorlagen sind proprietär und dürfen nicht ins
+(öffentliche) Repo/auf GitHub Pages. Statt sie base64-kodiert in die HTML
+einzubetten, liegen sie in einem eigenen lokalen Ordner
+(`webapp/templates/`, per `.gitignore` ausgeschlossen, siehe
+`webapp/templates/README.md`). Die App fragt beim ersten Klick auf einen
+"... erzeugen"-Knopf per File System Access API (`showDirectoryPicker`,
+funktioniert auch bei `file://`-Aufruf per Doppelklick) einmalig nach
+diesem Ordner und merkt sich den Zugriff (IndexedDB) für weitere
+Aufrufe. Welche Datei im Ordner die richtige ist, wird NICHT über den
+Dateinamen entschieden (zu fehleranfällig bei einem klassischen
+Upload-Dialog, siehe Nutzer-Feedback), sondern über einen Inhalts-Check:
+die Datei muss die Dok-Nr. der jeweiligen Vorlage tatsächlich im
+Fließtext enthalten (`word/document.xml` wird dafür kurz eingelesen).
+Fehlt die File System Access API (z.B. Firefox), springt ein normaler
+Datei-Auswahl-Dialog ein (jedes Mal neu, gleicher Inhalts-Check).
+
+Das eigentliche "Erstellpaket" (App + gefüllter Vorlagen-Ordner) wird
+später als Ganzes an eine andere Stelle kopiert - das Repo selbst bleibt
+Entwicklungsstand ohne echte Vorlagen, unabhängig davon, ob es öffentlich
+oder privat ist.
 
 ## 6. Offene Fragen für dich
 
