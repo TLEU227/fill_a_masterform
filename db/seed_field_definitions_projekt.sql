@@ -121,6 +121,26 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('projekt', 'vp_dok_id',              'Validierungsplan (CS-VP): Dok-ID (dieses Projekt)', 'text', NULL, 1, 'QU-OPE-XXXXXXX', 'im VP-Tab erfassen, sobald nach Erstellung/Freigabe bekannt - wird im VB-Tab als Referenz auf den Validierungsplan wiederverwendet', '["CS-VP","CS-VB"]', 'Dokument', 10),
 ('projekt', 'vp_version',             'Validierungsplan (CS-VP): Version (dieses Projekt)', 'text', NULL, 1, 'x.x', NULL, '["CS-VP","CS-VB"]', 'Dokument', 15),
 
+-- Update 06.09. (Nutzer-Feedback: "die ganzen Personen sind projektrelevant
+-- ... wir sollten wenigstens Rolle und Person erfassen, auch wenn wir sie
+-- nicht in die Dokumente einbauen"): Tabelle "Dokumentenfreigabe" (Rolle/
+-- Funktion/Beschreibung) ist in CS-VP UND CS-VB identisch (6 Rollenzeilen),
+-- deshalb geteiltes Feld. Bewusst NICHT dieselben Felder wie
+-- system.rolle_* (Personen-Gruppe, aktuell versteckt) - die gehoeren zur
+-- Systembewertung (QU-MT-0001344) und sind system-, nicht projektbezogen;
+-- die Rollenbezeichnungen der beiden Tabellen ueberschneiden sich nur
+-- teilweise ("Projektleiter/SME" als EINE Zeile gibt es nur hier).
+-- Reine Datenerfassung (siehe Konvention): wird aktuell NICHT ins .docx
+-- geschrieben (Nutzer-Entscheidung 04.09. bei Tabelle 1 Dokumentenfreigabe:
+-- "dort brauchen keine Namen hinterlegt zu werden, die Tabelle kann so
+-- bleiben wie sie ist") - dient nur der eigenen Nachverfolgung.
+('projekt', 'df_autor_cq',               'Autor: C&Q (Commissioning & Qualification)', 'person_referenz', NULL, 0, NULL, 'wird aktuell nicht ins Dokument übernommen, s. Kommentar in der Seed-Datei', '["CS-VP","CS-VB"]', 'Personen (Dokumentenfreigabe)', 1),
+('projekt', 'df_pruefer_projektleiter_sme', 'Prüfer: Projektleiter/SME', 'person_referenz', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Personen (Dokumentenfreigabe)', 2),
+('projekt', 'df_pruefer_tso',            'Prüfer: Technical System Owner (TSO)', 'person_referenz', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Personen (Dokumentenfreigabe)', 3),
+('projekt', 'df_pruefer_bso',            'Prüfer: Business System Owner (BSO)', 'person_referenz', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Personen (Dokumentenfreigabe)', 4),
+('projekt', 'df_freigeber_bqr',          'Freigeber: Business Quality Representative (BQR)', 'person_referenz', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Personen (Dokumentenfreigabe)', 5),
+('projekt', 'df_freigeber_csq',          'Freigeber: Computerized System Quality Expert (CSQ)', 'person_referenz', NULL, 0, NULL, NULL, '["CS-VP","CS-VB"]', 'Personen (Dokumentenfreigabe)', 6),
+
 -- ---------------------------------------------------------------------------
 -- Vorgehensweise bei der Validierung (Kap. 3 CS-VP) - Weichen für ganze
 -- Kapitel/Absätze.

@@ -24,3 +24,8 @@ nach diesem Ordner (Firefox: stattdessen ein normaler Datei-Auswahl-Dialog,
 jedes Mal neu). Danach merkt sich der Browser den Zugriff, solange die App
 im selben Browser-Profil läuft - kein erneutes Auswählen nötig, außer der
 Zugriff wird vom Browser zurückgesetzt.
+
+Ändert sich der Ordner (z.B. Umzug auf einen anderen Rechner/Pfad), einfach
+in der App auf "Vorlagen-Ordner wechseln" klicken (neben den "... erzeugen"-
+Knöpfen in VP/VB) - fragt sofort erneut, ohne dass der Browser-Zugriff erst
+ungültig werden muss.

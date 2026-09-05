@@ -391,6 +391,37 @@ Pflichtfeld muss als erstes eine Dok-ID des Dokumentes und Version sein."
   sind absichtlich auf die Tabs verteilt, in denen sie tatsächlich
   gebraucht werden (Architektur aus Abschnitt 3b).
 
+### 3f. Personen (Dokumentenfreigabe) im Projekt erfasst (Stand 06.09.)
+
+Nutzer-Rückmeldung: "die ganzen Personen sind projektrelevant. Auch wenn
+wir sie nicht in die Dokumente einbauen, sollten wir wenigstens die Rolle
+und Person erfassen." Die Tabelle "Dokumentenfreigabe" (Rolle/Funktion/
+Beschreibung) ist in CS-VP und CS-VB identisch (6 Rollen: Autor C&Q,
+Prüfer Projektleiter/SME, Prüfer TSO, Prüfer BSO, Freigeber BQR, Freigeber
+CSQ) - neue geteilte Felder `df_autor_cq`/`df_pruefer_projektleiter_sme`/
+`df_pruefer_tso`/`df_pruefer_bso`/`df_freigeber_bqr`/`df_freigeber_csq`
+(Gruppe "Personen (Dokumentenfreigabe)", direkt nach "Dokument"), Datentyp
+`person_referenz` (bereits vorhandener Mechanismus, bisher nur für die
+System-DB-Gruppe "Personen" genutzt, die aber bewusst separat bleibt - sie
+gehört zur Systembewertung QU-MT-0001344, ist system- statt projektbezogen,
+und ihre Rollen überschneiden sich nur teilweise). Werte werden **nicht**
+ins .docx übernommen (Nutzer-Entscheidung 04.09. zu Tabelle 1), dienen nur
+der eigenen Nachverfolgung.
+
+Dabei zwei latente Bugs im "+ Neue Person anlegen"-Mechanismus gefunden
+und behoben (existierten schon vorher für die System-DB, wurden aber nie
+ausgeführt, weil deren Personen-Gruppe versteckt ist):
+- Ein frisch angelegter Personen-Datensatz bekam keine `<option>` im
+  Auswahlfeld, das nur die beim Rendern vorhandenen Personen kennt -
+  `select.value = neueId` verpuffte folgenlos (Browser kann keinen nicht
+  vorhandenen Options-Wert setzen). Jetzt: `addPersonOptionEverywhere()`
+  ergänzt die `<option>` in JEDEM Personen-Auswahlfeld, bevor der Wert
+  gesetzt wird.
+- Bei geteilten Projekt-Feldern (Vorkommen in VP- UND VB-Formular) legte
+  "+ Neue Person anlegen" die Person ZWEIMAL an (einmal pro Vorkommen).
+  Jetzt: pro Feld-Key nur einmal anlegen, Ergebnis-ID auf alle Vorkommen
+  anwenden.
+
 ## 4. Prozesse
 
 ### a) Datenerfassung – 3 Szenarien im Browser-Formular

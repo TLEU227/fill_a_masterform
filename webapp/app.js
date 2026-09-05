@@ -47,6 +47,9 @@ const GROUP_ORDER = {
     // steht bewusst ganz vorn - Nutzer-Anfrage 06.09.: "ein Pflichtfeld muss
     // als erstes eine Dok-ID des Dokumentes und Version sein".
     "Dokument",
+    // Personen (Dokumentenfreigabe) direkt danach - "wer" gehoert erzaehl-
+    // logisch zur Dokument-Identitaet (Nutzer-Anfrage 06.09.).
+    "Personen (Dokumentenfreigabe)",
     "Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente",
     "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument",
     // Validierungsergebnisse (nur CS-VB) - seit 05.09. nach Kapitel untergruppiert statt
@@ -340,6 +343,26 @@ function collectFormValuesFrom(formSelector) {
 function collectFormValues() { return collectFormValuesFrom("#systemForm"); }
 function collectProjektFormValues() { return collectFormValuesFrom(PROJEKT_FORM_SELECTORS); }
 
+// Wird nach createPerson() gebraucht: ein <select data-type="person"> zeigt
+// nur die <option>-Elemente, die beim Rendern des Formulars (aus dem damals
+// aktuellen personCache) erzeugt wurden. Nach dem Anlegen einer neuen Person
+// gibt es dafuer noch KEINE <option> - `el.value = String(newId)` wuerde
+// sonst folgenlos verpuffen (der Browser kann keinen nicht vorhandenen
+// <option>-Wert auswaehlen, das Select faellt zurueck auf "" = "– bitte
+// wählen –"). Deshalb hier VOR dem Setzen von .value die <option> in JEDES
+// Personen-Select im Dokument nachtragen (nicht nur ins gerade befuellte -
+// derselbe Datensatz kann ja aus jedem anderen Rollen-Feld heraus ebenfalls
+// ausgewaehlt werden wollen).
+function addPersonOptionEverywhere(id, name) {
+  document.querySelectorAll('select[data-type="person"]').forEach((sel) => {
+    if (Array.from(sel.options).some((o) => o.value === String(id))) return;
+    const opt = document.createElement("option");
+    opt.value = String(id);
+    opt.textContent = name || "(ohne Namen)";
+    sel.insertBefore(opt, sel.querySelector('option[value="__new__"]'));
+  });
+}
+
 function saveAll() {
   db.run("BEGIN");
   try {
@@ -351,6 +374,7 @@ function saveAll() {
         const funktion = wrap.querySelector('[data-newperson-field="funktion"]').value;
         const abteilung = wrap.querySelector('[data-newperson-field="abteilung"]').value;
         const newId = createPerson(name, funktion, abteilung);
+        addPersonOptionEverywhere(newId, name);
         el.value = String(newId);
       }
     });
@@ -400,18 +424,30 @@ function saveAll() {
 function saveProjektAll() {
   projektDb.run("BEGIN");
   try {
-    // 0. Neue Personen (falls ein projekt-Feld je vom Typ person_referenz
-    // wird - aktuell nicht der Fall, aber fuer Konsistenz mit saveAll()
-    // vorgesehen). Personen leben in der System-DB, nicht der Projekt-DB.
+    // 0. Neue Personen (Rollen-Felder auf "__new__") anlegen - z.B. die
+    // "Personen (Dokumentenfreigabe)"-Gruppe. Personen leben in der
+    // System-DB, nicht der Projekt-DB (daher "&& db"). Ein geteiltes Feld
+    // (z.B. df_pruefer_bso) steht als ZWEI DOM-Elemente da (VP- UND
+    // VB-Formular, gleicher data-key, per syncSharedProjektField() im Wert
+    // synchron) - pro Feld-Key darf trotzdem nur EINMAL eine Person
+    // angelegt werden, nicht einmal pro Vorkommen.
+    const angelegtePersonenKeys = new Set();
     document.querySelectorAll(PROJEKT_FORM_SELECTORS.map((s) => `${s} select[data-type="person"]`).join(", ")).forEach((el) => {
-      if (el.value === "__new__" && db) {
-        const wrap = document.querySelector(`[data-personnew-for="${el.dataset.key}"]`);
-        const name = wrap.querySelector('[data-newperson-field="name"]').value;
-        const funktion = wrap.querySelector('[data-newperson-field="funktion"]').value;
-        const abteilung = wrap.querySelector('[data-newperson-field="abteilung"]').value;
-        const newId = createPerson(name, funktion, abteilung);
-        el.value = String(newId);
-      }
+      const key = el.dataset.key;
+      if (el.value !== "__new__" || !db || angelegtePersonenKeys.has(key)) return;
+      angelegtePersonenKeys.add(key);
+      // Von allen Vorkommen dieses Feldes dasjenige nehmen, dessen "Neue
+      // Person"-Eingabe tatsaechlich befuellt ist (die anderen Vorkommen
+      // sind zwar auf "__new__" synchronisiert, ihr Eingabe-Wrap aber leer,
+      // weil syncSharedProjektField() nur den Select-Wert spiegelt).
+      const wraps = Array.from(document.querySelectorAll(`[data-personnew-for="${key}"]`));
+      const wrap = wraps.find((w) => w.querySelector('[data-newperson-field="name"]').value.trim()) || wraps[0];
+      const name = wrap.querySelector('[data-newperson-field="name"]').value;
+      const funktion = wrap.querySelector('[data-newperson-field="funktion"]').value;
+      const abteilung = wrap.querySelector('[data-newperson-field="abteilung"]').value;
+      const newId = createPerson(name, funktion, abteilung);
+      addPersonOptionEverywhere(newId, name);
+      document.querySelectorAll(`[data-key="${key}"][data-type="person"]`).forEach((sharedEl) => { sharedEl.value = String(newId); });
     });
 
     // 1. Projekt-Datensatz anlegen (Szenario "neu") oder wiederverwenden ("bearbeiten")
@@ -447,6 +483,7 @@ function saveProjektAll() {
     projektDb.run("COMMIT");
     currentProjektId = projektId;
     loadProjektCache();
+    if (angelegtePersonenKeys.size) loadPersonCache(); // neu angelegte Personen (liegen in db, nicht projektDb)
     return true;
   } catch (e) {
     projektDb.run("ROLLBACK");
@@ -1342,6 +1379,26 @@ function pickTemplateFileManually(markerText) {
   });
 }
 
+// Erlaubt es, den Vorlagen-Ordner jederzeit bewusst neu zu waehlen (statt
+// nur implizit, wenn der gespeicherte Zugriff mal ungueltig wird) - Nutzer-
+// Anfrage: "wenn sich das Verzeichnis mal ändert, würde ich das auch gleich
+// mit angeben wollen". Wirft den bisherigen Cache weg, damit die naechste
+// Dokumenterzeugung den neuen Ordner tatsaechlich neu durchsucht.
+async function changeTemplateDir() {
+  if (typeof window.showDirectoryPicker !== "function") {
+    alert("Dein Browser unterstützt keine feste Ordner-Auswahl - beim nächsten 'erzeugen'-Klick erscheint stattdessen ein normaler Datei-Auswahl-Dialog.");
+    return;
+  }
+  try {
+    const handle = await window.showDirectoryPicker({ id: "masterform-vorlagen", mode: "read" });
+    await idbSetDirHandle(handle);
+    Object.keys(templateFileCache).forEach((k) => delete templateFileCache[k]);
+    document.getElementById("statusNote").textContent = "Neuer Vorlagen-Ordner gemerkt - wird beim nächsten 'erzeugen'-Klick verwendet.";
+  } catch {
+    /* Auswahl abgebrochen - alter Ordner bleibt gültig */
+  }
+}
+
 async function loadTemplateBytes(docType) {
   const { markerText } = TEMPLATE_MARKERS[docType];
   if (templateFileCache[docType]) return templateFileCache[docType];
@@ -1732,6 +1789,8 @@ async function main() {
   document.getElementById("btnExportVB").addEventListener("click", () => exportProjektData("VB"));
   document.getElementById("btnGenerateVP").addEventListener("click", () => generateDocx("VP"));
   document.getElementById("btnGenerateVB").addEventListener("click", () => generateDocx("VB"));
+  document.getElementById("btnChangeTemplateDirVP").addEventListener("click", changeTemplateDir);
+  document.getElementById("btnChangeTemplateDirVB").addEventListener("click", changeTemplateDir);
   PLACEHOLDER_TABS.forEach((t) => document.getElementById(TAB_BUTTON_IDS[t]).addEventListener("click", () => setActiveTab(t)));
 
   document.querySelectorAll("#systemTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setScenario(btn.dataset.scenario)));
