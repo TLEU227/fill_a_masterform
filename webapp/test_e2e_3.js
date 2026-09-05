@@ -24,12 +24,11 @@ async function main() {
 
   await page.goto("file://" + APP_PATH);
 
-  // --- Dokumentart "CS-Validierungsplan" waehlen: braucht System- UND
-  // Projekt-DB, beide werden dafuer automatisch angelegt (kein separates
-  // "Neu anlegen"/"Öffnen" mehr noetig) ---
-  await page.click('.doctype-btn[data-doctype="CS-VP"]');
+  // --- "Neu anlegen" auf dem Startbildschirm: legt System- UND Projekt-DB
+  // gemeinsam an (seit 05.09. kein Dokumentart-first-Einstieg mehr) ---
+  await page.click("#btnStartFresh");
   await page.waitForSelector("#appScreen:not(.hidden)", { timeout: 10000 });
-  assert(!(await page.isDisabled("#tabBtnProjekt")), "Projekt-Tab ist nach Wahl der Dokumentart CS-VP sofort aktiv (Projekt-DB automatisch angelegt)");
+  assert(!(await page.isDisabled("#tabBtnProjekt")), "Projekt-Tab ist nach 'Neu anlegen' sofort aktiv (Projekt-DB automatisch mit angelegt)");
   assert(await page.locator("#loadOtherDbBanner").evaluate((el) => el.classList.contains("hidden")), "Kein Hinweis-Banner mehr noetig, da beide Datenbanken schon bereitstehen");
 
   await page.fill('#systemForm [data-key="systemname"]', "E2E Projekt-Testsystem");

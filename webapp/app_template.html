@@ -151,34 +151,15 @@
 
 <div id="startScreen" class="start-card doctype-card">
   <h2>Masterform</h2>
-  <p class="lead">Welches Dokument möchtest du vorbereiten? Du bekommst dann nur die Felder, die dafür gebraucht werden - um Datenbanken musst du dich dabei nicht kümmern, das übernimmt die App im Hintergrund.</p>
+  <p class="lead">Datenquelle festlegen - danach stehen alle Bereiche (System, Projekt, VP, VB, …) gemeinsam als Reiter zur Verfügung, ohne weiter zwischen Dokumentarten wechseln zu müssen.</p>
 
-  <div class="doctype-grid">
-    <button type="button" class="doctype-btn" data-doctype="">
-      <b>Systembewertung</b>
-      <span>Grunddaten des Systems (GxP-Einstufung, GAMP-Kategorie, …)</span>
-    </button>
-    <button type="button" class="doctype-btn" data-doctype="CS-VP">
-      <b>CS-Validierungsplan</b>
-      <span>Systemdaten + Projektdaten (Folgeprojekt, Change Control, Verantwortlichkeiten, …)</span>
-    </button>
-    <button type="button" class="doctype-btn" data-doctype="CS-VB">
-      <b>CS-Validierungsbericht</b>
-      <span>Systemdaten + Projektdaten</span>
-    </button>
-    <button type="button" class="doctype-btn" data-doctype="VQ">
-      <b>Vereinfachte Qualifizierung</b>
-      <span>Systemdaten + Anforderungen/Risiken/Prüfschritte</span>
-    </button>
-    <button type="button" class="doctype-btn" data-doctype="xQTP">
-      <b>xQ-Testplan</b>
-      <span>Systemdaten + Prüfschritte (IQ/OQ/PQ)</span>
+  <div class="doctype-grid" style="grid-template-columns: 1fr;">
+    <button type="button" class="doctype-btn" id="btnStartFresh">
+      <b>Neu anlegen</b>
+      <span>Leere System- und Projekt-Datenbank anlegen und direkt losarbeiten</span>
     </button>
   </div>
 
-  <p class="start-shortcut">
-    Kennst du dich schon aus? <a href="#" id="lnkSkipToData">Direkt zu den Daten, ohne Dokumentart festzulegen</a>
-  </p>
   <p class="start-shortcut">
     Du hast schon Datenbank-Dateien? Direkt laden:
     <a href="#" id="lnkLoadSystemDirect">System-Datenbank</a> ·
@@ -194,7 +175,6 @@
   <header>
     <h1>Masterform – Daten erfassen</h1>
     <p id="dbFileLabel">System: – · Projekt: –</p>
-    <p class="doc-indicator" id="docIndicator"></p>
   </header>
   <div class="topbar">
     <span class="dirty-indicator" id="dirtyIndicatorTop">Keine ungespeicherten Änderungen</span>
@@ -249,15 +229,13 @@
       </div>
 
       <div class="doc-picker visible" id="docPicker">
-        <label>Für welches Dokument bereitest du die Daten vor?</label>
+        <label>Zusätzliche Anforderungen/Risiken/Prüfschritte gebraucht für:</label>
         <select id="docSelect">
-          <option value="">Nur Basisdaten (dokumentübergreifend)</option>
+          <option value="">– keine (CS-VP/CS-VB haben eigene Reiter, s.o.) –</option>
           <option value="VQ">Vereinfachte Qualifizierung (VQ)</option>
-          <option value="CS-VP">CS Validierungsplan (CS-VP)</option>
-          <option value="CS-VB">CS Validierungsbericht (CS-VB)</option>
           <option value="xQTP">xQ-Testplan (IQ/OQ/PQ)</option>
         </select>
-        <div class="hint">Die Basisdaten unten werden von allen Dokumenten gemeinsam genutzt. Je nach Auswahl erscheinen zusätzlich nur die Felder, die speziell für dieses Dokument benötigt werden.</div>
+        <div class="hint">Nur für VQ/xQTP relevant - blendet die passenden Zusatzlisten unten ein. CS-VP/CS-VB haben ihre eigenen Reiter oben und brauchen diese Auswahl nicht.</div>
       </div>
 
       <p class="legend"><span class="req">*</span> = Pflichtfeld. Bei Feldern mit Formatvorschrift oder SOP-Bezug erscheint beim Klick ins Feld ein kurzer gelber Hinweis.</p>

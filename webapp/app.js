@@ -72,23 +72,10 @@ const BRANCH_CONFIG = {
   "CS-VP": { pflicht: [], optional: [] },
   "CS-VB": { pflicht: [], optional: [] },
 };
-// Welche Datenbank(en) fuer welche Dokumentart gebraucht werden - steuert,
-// was beim Waehlen der Dokumentart auf dem Startbildschirm automatisch (im
-// Hintergrund, ohne Anlegen/Oeffnen-Klick) bereitgestellt wird.
-const DOC_DB_REQUIREMENTS = {
-  "": ["system"],
-  "CS-VP": ["system", "projekt"],
-  "CS-VB": ["system", "projekt"],
-  "VQ": ["system"],
-  "xQTP": ["system"],
-};
-const DOC_TYPE_LABELS = {
-  "": "Systembewertung (nur Basisdaten)",
-  "CS-VP": "CS-Validierungsplan",
-  "CS-VB": "CS-Validierungsbericht",
-  "VQ": "Vereinfachte Qualifizierung",
-  "xQTP": "xQ-Testplan",
-};
+// currentDocTypeChosen steuert seit der Reiter-Aufteilung nur noch, welche
+// optionalen Zusatzlisten (Anforderung/Risiko/Pruefschritt, nur VQ/xQTP) im
+// System-Reiter erscheinen (s. applyBranchDocType()) - beide Datenbanken
+// (System+Projekt) werden davon unabhaengig immer gemeinsam bereitgestellt.
 let currentDocTypeChosen = "";
 // Ableitungstabelle Testtiefe (Kapitel 8 der Systembewertung, QU-MT-0001344).
 const TESTTIEFE_MATRIX = {
@@ -1228,14 +1215,14 @@ function updateHeaderAndTabs() {
   document.getElementById("fsWarningBanner").style.display = hasFSAccess ? "none" : "block";
 
   const banner = document.getElementById("loadOtherDbBanner");
-  // Nur nerven, wenn die fehlende DB fuer die gewaehlte Dokumentart auch
-  // wirklich gebraucht wird - sonst wuerde z.B. bei "Systembewertung"
-  // (braucht nur die System-DB) staendig ein Projekt-DB-Hinweis erscheinen.
-  // Platzhalter-Reiter (AB-DQ/SCR/AB-IQOQPQ/STV/AFU) brauchen noch gar keine
-  // DB, deshalb hier immer "nicht fehlend".
-  const neededForDocType = new Set(DOC_DB_REQUIREMENTS[currentDocTypeChosen] || ["system"]);
+  // Seit dem Wegfall der Dokumentart-first-Startseite (05.09.) will die App
+  // grundsaetzlich IMMER beide Datenbanken - "Neu anlegen" auf dem
+  // Startbildschirm legt beide sofort an; dieser Hinweis greift nur noch,
+  // wenn jemand ueber die Direkt-Laden-Links bewusst nur EINE Datei geoeffnet
+  // hat. Platzhalter-Reiter (AB-DQ/SCR/AB-IQOQPQ/STV/AFU) brauchen noch gar
+  // keine DB, deshalb hier immer "nicht fehlend".
   const missing = PLACEHOLDER_TABS.includes(activeTab) ? false
-    : activeTab === "system" ? (!projektDb && neededForDocType.has("projekt")) : (!db && neededForDocType.has("system"));
+    : activeTab === "system" ? !projektDb : !db;
   if (missing) {
     const missingLabel = activeTab === "system" ? "Projekt-Datenbank" : "System-Datenbank";
     document.getElementById("loadOtherDbText").textContent = `${missingLabel} ist noch nicht geladen - für diesen Tab wird sie gebraucht, um Daten einzugeben.`;
@@ -1323,48 +1310,36 @@ function showAppScreen(which, label) {
   if (which === "system") { systemDbLabel = label; initSystemUi(); }
   else { projektDbLabel = label; initProjektUi(); }
   setActiveTab(which);
-  updateDocIndicator();
 }
 
-// ---------------------------------------------------------------- Dokumentart-first-Einstieg
-// Der Startbildschirm fragt zuerst "welches Dokument?", nicht "welche
-// Datenbank?". Je nach Antwort werden die dafuer noetigen Datenbank(en) im
-// Hintergrund bereitgestellt (leer, in-memory, oder eine bereits geladene
-// eingebettete Startdatenbank) - kein Anlegen/Oeffnen-Klick noetig. Wer
-// stattdessen eine eigene Datei laden will, kann das ueber die Direkt-
-// Laden-Links auf dem Startbildschirm weiterhin tun.
-function provisionForDocType(docType) {
-  currentDocTypeChosen = docType;
-  const needed = DOC_DB_REQUIREMENTS[docType] || ["system"];
-  if (needed.includes("system")) {
-    if (!db) { createNewDb(); systemDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
-    if (!systemUiReady) initSystemUi();
-  }
-  if (needed.includes("projekt")) {
-    if (!projektDb) { createNewProjektDb(); projektDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
-    // Projekt/VP/VB-Tabs sind seit 05.09. statisch (nicht mehr abhaengig von
-    // der hier gewaehlten Dokumentart) - einmal aufgebaut, muessen sie beim
-    // Wechsel der Dokumentart nicht neu gerendert werden.
-    if (!projektUiReady) initProjektUi();
-  }
+// ---------------------------------------------------------------- Einstieg
+// Nutzer-Feedback 05.09.: "ich sehe keinen Nutzen mehr darin, zwischen den
+// Dokumenten zu wechseln" - der Startbildschirm fragte frueher zuerst
+// "welches Dokument?" (Systembewertung/CS-VP/CS-VB/VQ/xQTP), was seit der
+// Aufteilung in parallele Reiter (System/Projekt/VP/VB, s.o.) ueberholt war
+// und sogar zu einem echten Problem fuehrte: wer z.B. "Systembewertung"
+// waehlte, bekam NUR die System-DB provisioniert und konnte den Projekt-/
+// VP-/VB-Reiter danach nicht anwaehlen (disabled), ohne noch etwas
+// Zusaetzliches zu tun. Jetzt fragt der Startbildschirm nur noch nach der
+// Datenquelle: "Neu anlegen" (beide DBs sofort, leer) oder eine bestehende
+// Datei laden (System-DB und/oder Projekt-DB einzeln, wie bisher).
+function startFresh() {
+  if (!db) { createNewDb(); systemDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
+  if (!systemUiReady) initSystemUi();
+  if (!projektDb) { createNewProjektDb(); projektDbLabel = "neue Datenbank (noch nicht gespeichert)"; }
+  if (!projektUiReady) initProjektUi();
   document.getElementById("startScreen").classList.add("hidden");
   document.getElementById("appScreen").classList.remove("hidden");
-  document.getElementById("docSelect").value = docType;
+  setActiveTab("system");
+}
+// docSelect (im System-Reiter) hat seit der Reiter-Aufteilung nur noch EINEN
+// Zweck: die optionalen Zusatzlisten (Anforderung/Risiko/Pruefschritt) fuer
+// VQ/xQTP einblenden - CS-VP/CS-VB haben dafuer keinen Bedarf mehr (eigene
+// Reiter, s.o.), deshalb auch nicht mehr als Option in diesem Dropdown.
+function applyBranchDocType(docType) {
+  currentDocTypeChosen = docType;
   loadListsForBranch(currentSystemId);
   renderBranch(docType);
-  setActiveTab("system"); // Systemdaten sind immer die Grundlage, unabhaengig von der Dokumentart
-  updateDocIndicator();
-}
-function updateDocIndicator() {
-  const el = document.getElementById("docIndicator");
-  if (!el) return;
-  const label = DOC_TYPE_LABELS[currentDocTypeChosen] ?? "keine Dokumentart gewählt";
-  el.innerHTML = `Dokument: <b>${escapeHtml(label)}</b> <a href="#" id="lnkChangeDoc">ändern</a>`;
-  document.getElementById("lnkChangeDoc").addEventListener("click", (e) => {
-    e.preventDefault();
-    document.getElementById("appScreen").classList.add("hidden");
-    document.getElementById("startScreen").classList.remove("hidden");
-  });
 }
 
 async function handleNewDb() {
@@ -1473,10 +1448,9 @@ async function main() {
   document.getElementById("btnLinkFile").addEventListener("click", handleLinkFile);
 
   // Eingebettete Startdatenbank(en) vorhanden? Nur laden (in den Speicher,
-  // OHNE schon die App-Oberflaeche zu zeigen) - der Startbildschirm fragt
-  // trotzdem zuerst "welches Dokument?"; provisionForDocType() erkennt dann,
-  // dass diese Datenbank(en) schon da sind, und baut nur noch die UI dafuer
-  // auf (siehe initSystemUi()/initProjektUi()).
+  // OHNE schon die App-Oberflaeche zu zeigen) - der Klick auf "Neu anlegen"
+  // (startFresh()) erkennt dann, dass diese Datenbank(en) schon da sind,
+  // und baut nur noch die UI dafuer auf (siehe initSystemUi()/initProjektUi()).
   if (STARTER_DB_B64) {
     loadDbFromBytes(base64ToBytes(STARTER_DB_B64));
     systemDbLabel = "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)";
@@ -1486,14 +1460,8 @@ async function main() {
     projektDbLabel = "eingebettete Datenbank (noch nicht mit einer Datei verknüpft)";
   }
 
-  // --- Startbildschirm: Dokumentart waehlen (Haupteinstieg) ---
-  document.querySelectorAll(".doctype-btn").forEach((btn) => {
-    btn.addEventListener("click", () => provisionForDocType(btn.dataset.doctype));
-  });
-  document.getElementById("lnkSkipToData").addEventListener("click", (e) => {
-    e.preventDefault();
-    provisionForDocType(""); // "ich kenne mich aus" - nur Basisdaten, wie vorher der Direkteinstieg
-  });
+  // --- Startbildschirm: nur noch Datenquelle waehlen (kein Dokumentart-first-Einstieg mehr) ---
+  document.getElementById("btnStartFresh").addEventListener("click", startFresh);
   document.getElementById("lnkLoadSystemDirect").addEventListener("click", (e) => { e.preventDefault(); handleOpenDb(); });
   document.getElementById("lnkLoadProjektDirect").addEventListener("click", (e) => { e.preventDefault(); handleOpenProjektDb(); });
 
@@ -1527,7 +1495,7 @@ async function main() {
     const item = e.target.closest(".combo-item");
     if (item) selectSource(item.dataset.id);
   });
-  document.getElementById("docSelect").addEventListener("change", (e) => provisionForDocType(e.target.value));
+  document.getElementById("docSelect").addEventListener("change", (e) => applyBranchDocType(e.target.value));
 
   document.querySelectorAll("#projektTabContent .scenario-btn").forEach((btn) => btn.addEventListener("click", () => setProjektScenario(btn.dataset.scenario)));
   document.getElementById("projektSourceSearch").addEventListener("input", (e) => renderProjektSourceResults(e.target.value));

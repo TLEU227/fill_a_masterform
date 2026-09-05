@@ -284,6 +284,51 @@ eine grundsätzlichere, stabilere Lösung:
   hätte z.B. das Aktualisieren des Hinweistexts nur die erste der beiden
   Fundstellen getroffen.
 
+### 3c. Startbildschirm entfernt - kein Dokumentart-first-Einstieg mehr (Stand 05.09., später Abend)
+
+Nutzer-Feedback, nachdem die Reiter-Aufteilung (3b) schon stand: "ich denke
+wir können auf die Startseite verzichten. ich sehe keinen Nutzen mehr
+darin, zwischen den Dokumenten zu wechseln" - konkret ausgelöst durch einen
+echten Nutzungsfehler: wer auf dem alten Startbildschirm z.B.
+"Systembewertung" wählte, bekam NUR die System-DB provisioniert und konnte
+danach die Reiter Projekt/VP/VB nicht anwählen (disabled), ohne noch etwas
+Zusätzliches zu tun ("kann die Seite aber nicht anwählen, funktioniert das
+noch nicht"). Das bestätigte: der alte Dokumentart-first-Einstieg war mit
+der neuen Parallel-Reiter-Architektur (3b) nicht mehr stimmig.
+
+- **Startbildschirm fragt nicht mehr "welches Dokument?", sondern nur noch
+  "welche Datenquelle?".** Die Dokumentart-Kacheln (Systembewertung/CS-VP/
+  CS-VB/VQ/xQTP) sind komplett weg. Übrig bleiben zwei gleichwertige, klar
+  getrennte Wege: **"Neu anlegen"** (`startFresh()` - legt SOFORT beide
+  Datenbanken leer an, unabhängig von jeder Dokumentart) oder **bestehende
+  Datei(en) laden** (System-DB und/oder Projekt-DB einzeln, unverändert
+  über `handleOpenDb()`/`handleOpenProjektDb()`). Danach stehen alle Reiter
+  (System/Projekt/VP/VB/+Platzhalter) gemeinsam zur Verfügung.
+  Perspektivisch angemerkt (Nutzer: "dies können wir auch in eine andere
+  Website verschieben"): die Datenquellen-Auswahl könnte später in eine
+  eigene, separate Seite ausgelagert werden - aktuell bewusst noch nicht
+  umgesetzt (Mehraufwand für Zustandsübergabe zwischen zwei Seiten, kein
+  unmittelbarer Zusatznutzen gegenüber der jetzigen, stark verschlankten
+  Ein-Seiten-Lösung).
+- **`docSelect` (im System-Reiter) hat jetzt nur noch EINEN, engeren
+  Zweck:** die optionalen Zusatzlisten (Anforderung/Risiko/Prüfschritt) für
+  VQ/xQTP einblenden. Die Optionen "CS Validierungsplan (CS-VP)"/"CS
+  Validierungsbericht (CS-VB)" sind aus diesem Dropdown entfernt - sie
+  hätten dort ohnehin nichts bewirkt (`BRANCH_CONFIG["CS-VP"|"CS-VB"]` war
+  schon immer leer), seit VP/CS-VB eigene Reiter haben, wäre die Auswahl
+  dort nur verwirrend gewesen ("Dokument wählen" suggeriert einen
+  Seitenwechsel, der so nicht mehr existiert). `applyBranchDocType()`
+  ersetzt das alte, DB-provisionierende `provisionForDocType()`.
+- **Kopf-Anzeige "Dokument: X ändern" entfernt** (`docIndicator`/
+  `updateDocIndicator()`) - verwies auf den jetzt nicht mehr existierenden
+  Dokumentart-Startbildschirm.
+- **`DOC_DB_REQUIREMENTS`/`DOC_TYPE_LABELS` entfallen** - da "Neu anlegen"
+  jetzt immer BEIDE Datenbanken anlegt, gibt es keine Dokumentart-abhängige
+  Fallunterscheidung mehr, welche DB wann gebraucht wird. Der verbleibende
+  "andere Datenbank fehlt"-Hinweis (`loadOtherDbBanner`) bezieht sich jetzt
+  nur noch auf den Fall, dass jemand bewusst nur EINE Datei über die
+  Direkt-Laden-Links geöffnet hat.
+
 ## 4. Prozesse
 
 ### a) Datenerfassung – 3 Szenarien im Browser-Formular

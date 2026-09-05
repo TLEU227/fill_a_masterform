@@ -27,8 +27,8 @@ async function main() {
   const hasFSAccess = await page.evaluate(() => "showOpenFilePicker" in window);
   console.log("File System Access API im Test-Browser verfügbar:", hasFSAccess);
 
-  // --- Neue Datenbank anlegen (ueber "Direkt zu den Daten", ohne Dokumentart) ---
-  await page.click("#lnkSkipToData");
+  // --- Neue Datenbank(en) anlegen (ueber "Neu anlegen" auf dem Startbildschirm) ---
+  await page.click("#btnStartFresh");
   await page.waitForSelector("#appScreen:not(.hidden)", { timeout: 10000 });
   assert(true, "Neue Datenbank angelegt, App-Bildschirm sichtbar");
 
@@ -62,7 +62,11 @@ async function main() {
   assert(headings.some((h) => h.includes("Notwendige")), "Notwendige Zusatzfelder-Überschrift vorhanden");
   assert(headings.some((h) => h.includes("Optionale")), "Optionale Zusatzfelder-Überschrift vorhanden");
 
-  const addBtns = await page.$$(".add-row-btn");
+  // Scope auf #systemTabContent: seit "Neu anlegen" beide DBs gemeinsam
+  // anlegt, gibt es jetzt auch in den Projekt/VP/VB-Reitern eigene
+  // Hinzufuegen-Buttons (Versionshistorie/Lieferant/Unexpected Event) - die
+  // sollen hier nicht mitgezaehlt werden.
+  const addBtns = await page.$$("#systemTabContent .add-row-btn");
   assert(addBtns.length === 3, `3 Hinzufügen-Buttons gefunden (Anforderung/Risiko/Prüfschritt), gefunden: ${addBtns.length}`);
   await addBtns[0].click(); // Anforderung hinzufuegen
   await page.waitForSelector('[data-key^="anforderung.0."]');
