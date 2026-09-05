@@ -42,7 +42,7 @@ const GROUP_ORDER = {
   anforderung: ["Anforderung"],
   risiko: ["Risiko"],
   pruefschritt: ["Prüfschritt"],
-  projekt: ["Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente", "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument", "Validierungsergebnisse"],
+  projekt: ["Projekt", "Verknüpfung", "Vorgängerprojekt", "Systembeschreibung", "Referenzdokumente", "Vorgehensweise", "Testkonzept", "Verantwortlichkeiten je Dokument", "Validierungsergebnisse", "Weitere Validierungsdokumente"],
   versionshistorie_eintrag: [null],
   lieferant_verantwortlichkeit: [null],
   unexpected_event: [null],

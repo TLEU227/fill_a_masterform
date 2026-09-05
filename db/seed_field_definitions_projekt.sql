@@ -236,3 +236,167 @@ INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pfli
 ('unexpected_event', 'dokumenten_nr', 'Dokumenten-Nr. (QU-OPE)', 'text', NULL, 1, 'QU-OPE-XXXXXX', NULL, '["CS-VB"]', NULL, 10),
 ('unexpected_event', 'titel',         'Titel', 'text', NULL, 1, NULL, NULL, '["CS-VB"]', NULL, 20),
 ('unexpected_event', 'version',       'Version', 'text', NULL, 0, 'x.x', NULL, '["CS-VB"]', NULL, 30);
+
+-- ---------------------------------------------------------------------------
+-- CS-VB: vollständige Inventur aller Entweder-Oder-Textstellen (Stand 05.09.).
+-- Alle Felder hier bilden "unveraendert (wie im CS-VP geplant) vs. waehrend
+-- der Validierung geaendert/angepasst"-Entscheidungen ab - dasselbe
+-- Grundmuster wie vorgehensweise_wie_geplant oben, nur an anderen Stellen
+-- im Dokument. Bei einigen Stellen (Verantwortlichkeiten, Verantwort-
+-- lichkeiten des Lieferanten) fehlt im Template das Wort "Oder" zwischen
+-- den beiden Absaetzen - inhaltlich sind es trotzdem echte Alternativen
+-- (widerspruechlich, beides gleichzeitig zu behaupten), daher gleiche
+-- ja/nein-Logik wie bei den expliziten "Oder"-Stellen.
+-- ---------------------------------------------------------------------------
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
+-- Kap. 1.4 Systembeschreibung (hat "Oder:" im Template)
+('projekt', 'systembeschreibung_geaendert', 'Systembeschreibung/-struktur/-komponenten/Schnittstellen gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 70),
+('projekt', 'systembeschreibung_aenderung_beschreibung', 'Beschreibung der Änderung der Systemstruktur/des Datenflusses', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn systembeschreibung_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse', 71),
+-- Kap. 2.1 Verantwortlichkeiten (im Template OHNE "Oder", aber inhaltlich Alternative)
+('projekt', 'verantwortlichkeiten_geaendert', 'Verantwortlichkeiten (Kap. 2.1) gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 72),
+('projekt', 'verantwortlichkeiten_aenderung_beschreibung', 'Beschreibung der Änderung der Verantwortlichkeiten', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn verantwortlichkeiten_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse', 73),
+-- Kap. 2.2 Verantwortlichkeiten des/der Lieferanten (im Template OHNE "Oder")
+('projekt', 'lieferanten_verantwortlichkeiten_geaendert', 'Verantwortlichkeiten des/der Lieferanten (Kap. 2.2) gegenüber CS-VP geändert?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 74),
+('projekt', 'lieferanten_verantwortlichkeiten_aenderung_beschreibung', 'Beschreibung der Änderung der Lieferanten-Verantwortlichkeiten', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn lieferanten_verantwortlichkeiten_geaendert = ja', '["CS-VB"]', 'Validierungsergebnisse', 75),
+-- Kap. 2.2.1 Lieferantenbewertung (hat "Oder:") - steuert ob Tabelle 5 ueberhaupt befuellt wird
+('projekt', 'lieferantenbewertung_neu_durchgefuehrt', 'Lieferantenbewertung im Rahmen DIESER Validierung neu durchgeführt (statt nur Verweis auf CS-VP)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 76),
+-- Kap. 3.x Testprozess (hat "Oder:")
+('projekt', 'testprozess_angepasst', 'Testprozess während der Validierung angepasst (statt Standardtestvorschriften)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 77),
+('projekt', 'testprozess_anpassung_beschreibung', 'Beschreibung der Anpassung des Testprozesses', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn testprozess_angepasst = ja', '["CS-VB"]', 'Validierungsergebnisse', 78),
+-- Kap. 4.7 IQ: dritte Template-Variante (bisher immer gestrichen) jetzt echtes Unterfeld
+('projekt', 'iq_offene_anforderungen_unkritisch', 'IQ: offene Anforderungen als unkritisch bewertet (statt bis PQ behoben)?', 'ja_nein', NULL, 0, NULL, 'nur wenn iq_offene_anforderungen = ja', '["CS-VB"]', 'Validierungsergebnisse', 79),
+('projekt', 'iq_offene_anforderungen_beschreibung', 'Beschreibung der als unkritisch bewerteten offenen IQ-Anforderungen', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn iq_offene_anforderungen_unkritisch = ja', '["CS-VB"]', 'Validierungsergebnisse', 80),
+-- Kap. 4.8/4.9/4.10: direkte Tatsache statt Ableitung ueber phase_pq_geplant
+-- (ein Abschlussbericht kann unabhaengig davon erstellt werden oder nicht)
+('projekt', 'oq_abschlussbericht_erstellt', 'Eigener OQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 81),
+('projekt', 'pq_abschlussbericht_erstellt', 'Eigener PQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Validierungsergebnisse', 82),
+('projekt', 'ppq_abschlussbericht_erstellt', 'Eigener PPQ-Abschlussbericht erstellt (statt Ergebnisse nur in diesem CS-VB)?', 'ja_nein', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Validierungsergebnisse', 83);
+
+-- ---------------------------------------------------------------------------
+-- CS-VB Tabelle 'Dokumentation Initial-Validierung' (Kap. 6.1): fuer die
+-- restlichen Zeilen ohne Feld (Ergebnis-Dokumente: HDS/SDS/URS-TM/
+-- Abschlussberichte/Testvorschriften/AFU) wird jetzt zusaetzlich abgefragt,
+-- OB das Dokument ueberhaupt erstellt wurde (Nutzer-Anfrage 05.09.: 'Doks
+-- die nicht erstellt wurden sollen ebenfalls mit angefragt werden. Wenn dort
+-- die Entscheidung getroffen wurde dass sie nicht erstellt worden sind die
+-- jeweiligen Zeilen aus der Tabelle zu entfernen'). Bewusst NICHT fuer die
+-- bereits vorhandenen Zeilen Systembewertung/CS-VP/FDS/RA/IQ-OQ-Testplan -
+-- diese sind fuer JEDE GxP-Systemvalidierung zwingende Grundlagendokumente,
+-- ein 'nicht erstellt' ist dort kein realistischer Fall. OQ/PQ-Abschluss-
+-- bericht: 'erstellt?'-Feld existiert schon (Kap. 4.8/4.9 Entweder-Oder),
+-- hier nur Dok-ID/Version ergaenzt statt Duplikat.
+-- ---------------------------------------------------------------------------
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
+('projekt', 'hds_erstellt', 'Hardware Designspezifikation (HDS): erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 100),
+('projekt', 'hds_dok_id', 'Hardware Designspezifikation (HDS): Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn hds_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 101),
+('projekt', 'hds_version', 'Hardware Designspezifikation (HDS): Version', 'text', NULL, 0, 'x.x', 'nur wenn hds_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 102),
+('projekt', 'sds_erstellt', 'Software Designspezifikation (SDS): erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 110),
+('projekt', 'sds_dok_id', 'Software Designspezifikation (SDS): Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn sds_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 111),
+('projekt', 'sds_version', 'Software Designspezifikation (SDS): Version', 'text', NULL, 0, 'x.x', 'nur wenn sds_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 112),
+('projekt', 'urs_tm_erstellt', 'URS/Traceability-Matrix: erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 120),
+('projekt', 'urs_tm_dok_id', 'URS/Traceability-Matrix: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn urs_tm_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 121),
+('projekt', 'urs_tm_version', 'URS/Traceability-Matrix: Version', 'text', NULL, 0, 'x.x', 'nur wenn urs_tm_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 122),
+('projekt', 'dq_abschlussbericht_erstellt', 'DQ Abschlussbericht: erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 130),
+('projekt', 'dq_abschlussbericht_dok_id', 'DQ Abschlussbericht: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn dq_abschlussbericht_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 131),
+('projekt', 'dq_abschlussbericht_version', 'DQ Abschlussbericht: Version', 'text', NULL, 0, 'x.x', 'nur wenn dq_abschlussbericht_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 132),
+('projekt', 'iq_testvorschriften_erstellt', 'IQ-Testvorschriften (projektspezifisch): erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 140),
+('projekt', 'iq_testvorschriften_dok_id', 'IQ-Testvorschriften (projektspezifisch): Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn iq_testvorschriften_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 141),
+('projekt', 'iq_testvorschriften_version', 'IQ-Testvorschriften (projektspezifisch): Version', 'text', NULL, 0, 'x.x', 'nur wenn iq_testvorschriften_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 142),
+('projekt', 'iq_abschlussbericht_erstellt', 'IQ-Abschlussbericht: erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 150),
+('projekt', 'iq_abschlussbericht_dok_id', 'IQ-Abschlussbericht: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn iq_abschlussbericht_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 151),
+('projekt', 'iq_abschlussbericht_version', 'IQ-Abschlussbericht: Version', 'text', NULL, 0, 'x.x', 'nur wenn iq_abschlussbericht_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 152),
+('projekt', 'oq_testvorschriften_erstellt', 'OQ-Testvorschriften (projektspezifisch): erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 160),
+('projekt', 'oq_testvorschriften_dok_id', 'OQ-Testvorschriften (projektspezifisch): Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn oq_testvorschriften_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 161),
+('projekt', 'oq_testvorschriften_version', 'OQ-Testvorschriften (projektspezifisch): Version', 'text', NULL, 0, 'x.x', 'nur wenn oq_testvorschriften_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 162),
+('projekt', 'pq_testplan_erstellt', 'PQ-Testplan: erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 170),
+('projekt', 'pq_testplan_dok_id', 'PQ-Testplan: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn pq_testplan_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 171),
+('projekt', 'pq_testplan_version', 'PQ-Testplan: Version', 'text', NULL, 0, 'x.x', 'nur wenn pq_testplan_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 172),
+('projekt', 'afu_erstellt', 'Authorisation for Use (AFU): erstellt?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Referenzdokumente', 180),
+('projekt', 'afu_dok_id', 'Authorisation for Use (AFU): Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn afu_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 181),
+('projekt', 'afu_version', 'Authorisation for Use (AFU): Version', 'text', NULL, 0, 'x.x', 'nur wenn afu_erstellt = ja', '["CS-VB"]', 'Referenzdokumente', 182),
+('projekt', 'oq_abschlussbericht_dok_id', 'OQ-Abschlussbericht: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn oq_abschlussbericht_erstellt = ja (wiederverwendetes Feld aus Kap. 4.8/4.9)', '["CS-VB"]', 'Referenzdokumente', 190),
+('projekt', 'oq_abschlussbericht_version', 'OQ-Abschlussbericht: Version', 'text', NULL, 0, 'x.x', 'nur wenn oq_abschlussbericht_erstellt = ja (wiederverwendetes Feld aus Kap. 4.8/4.9)', '["CS-VB"]', 'Referenzdokumente', 191),
+('projekt', 'pq_abschlussbericht_dok_id', 'PQ-Abschlussbericht: Dok-ID (dieses Projekt)', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn pq_abschlussbericht_erstellt = ja (wiederverwendetes Feld aus Kap. 4.8/4.9)', '["CS-VB"]', 'Referenzdokumente', 200),
+('projekt', 'pq_abschlussbericht_version', 'PQ-Abschlussbericht: Version', 'text', NULL, 0, 'x.x', 'nur wenn pq_abschlussbericht_erstellt = ja (wiederverwendetes Feld aus Kap. 4.8/4.9)', '["CS-VB"]', 'Referenzdokumente', 201);
+
+-- ---------------------------------------------------------------------------
+-- CS-VB Tabelle 'Weitere Validierungsdokumente' (Kap. 6.2, 18 Prüfpunkte).
+-- Nutzer-Anfrage 05.09.: pro Prüfpunkt abfragen, ob das Dokument erforderlich
+-- war. Wenn nein -> Begründung (fuellt Spalte 'Nachweis/Begründung'). Wenn
+-- ja -> Dokumenten-ID (+ optional Titel) in dieselbe Spalte. Die 'Erforder-
+-- lich'-Checkbox der PPQ-Zeile nutzt das bereits vorhandene Feld
+-- ppq_durchgefuehrt (Kap. 4.10) wieder, statt ein Duplikat anzulegen.
+-- ---------------------------------------------------------------------------
+INSERT INTO field_definitions (entity_type, key, label, datentyp, optionen, pflichtfeld, format_hinweis, sop_hinweis, benoetigt_fuer, gruppe, sortierung) VALUES
+('projekt', 'wvd_datenflussdiagramm_erforderlich', 'Weitere Validierungsdokumente: Datenflussdiagramm - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 10),
+('projekt', 'wvd_datenflussdiagramm_dok_id', 'Weitere Validierungsdokumente: Datenflussdiagramm - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_datenflussdiagramm_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 11),
+('projekt', 'wvd_datenflussdiagramm_titel', 'Weitere Validierungsdokumente: Datenflussdiagramm - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_datenflussdiagramm_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 12),
+('projekt', 'wvd_datenflussdiagramm_begruendung', 'Weitere Validierungsdokumente: Datenflussdiagramm - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_datenflussdiagramm_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 13),
+('projekt', 'wvd_audit_trail_review_konzept_erforderlich', 'Weitere Validierungsdokumente: Audit Trail Review Konzept - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 20),
+('projekt', 'wvd_audit_trail_review_konzept_dok_id', 'Weitere Validierungsdokumente: Audit Trail Review Konzept - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_audit_trail_review_konzept_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 21),
+('projekt', 'wvd_audit_trail_review_konzept_titel', 'Weitere Validierungsdokumente: Audit Trail Review Konzept - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_audit_trail_review_konzept_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 22),
+('projekt', 'wvd_audit_trail_review_konzept_begruendung', 'Weitere Validierungsdokumente: Audit Trail Review Konzept - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_audit_trail_review_konzept_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 23),
+('projekt', 'wvd_berechtigungskonzept_erforderlich', 'Weitere Validierungsdokumente: Berechtigungskonzept - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 30),
+('projekt', 'wvd_berechtigungskonzept_dok_id', 'Weitere Validierungsdokumente: Berechtigungskonzept - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_berechtigungskonzept_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 31),
+('projekt', 'wvd_berechtigungskonzept_titel', 'Weitere Validierungsdokumente: Berechtigungskonzept - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_berechtigungskonzept_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 32),
+('projekt', 'wvd_berechtigungskonzept_begruendung', 'Weitere Validierungsdokumente: Berechtigungskonzept - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_berechtigungskonzept_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 33),
+('projekt', 'wvd_trainingsplan_erforderlich', 'Weitere Validierungsdokumente: Trainingsplan - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 40),
+('projekt', 'wvd_trainingsplan_dok_id', 'Weitere Validierungsdokumente: Trainingsplan - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_trainingsplan_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 41),
+('projekt', 'wvd_trainingsplan_titel', 'Weitere Validierungsdokumente: Trainingsplan - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_trainingsplan_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 42),
+('projekt', 'wvd_trainingsplan_begruendung', 'Weitere Validierungsdokumente: Trainingsplan - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_trainingsplan_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 43),
+-- 'Erforderlich' fuer PPQ-Zeile: wiederverwendet ppq_durchgefuehrt (Kap. 4.10), kein eigenes Feld.
+('projekt', 'wvd_ppq_dok_id', 'Weitere Validierungsdokumente: Process Performance Qualification (PPQ) - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 51),
+('projekt', 'wvd_ppq_titel', 'Weitere Validierungsdokumente: Process Performance Qualification (PPQ) - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 52),
+('projekt', 'wvd_ppq_begruendung', 'Weitere Validierungsdokumente: Process Performance Qualification (PPQ) - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn ppq_durchgefuehrt = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 53),
+('projekt', 'wvd_user_process_monitoring_erforderlich', 'Weitere Validierungsdokumente: User Process Monitoring (UPM) - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 60),
+('projekt', 'wvd_user_process_monitoring_dok_id', 'Weitere Validierungsdokumente: User Process Monitoring (UPM) - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_user_process_monitoring_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 61),
+('projekt', 'wvd_user_process_monitoring_titel', 'Weitere Validierungsdokumente: User Process Monitoring (UPM) - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_user_process_monitoring_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 62),
+('projekt', 'wvd_user_process_monitoring_begruendung', 'Weitere Validierungsdokumente: User Process Monitoring (UPM) - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_user_process_monitoring_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 63),
+('projekt', 'wvd_datenmigration_erforderlich', 'Weitere Validierungsdokumente: Datenmigration (DM) - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 70),
+('projekt', 'wvd_datenmigration_dok_id', 'Weitere Validierungsdokumente: Datenmigration (DM) - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_datenmigration_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 71),
+('projekt', 'wvd_datenmigration_titel', 'Weitere Validierungsdokumente: Datenmigration (DM) - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_datenmigration_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 72),
+('projekt', 'wvd_datenmigration_begruendung', 'Weitere Validierungsdokumente: Datenmigration (DM) - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_datenmigration_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 73),
+('projekt', 'wvd_wartung_monitoring_erforderlich', 'Weitere Validierungsdokumente: Festlegung Wartung und Monitoring - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 80),
+('projekt', 'wvd_wartung_monitoring_dok_id', 'Weitere Validierungsdokumente: Festlegung Wartung und Monitoring - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_wartung_monitoring_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 81),
+('projekt', 'wvd_wartung_monitoring_titel', 'Weitere Validierungsdokumente: Festlegung Wartung und Monitoring - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_wartung_monitoring_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 82),
+('projekt', 'wvd_wartung_monitoring_begruendung', 'Weitere Validierungsdokumente: Festlegung Wartung und Monitoring - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_wartung_monitoring_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 83),
+('projekt', 'wvd_archivierung_daten_erforderlich', 'Weitere Validierungsdokumente: Prozedur zur Archivierung der Daten - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 90),
+('projekt', 'wvd_archivierung_daten_dok_id', 'Weitere Validierungsdokumente: Prozedur zur Archivierung der Daten - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_archivierung_daten_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 91),
+('projekt', 'wvd_archivierung_daten_titel', 'Weitere Validierungsdokumente: Prozedur zur Archivierung der Daten - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_archivierung_daten_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 92),
+('projekt', 'wvd_archivierung_daten_begruendung', 'Weitere Validierungsdokumente: Prozedur zur Archivierung der Daten - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_archivierung_daten_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 93),
+('projekt', 'wvd_backup_restore_konzept_erforderlich', 'Weitere Validierungsdokumente: Back-up & Restore Konzept - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 100),
+('projekt', 'wvd_backup_restore_konzept_dok_id', 'Weitere Validierungsdokumente: Back-up & Restore Konzept - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_backup_restore_konzept_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 101),
+('projekt', 'wvd_backup_restore_konzept_titel', 'Weitere Validierungsdokumente: Back-up & Restore Konzept - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_backup_restore_konzept_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 102),
+('projekt', 'wvd_backup_restore_konzept_begruendung', 'Weitere Validierungsdokumente: Back-up & Restore Konzept - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_backup_restore_konzept_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 103),
+('projekt', 'wvd_business_continuity_plan_erforderlich', 'Weitere Validierungsdokumente: Business Continuity Plan - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 110),
+('projekt', 'wvd_business_continuity_plan_dok_id', 'Weitere Validierungsdokumente: Business Continuity Plan - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_business_continuity_plan_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 111),
+('projekt', 'wvd_business_continuity_plan_titel', 'Weitere Validierungsdokumente: Business Continuity Plan - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_business_continuity_plan_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 112),
+('projekt', 'wvd_business_continuity_plan_begruendung', 'Weitere Validierungsdokumente: Business Continuity Plan - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_business_continuity_plan_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 113),
+('projekt', 'wvd_incident_stoerungsmanagement_erforderlich', 'Weitere Validierungsdokumente: Incident- und Störungsmanagement - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 120),
+('projekt', 'wvd_incident_stoerungsmanagement_dok_id', 'Weitere Validierungsdokumente: Incident- und Störungsmanagement - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_incident_stoerungsmanagement_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 121),
+('projekt', 'wvd_incident_stoerungsmanagement_titel', 'Weitere Validierungsdokumente: Incident- und Störungsmanagement - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_incident_stoerungsmanagement_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 122),
+('projekt', 'wvd_incident_stoerungsmanagement_begruendung', 'Weitere Validierungsdokumente: Incident- und Störungsmanagement - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_incident_stoerungsmanagement_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 123),
+('projekt', 'wvd_aenderungs_konfigurationsmanagement_erforderlich', 'Weitere Validierungsdokumente: Änderungs- und Konfigurationsmanagement - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 130),
+('projekt', 'wvd_aenderungs_konfigurationsmanagement_dok_id', 'Weitere Validierungsdokumente: Änderungs- und Konfigurationsmanagement - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_aenderungs_konfigurationsmanagement_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 131),
+('projekt', 'wvd_aenderungs_konfigurationsmanagement_titel', 'Weitere Validierungsdokumente: Änderungs- und Konfigurationsmanagement - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_aenderungs_konfigurationsmanagement_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 132),
+('projekt', 'wvd_aenderungs_konfigurationsmanagement_begruendung', 'Weitere Validierungsdokumente: Änderungs- und Konfigurationsmanagement - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_aenderungs_konfigurationsmanagement_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 133),
+('projekt', 'wvd_logbuch_system_erforderlich', 'Weitere Validierungsdokumente: Logbuch (Server, CS, Equipment, etc.) - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 140),
+('projekt', 'wvd_logbuch_system_dok_id', 'Weitere Validierungsdokumente: Logbuch (Server, CS, Equipment, etc.) - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_logbuch_system_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 141),
+('projekt', 'wvd_logbuch_system_titel', 'Weitere Validierungsdokumente: Logbuch (Server, CS, Equipment, etc.) - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_logbuch_system_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 142),
+('projekt', 'wvd_logbuch_system_begruendung', 'Weitere Validierungsdokumente: Logbuch (Server, CS, Equipment, etc.) - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_logbuch_system_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 143),
+('projekt', 'wvd_lieferantenbewertung_nachweis_erforderlich', 'Weitere Validierungsdokumente: Lieferantenbewertung - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 150),
+('projekt', 'wvd_lieferantenbewertung_nachweis_dok_id', 'Weitere Validierungsdokumente: Lieferantenbewertung - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_lieferantenbewertung_nachweis_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 151),
+('projekt', 'wvd_lieferantenbewertung_nachweis_titel', 'Weitere Validierungsdokumente: Lieferantenbewertung - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_lieferantenbewertung_nachweis_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 152),
+('projekt', 'wvd_lieferantenbewertung_nachweis_begruendung', 'Weitere Validierungsdokumente: Lieferantenbewertung - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_lieferantenbewertung_nachweis_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 153),
+('projekt', 'wvd_quality_agreement_erforderlich', 'Weitere Validierungsdokumente: Quality Agreement - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 160),
+('projekt', 'wvd_quality_agreement_dok_id', 'Weitere Validierungsdokumente: Quality Agreement - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_quality_agreement_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 161),
+('projekt', 'wvd_quality_agreement_titel', 'Weitere Validierungsdokumente: Quality Agreement - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_quality_agreement_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 162),
+('projekt', 'wvd_quality_agreement_begruendung', 'Weitere Validierungsdokumente: Quality Agreement - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_quality_agreement_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 163),
+('projekt', 'wvd_bedienungsanweisungen_erforderlich', 'Weitere Validierungsdokumente: Anweisungen zur Bedienung des CS - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 170),
+('projekt', 'wvd_bedienungsanweisungen_dok_id', 'Weitere Validierungsdokumente: Anweisungen zur Bedienung des CS - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_bedienungsanweisungen_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 171),
+('projekt', 'wvd_bedienungsanweisungen_titel', 'Weitere Validierungsdokumente: Anweisungen zur Bedienung des CS - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_bedienungsanweisungen_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 172),
+('projekt', 'wvd_bedienungsanweisungen_begruendung', 'Weitere Validierungsdokumente: Anweisungen zur Bedienung des CS - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_bedienungsanweisungen_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 173),
+('projekt', 'wvd_bedienungshandbuch_erforderlich', 'Weitere Validierungsdokumente: Handbuch mit Anleitungen zur Bedienung des CS - erforderlich?', 'ja_nein', NULL, 0, NULL, NULL, '["CS-VB"]', 'Weitere Validierungsdokumente', 180),
+('projekt', 'wvd_bedienungshandbuch_dok_id', 'Weitere Validierungsdokumente: Handbuch mit Anleitungen zur Bedienung des CS - Dokumenten-ID', 'text', NULL, 0, 'QU-OPE-XXXXXXX', 'nur wenn wvd_bedienungshandbuch_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 181),
+('projekt', 'wvd_bedienungshandbuch_titel', 'Weitere Validierungsdokumente: Handbuch mit Anleitungen zur Bedienung des CS - Titel (optional)', 'text', NULL, 0, NULL, 'nur wenn wvd_bedienungshandbuch_erforderlich = ja', '["CS-VB"]', 'Weitere Validierungsdokumente', 182),
+('projekt', 'wvd_bedienungshandbuch_begruendung', 'Weitere Validierungsdokumente: Handbuch mit Anleitungen zur Bedienung des CS - Begründung, warum nicht erforderlich', 'mehrzeiliger_text', NULL, 0, NULL, 'nur wenn wvd_bedienungshandbuch_erforderlich = nein', '["CS-VB"]', 'Weitere Validierungsdokumente', 183);

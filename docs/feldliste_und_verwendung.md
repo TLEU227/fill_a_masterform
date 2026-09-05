@@ -288,11 +288,22 @@ Frage, siehe `KONZEPT.md` Abschnitt 2.1).
 | Feld | Label | Verwendung im Template |
 |---|---|---|
 | `dq_offene_anforderungen` | DQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.2 - steuert, welcher der beiden Alternativ-Absätze stehen bleibt |
-| `iq_offene_anforderungen` | IQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.7 - binäre Vereinfachung, dritte Template-Variante ("unkritisch, per CC nachverfolgt") wird immer gestrichen |
+| `iq_offene_anforderungen` | IQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.7 - **Update 05.09.**: echte 3-Wege-Weiche zusammen mit `iq_offene_anforderungen_unkritisch` (statt binärer Vereinfachung) |
+| `iq_offene_anforderungen_unkritisch` / `_beschreibung` | IQ: als unkritisch bewertet? / Beschreibung | ✅ **Neu 05.09.** Kap. 4.7, dritte Template-Variante ("unkritisch, per CC nachverfolgt") - nur wenn `iq_offene_anforderungen=ja`. CC-Nummer im Text wiederverwendet `change_control_nummer` |
 | `oq_offene_anforderungen` | OQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.8 |
 | `pq_offene_anforderungen` | PQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.9 |
 | `ppq_offene_anforderungen` | PPQ: offene Anforderungen aufgetreten? | ✅ Kap. 4.10, nur relevant wenn `ppq_durchgefuehrt=ja` |
 | `ppq_durchgefuehrt` | PPQ tatsächlich durchgeführt? | ✅ Kap. 4.10 - bei `nein` entfällt das ganze Kapitel |
+| `oq_abschlussbericht_erstellt` / `pq_abschlussbericht_erstellt` / `ppq_abschlussbericht_erstellt` | Eigener Abschlussbericht erstellt? | ✅ **Neu 05.09.** Kap. 4.8/4.9/4.10 - steuert "... im X-Abschlussbericht zusammengefasst" vs. "... in diesem Validierungsbericht zusammengefasst" (ersetzt die alte Ableitung aus `phase_pq_geplant`). PPQ nur relevant wenn `ppq_durchgefuehrt=ja`. Werden auch in Tabelle "Dokumentation Initial-Validierung" (2.9) wiederverwendet. |
+| `systembeschreibung_geaendert` / `_aenderung_beschreibung` | Systembeschreibung gegenüber CS-VP geändert? / Beschreibung | ✅ **Neu 05.09.** Kap. 1.4 (hat "Oder:") |
+| `verantwortlichkeiten_geaendert` / `_aenderung_beschreibung` | Verantwortlichkeiten (Kap. 2.1) geändert? / Beschreibung | ✅ **Neu 05.09.** Kap. 2.1 (Template OHNE "Oder", inhaltlich trotzdem Alternative) |
+| `lieferanten_verantwortlichkeiten_geaendert` / `_aenderung_beschreibung` | Verantwortlichkeiten des/der Lieferanten (Kap. 2.2) geändert? / Beschreibung | ✅ **Neu 05.09.** Kap. 2.2 (Template OHNE "Oder") |
+| `lieferantenbewertung_neu_durchgefuehrt` | Lieferantenbewertung neu durchgeführt (statt Verweis auf CS-VP)? | ✅ **Neu 05.09.** Kap. 2.2.1 (hat "Oder:"); bei `nein` entfällt zusätzlich die gesamte Tabelle 5 "Lieferantenbewertung" |
+| `testprozess_angepasst` / `_anpassung_beschreibung` | Testprozess angepasst (statt Standardtestvorschriften)? / Beschreibung | ✅ **Neu 05.09.** Kap. 3.x (hat "Oder:") |
+
+**Kap. 5 Zusammenfassung** (hat "Oder"): "neues System" (Business-Continuity-
+Bewertung) vs. "Folgeprojekt" (Zweck-Erweiterung um CC-Inhalt) - nutzt das
+schon vorhandene `ist_folgeprojekt` (2.1) wieder, kein neues Feld.
 
 ### 2.8 Objektart `unexpected_event` (Liste, Kap. 4.12 CS-VB, Tabelle 6)
 
@@ -305,6 +316,68 @@ Frage, siehe `KONZEPT.md` Abschnitt 2.1).
 Wenn die Liste leer ist, bleibt stattdessen der "keine Änderungen"-Absatz
 stehen (Template-Alternative). Der "Formblatt"-Mechanismus (weitere
 Template-Alternative) wird nicht modelliert.
+
+### 2.9 Tabelle "Dokumentation Initial-Validierung" (nur CS-VB, Kap. 6.1)
+
+**Neu 05.09.** Nutzer-Anfrage: Dok-ID + Version pro Zeile abfragen, UND für
+Dokumente, die gar nicht erstellt wurden, die Zeile aus der Tabelle
+entfernen (statt Platzhalter "XXXX" stehen zu lassen). Fünf Zeilen sind
+zwingende Grundlagendokumente jeder GxP-Systemvalidierung (kein
+"nicht erstellt" möglich) und behalten ihr bestehendes Feld ohne Gate:
+Systembewertung, CS-VP, FDS, RA, IQ/OQ-Testplan (siehe 2.2). Die
+restlichen 11 Zeilen (Ergebnis-Dokumente) haben je ein `{typ}_erstellt`
+(ja/nein) + `{typ}_dok_id` + `{typ}_version`:
+
+| Feld-Präfix | Dokumententyp |
+|---|---|
+| `hds` | Hardware Designspezifikation (HDS) |
+| `sds` | Software Designspezifikation (SDS) |
+| `urs_tm` | URS/Traceability-Matrix |
+| `dq_abschlussbericht` | DQ Abschlussbericht |
+| `iq_testvorschriften` | IQ-Testvorschriften (projektspezifisch) |
+| `iq_abschlussbericht` | IQ-Abschlussbericht |
+| `oq_testvorschriften` | OQ-Testvorschriften (projektspezifisch) |
+| `oq_abschlussbericht` | OQ-Abschlussbericht (nur `_dok_id`/`_version` neu - `_erstellt` ist das wiederverwendete Feld aus 2.7) |
+| `pq_testplan` | PQ-Testplan |
+| `pq_abschlussbericht` | PQ-Abschlussbericht (nur `_dok_id`/`_version` neu, s.o.) |
+| `afu` | Authorisation for Use (AFU) |
+
+Bei `{typ}_erstellt=nein` wird die komplette Tabellenzeile entfernt; bei
+`ja` werden Dok-ID/Version eingesetzt; ist der Wert nicht gesetzt, bleibt
+die Zeile mit Platzhalter "XXXX" unangetastet stehen.
+
+### 2.10 Tabelle "Weitere Validierungsdokumente" (nur CS-VB, Kap. 6.2, 18 Prüfpunkte)
+
+**Neu 05.09.** Nutzer-Anfrage: pro Prüfpunkt abfragen, ob das Dokument
+erforderlich war (echte Ja/Nein-Checkbox im Template). Bei `nein` wird die
+Begründung in die letzte Spalte ("Nachweis (Dokumenten ID) / Begründung,
+wenn nicht erforderlich") übertragen, bei `ja` die Dokumenten-ID (+
+optional Titel). Jede Zeile hat `wvd_{slug}_erforderlich` (ja/nein) +
+`wvd_{slug}_dok_id` + `wvd_{slug}_titel` (optional) + `wvd_{slug}_begruendung`
+- mit einer Ausnahme: die PPQ-Zeile nutzt für "erforderlich?" das schon
+vorhandene Feld `ppq_durchgefuehrt` (2.7) wieder statt eines eigenen Feldes
+(hat kein eigenes `wvd_ppq_erforderlich`).
+
+| Slug | Prüfpunkt |
+|---|---|
+| `datenflussdiagramm` | Datenflussdiagramm |
+| `audit_trail_review_konzept` | Audit Trail Review Konzept |
+| `berechtigungskonzept` | Berechtigungskonzept |
+| `trainingsplan` | Trainingsplan |
+| `ppq` | Process Performance Qualification (PPQ) - "erforderlich?" = `ppq_durchgefuehrt` |
+| `user_process_monitoring` | User Process Monitoring (UPM) |
+| `datenmigration` | Datenmigration (DM) |
+| `wartung_monitoring` | Festlegung Wartung und Monitoring |
+| `archivierung_daten` | Prozedur zur Archivierung der Daten |
+| `backup_restore_konzept` | Back-up & Restore Konzept |
+| `business_continuity_plan` | Business Continuity Plan |
+| `incident_stoerungsmanagement` | Incident- und Störungsmanagement |
+| `aenderungs_konfigurationsmanagement` | Änderungs- und Konfigurationsmanagement |
+| `logbuch_system` | Logbuch (Server, CS, Equipment, etc.) |
+| `lieferantenbewertung_nachweis` | Lieferantenbewertung (Nachweis, andere Stelle als 2.7 `lieferantenbewertung_neu_durchgefuehrt`) |
+| `quality_agreement` | Quality Agreement |
+| `bedienungsanweisungen` | Anweisungen zur Bedienung des CS |
+| `bedienungshandbuch` | Handbuch mit Anleitungen zur Bedienung des CS |
 
 ---
 
